@@ -4,8 +4,8 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
-#pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop, createmap_plots, mv_closure_phase_png, createmap_fits, mv_fits, get_imaging_catalogue, imaging_loop ]
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop, createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
+#pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop1, createmap_plots, mv_closure_phase_png, createmap_fits, mv_fits, get_imaging_catalogue, imaging_loop ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, find_delay_cal, best_delay_cal, createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
 # PARAMETER SETUP -- THINGS YOU WILL NEED TO CHANGE
 ## target data information
@@ -21,6 +21,9 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 # this is the catalogue of calibrator images; if it doesn't exist, download from LBCS database and create
 ! calibrator_catalogue 		 = /data/scratch/lb_bw/pipeline_test/lbcs_catalogue.csv
 ! use_calibrator_catalogue		 = True
+# name of output closure phase file
+! closure_phase_file             = {{ job_directory }}/closure_phases.txt
+
 
 #! manual_targets                 = True                                                     # Set to true if you want to specify a target list manually, otherwise targets selected using LOBOS                        
 #! manual_target_file             = /data/scratch/lb_bw/pipeline_test/lbcs_manual_target_list.txt          # only used if manual targets set to true
@@ -237,24 +240,24 @@ ndppp_apply_cal.argument.applytheBeam.beammode       =   default
 #####################################################################################################################################################################
 #
 #
-#	CALIBRATOR LOOP
+#	CALIBRATOR LOOP 1: FIND THE BEST CALIBRATOR
 #
 #
 #####################################################################################################################################################################
 
 # access lotss to provide a catalogue of sources to use
-get_lbcs_catalogue.control.type         = pythonplugin
-get_lbcs_catalogue.executable           = {{ download_lbcs_script }}
-get_lbcs_catalogue.flags                = [ndppp_prep_target.output.mapfile]
-get_lbcs_catalogue.DoDownload           = {{ use_calibrator_catalogue }}
-get_lbcs_catalogue.SkymodelPath         = {{ calibrator_catalogue }}
-get_lbcs_catalogue.Radius               = 1.5
+get_lbcs_catalogue.control.type         	= pythonplugin
+get_lbcs_catalogue.control.executable           = {{ download_lbcs_script }}
+get_lbcs_catalogue.argument.flags               = [ndppp_prep_target.output.mapfile]
+get_lbcs_catalogue.argument.DoDownload          = {{ use_calibrator_catalogue }}
+get_lbcs_catalogue.argument.SkymodelPath        = {{ calibrator_catalogue }}
+get_lbcs_catalogue.argument.Radius              = 1.5
 
 # Loop through the target phase calibrator canditates
-calibrator_loop.control.kind                    =   loop
-calibrator_loop.control.type                    =   conditional
-calibrator_loop.control.loopcount               =   100
-calibrator_loop.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, dppp_concat, closure_phase, run_self_cal, make_cal_results_mapfile, move_cal_results ]
+calibrator_loop1.control.kind                    =   loop
+calibrator_loop1.control.type                    =   conditional
+calibrator_loop1.control.loopcount               =   100
+calibrator_loop1.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, dppp_concat, closure_phase ]
 ## steps still to add: conditional on scatter, do: run model_engine, diagonal gain, clock/tec separation, self-calibration
 
 
@@ -266,7 +269,7 @@ prep_dirs.control.infile                  =   ndppp_prep_target.output.mapfile
 prep_dirs.control.filename                =   prep_dirs.mapfile
 prep_dirs.control.wd                      =   {{ job_directory }}
 prep_dirs.control.nP                      =   3	# default was three
-prep_dirs.control.counter                 =   calibrator_loop.output.counter
+prep_dirs.control.counter                 =   calibrator_loop1.output.counter
 prep_dirs.control.target_file             =   {{ calibrator_catalogue }} ## get_calibrator_directions
 
 # shift, average and add up stations for tied array
@@ -321,29 +324,84 @@ closure_phase.control.type                =   pythonplugin
 closure_phase.control.executable          =   {{ closure_phase_script }}
 closure_phase.argument.flags              =   [dppp_concat.output.mapfile, {{ closure_phase_stations }}]
 
+
+#####################################################################################################################################################################
+#
+#
+#       HOUSEKEEPING AND DELAY CALIBRATION
+#
+#
+#####################################################################################################################################################################
+
+
+# get a list of the closure phase plots
+createmap_plots.control.kind            =   plugin
+createmap_plots.control.type            =   createMapfile
+createmap_plots.control.method          =   mapfile_from_folder
+createmap_plots.control.mapfile_dir     =   input.output.mapfile_dir
+createmap_plots.control.filename        =   createmap_plots.mapfile
+createmap_plots.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_plots.control.pattern         =   *.png
+
+# move the inspection plots
+mv_closure_phase_png.kind                 =   recipe
+mv_closure_phase_png.type                 =   executable_args
+mv_closure_phase_png.control.executable   =   /bin/mv
+mv_closure_phase_png.control.max_per_node =   {{ num_proc_per_node }}
+mv_closure_phase_png.control.mapfile_in   =   createmap_plots.output.mapfile
+mv_closure_phase_png.control.inputkey     =   source
+mv_closure_phase_png.control.arguments     =   [source,{{ inspection_directory }}]
+
+
+# automatically find the best calibrator 
+find_delay_cal.control.type               = pythonplugin
+find_delay_cal.control.executable         = {{ find_delay_calibrator }}
+find_delay_cal.control.error_tolerance    = {{ error_tolerance }}
+find_delay_cal.argument.flags             = {{ closure_phase_file }}
+
+# extract from the mapfile from the previos step
+best_delay_cal.control.kind              =  plugin
+best_delay_cal.control.type              =  mapfilenamesFromMapfiles
+best_delay_cal.control.mapfile_FilePath  =  find_delay_cal.output.DelayCal.mapfile
+
+#  
+
+
+
+
+
+
+#####################################################################################################################################################################
+#
+#
+#	CALIBRATOR LOOP 2: PHASE CALIBRATIONS
+#
+#
+#####################################################################################################################################################################
+
+# get a mapfile of the calibrator sources from alibrator_loop1
+
+# Loop through the target phase calibrator canditates
+#calibrator_loop2.control.kind                    =   loop
+#calibrator_loop2.control.type                    =   conditional
+#calibrator_loop2.control.loopcount               =   100
+#calibrator_loop2.control.loopsteps               =   [ run_self_cal ] ## , make_cal_results_mapfile, move_cal_results ]
+
+# Initialise file with all directions  -- THIS NEEDS TO BE CHANGED
+#prep_dirs.control.kind                    =   plugin
+#prep_dirs.control.type                    =   TargetListToMapfileX
+#prep_dirs.control.mapfile_dir             =   input.output.mapfile_dir
+#prep_dirs.control.infile                  =   ndppp_prep_target.output.mapfile
+#prep_dirs.control.filename                =   prep_dirs.mapfile
+#prep_dirs.control.wd                      =   {{ job_directory }}
+#prep_dirs.control.nP                      =   3	# default was three
+#prep_dirs.control.counter                 =   calibrator_loop2.output.counter
+#prep_dirs.control.target_file             =   {{ calibrator_catalogue }} ## get_calibrator_directions
+
 #run_self_cal.control.type		  =   pythonplugin
 #run_self_cal.control.executable           =   {{ self_cal_and_imaging_script }}
 #run_self_cal.argument.flags		  =   [ dppp_concat.output.mapfile ]
 #run_self_cal.argument.freq_range	  =   20
-
-
-# make mapfile with the filenames of the results that we want
-make_cal_results_mapfile.control.kind            =  plugin
-make_cal_results_mapfile.control.type            =  makeResultsMapfile
-make_cal_results_mapfile.control.mapfile_dir     =  input.output.mapfile_dir
-make_cal_results_mapfile.control.filename        =  make_results_mapfile.mapfile
-make_cal_results_mapfile.control.mapfile_in      =  dppp_concat.output.mapfile
-make_cal_results_mapfile.control.target_dir      =  {{ calibrator_results_directory }}
-make_cal_results_mapfile.control.make_target_dir =  True
-
-# move the final measurement set to the calibrator results directory
-move_cal_results.control.kind               =  recipe
-move_cal_results.control.type               =  executable_args
-move_cal_results.control.executable         =  /bin/mv
-move_cal_results.control.max_per_node       =  {{ num_proc_per_node_limit }}
-move_cal_results.control.mapfiles_in        =  [dppp_concat.output.mapfile,make_results_mapfile.output.mapfile]
-move_cal_results.control.inputkeys          =  [source,destination]
-move_cal_results.control.arguments          =  [source,destination]
 
 
 #####################################################################################################################################################################
@@ -355,23 +413,23 @@ move_cal_results.control.arguments          =  [source,destination]
 #####################################################################################################################################################################
 
 
-# get a list of the inspection plots
-createmap_plots.control.kind            =   plugin
-createmap_plots.control.type            =   createMapfile
-createmap_plots.control.method          =   mapfile_from_folder
-createmap_plots.control.mapfile_dir     =   input.output.mapfile_dir
-createmap_plots.control.filename        =   createmap_plots.mapfile
-createmap_plots.control.folder          =   input.output.working_directory/input.output.job_name
-createmap_plots.control.pattern         =   *.png
+# make mapfile with the filenames of the results that we want
+#make_cal_results_mapfile.control.kind            =  plugin
+#make_cal_results_mapfile.control.type            =  makeResultsMapfile
+#make_cal_results_mapfile.control.mapfile_dir     =  input.output.mapfile_dir
+#make_cal_results_mapfile.control.filename        =  make_results_mapfile.mapfile
+#make_cal_results_mapfile.control.mapfile_in      =  dppp_concat.output.mapfile
+#make_cal_results_mapfile.control.target_dir      =  {{ calibrator_results_directory }}
+#make_cal_results_mapfile.control.make_target_dir =  True
 
-# move the inspection plots
-mv_closure_phase_png.kind		  =   recipe
-mv_closure_phase_png.type		  =   executable_args
-mv_closure_phase_png.control.executable	  =   /bin/mv
-mv_closure_phase_png.control.max_per_node =   {{ num_proc_per_node }}
-mv_closure_phase_png.control.mapfile_in   =   createmap_plots.output.mapfile
-mv_closure_phase_png.control.inputkey	  =   source
-mv_closure_phase_png.control.arguments     =   [source,{{ inspection_directory }}]
+# move the final measurement set to the calibrator results directory  (probably not till after the phase-only calibrations)
+#move_cal_results.control.kind               =  recipe
+#move_cal_results.control.type               =  executable_args
+#move_cal_results.control.executable         =  /bin/mv
+#move_cal_results.control.max_per_node       =  {{ num_proc_per_node_limit }}
+#move_cal_results.control.mapfiles_in        =  [dppp_concat.output.mapfile,make_results_mapfile.output.mapfile]
+#move_cal_results.control.inputkeys          =  [source,destination]
+#move_cal_results.control.arguments          =  [source,destination]
 
 # get a list of final images
 createmap_fits.control.kind            =   plugin
@@ -391,9 +449,6 @@ mv_fits.control.mapfile_in   		=   createmap_fits.output.mapfile
 mv_fits.control.inputkey     		=   source
 mv_fits.control.arguments     		=   [source,{{ calibrator_results_directory }}]
 
-
-#find_best_closure_phase_solutions
-#run_model_engine_script_and_self_cal
 
 #####################################################################################################################################################################
 #
@@ -439,7 +494,7 @@ prep_dirs_img.control.infile                  =   ndppp_prep_target.output.mapfi
 prep_dirs_img.control.filename                =   prep_dirs_img.mapfile
 prep_dirs_img.control.wd                      =   {{ job_directory }}
 prep_dirs_img.control.nP                      =   3 # default was three
-prep_dirs_img.control.counter                 =   calibrator_loop.output.counter
+prep_dirs_img.control.counter                 =   imaging_loop.output.counter
 prep_dirs_img.control.target_file             =   {{ target_catalogue }}   ###
 
 # shift, average and add up stations for tied array
