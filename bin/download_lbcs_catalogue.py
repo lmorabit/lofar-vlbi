@@ -112,6 +112,9 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
     mypos = ( RATar, DECTar )
     #mypos = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
+    print 'RATAR RATAR RATAR'
+    print RATar
+
     ## this is the tier 1 database to query
     url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
 
