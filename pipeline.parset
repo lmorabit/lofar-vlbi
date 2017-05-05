@@ -171,9 +171,9 @@ copy_sols.control.kind                               =   recipe
 copy_sols.control.type                               =   executable_args
 copy_sols.control.executable                         =   /bin/cp
 copy_sols.control.max_per_node                       =   {{ num_proc_per_node }}
-copy_sols.control.mapfile_in                         =   createmap_ps_tables.output.mapfile
+copy_sols.control.mapfile_in                         =   [createmap_ps_tables.output.mapfile,make_ps_out_mapfile.output.mapfile
 copy_sols.control.inputkey                           =   source
-copy_sols.control.arguments                          =   [-r,source,make_ps_out_mapfile.output.mapfile]
+copy_sols.control.arguments                          =   [-r,source]
 
 # create a mapfile of the copied phase solution tables
 createmap_pstwo.control.kind                         =   plugin
