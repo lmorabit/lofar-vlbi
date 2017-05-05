@@ -153,5 +153,5 @@ if __name__ == "__main__":
     if args.Radius:
         radius=args.Radius
 
-    main(args.MSfile,args.SkyTar,radius,args.Outfile)
+    main(args.MSfile,args.SkyTar,args.Outfile,Radius=radius)
 
