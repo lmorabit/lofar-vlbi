@@ -149,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--Outfile', type=str, help='Filename to save the results to')
 
     args = parser.parse_args()
-    radius=1.5.
+    radius=1.5
     if args.Radius:
         radius=args.Radius
 

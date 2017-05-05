@@ -134,6 +134,12 @@ def main(ms_input, SkymodelPath, Radius=1.5, ResultsFile, DoDownload="True"):
     for i in range ((len_array-P_count)):
         len_array-=1
         tb_sorted.remove_row(len_array)
+
+    ## remove duplicates
+    tb_tmp = np.array( tb_sorted['raj2000','decj2000'] )
+    result = [ idx for idx, item in enumerate( tb_tmp ) if item in tb_tmp[:idx] ]
+    tb_sorted.remove_rows(result)
+    
     ############ Print the new table with 3 columns in it  ########################
     
     tb_out = tb_sorted['raj2000','decj2000','ObsID'] 
@@ -149,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument('--Outfile', type=str, help='Filename to save the results to')
 
     args = parser.parse_args()
-    radius=1.5.
+    radius=1.5
     if args.Radius:
         radius=args.Radius
 
