@@ -154,7 +154,7 @@ createmap_ps_tables.control.method		     =   add_suffix_to_file
 createmap_ps_tables.control.mapfile_in		     =   createmap_ps.output.mapfile
 createmap_ps_tables.control.add_suffix_to_file	     =   /instrument_directionindependent
 createmap_ps_tables.control.mapfile_dir		     =   input.output.mapfile_dir
-createmap_ps_tables.control.filename		     =   phase_sols.mapfile
+createmap_ps_tables.control.filename		     =   createmap_ps_tables.mapfile
 
 # make mapfile with the filenames of the results that we want
 make_ps_out_mapfile.control.kind            =  plugin
@@ -171,7 +171,7 @@ copy_sols.control.kind                               =   recipe
 copy_sols.control.type                               =   executable_args
 copy_sols.control.executable                         =   /bin/cp
 copy_sols.control.max_per_node                       =   {{ num_proc_per_node }}
-copy_sols.control.mapfile_in                         =   phase_sols.mapfile
+copy_sols.control.mapfile_in                         =   createmap_ps_tables.output.mapfile
 copy_sols.control.inputkey                           =   source
 copy_sols.control.arguments                          =   [-r,source,make_ps_out_mapfile.output.mapfile]
 
