@@ -249,8 +249,8 @@ ndppp_apply_cal.argument.applytheBeam.beammode       =   default
 get_lbcs_catalogue.control.type         	= pythonplugin
 get_lbcs_catalogue.control.executable           = {{ download_lbcs_script }}
 get_lbcs_catalogue.argument.flags               = [ndppp_prep_target.output.mapfile]
+get_lbcs_catalogue.argument.ResultsFile         = {{ calibrator_catalogue }}
 get_lbcs_catalogue.argument.DoDownload          = {{ use_calibrator_catalogue }}
-get_lbcs_catalogue.argument.SkymodelPath        = {{ calibrator_catalogue }}
 get_lbcs_catalogue.argument.Radius              = 1.5
 
 # Loop through the target phase calibrator canditates
