@@ -5,7 +5,6 @@ import glob
 import numpy as np
 import argparse
 import pyrap.tables as pt
-import numbers
 
 ## based on script by Leah Morabito
 ## updated by Kaspars and Atvars to work for lbcs
@@ -113,16 +112,10 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
     mypos = ( RATar, DECTar )
     #mypos = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
-    print 'RATAR RATAR RATAR'
-    print isinstance( RATar, numbers.Number )
-
-    print 'BLAH BLAH BLAH'
-    print isinstance( np.float( RATar ), numbers.Number )
-
     ## this is the tier 1 database to query
     url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
 
-    t = vo.conesearch( url, pos=mypos, radius=Radius )
+    t = vo.conesearch( url, mypos, radius=Radius )
 
     tb = t.votable.to_table()
 
