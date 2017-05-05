@@ -115,7 +115,8 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
     ## this is the tier 1 database to query
     url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
 
-    t = vo.conesearch( url, mypos, radius=Radius )
+    t = vo.conesearch( url, pos=mypos, radius=Radius )
+    print 'I GOT PAST THE CONESEARCH!!'
 
     tb = t.votable.to_table()
 
