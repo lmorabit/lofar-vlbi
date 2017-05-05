@@ -108,9 +108,10 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
     print "DOWNLOADING LBCS catalogue to "+ ResultsFile
 
     # Reading a MS to find the coordinate (pyrap)
-    #[RATar,DECTar]=grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
-    #mypos = ( RATar, DECTar )
-    mypos = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+    [RATar,DECTar]=grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+    mypos = ( RATar, DECTar )
+    #mypos = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+    print 'HERE IS MY POSITION '+mypos
 
     ## this is the tier 1 database to query
     url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
