@@ -1,7 +1,7 @@
 #########################################################
 ## LOFAR long baseline calibration pipeline parset     ##
 #########################################################
-# Please read the instructions and report bugs on: https://github.com/varenius/lofar-lb/tree/master/surveys_processing/lofar_lb_gpipeline
+# Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
 #pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop, createmap_plots, mv_closure_phase_png, createmap_fits, mv_fits, get_imaging_catalogue, imaging_loop ]
@@ -51,14 +51,14 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! error_tolerance                = False                                 		      # set to true if you want the pipeline run to continue if single bands fail
 
 ## scripts used in this parset (update paths)
-! transfer_amp_clock_sols_script = /data/scratch/lb_bw/pipeline_test/lofar-lb/surveys_processing/lofar_lb_gpipeline/prefactor_version/bin/transfer_amplitudes+clock+offset_toMS.py
-! update_ISgains_script		 = /data/scratch/lb_bw/pipeline_test/lofar-lb/surveys_processing/lofar_lb_gpipeline/prefactor_version/bin/updateISGains.py
-! add_IS_script			 = /data/scratch/lb_bw/pipeline_test/lofar-lb/surveys_processing/lofar_lb_gpipeline/prefactor_version/bin/addInternationalStations.py
-! execute_circ_conv_script	 = /data/scratch/lb_bw/pipeline_test/lofar-lb/surveys_processing/lofar_lb_gpipeline/prefactor_version/bin/execute_circ_pol_conv.py
-! lin2circ_script		 = /data/scratch/lb_bw/pipeline_test/lofar-lb/surveys_processing/lofar_lb_gpipeline/prefactor_version/bin/lin2circ.py
-! closure_phase_script	 	 = /data/scratch/lb_bw/pipeline_test/lofar-lb/surveys_processing/lofar_lb_gpipeline/prefactor_version/bin/closure_v2.py
-! download_lotss_script		 = /data/scratch/lb_bw/pipeline_test/lofar-lb/surveys_processing/lofar_lb_gpipeline/prefactor_version/bin/download_lotss_catalogue.py
-! self_cal_and_imaging_script	 = /data/scratch/lb_bw/pipeline_test/lofar-lb/surveys_processing/lofar_lb_gpipeline/prefactor_version/bin/self_calibration_and_imaging.py
+! transfer_amp_clock_sols_script = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/transfer_amplitudes+clock+offset_toMS.py
+! update_ISgains_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/updateISGains.py
+! add_IS_script			 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/addInternationalStations.py
+! execute_circ_conv_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/execute_circ_pol_conv.py
+! lin2circ_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/lin2circ.py
+! closure_phase_script	 	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline//bin/closure_v2.py
+! download_lotss_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lotss_catalogue.py
+! self_cal_and_imaging_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/self_calibration_and_imaging.py
 
 #####################################################################################################################################################################
 #
