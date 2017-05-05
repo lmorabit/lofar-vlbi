@@ -5,7 +5,7 @@
 
 # These are the steps to run.
 #pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop, createmap_plots, mv_closure_phase_png, createmap_fits, mv_fits, get_imaging_catalogue, imaging_loop ]
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop, createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop, createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
 # PARAMETER SETUP -- THINGS YOU WILL NEED TO CHANGE
 ## target data information
@@ -18,8 +18,12 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! phase_sol_input_path           = /data/scratch/lb_bw/prefactor_solutions/prefactor/results/                        # directory where the direction-independent phase solutions of the target field are stored
 ! phase_sol_input_pattern        = L401323*phase_table
 
-! manual_targets                 = True                                                     # Set to true if you want to specify a target list manually, otherwise targets selected using LOBOS                        
-! manual_target_file             = /data/scratch/lb_bw/pipeline_test/lbcs_manual_target_list.txt          # only used if manual targets set to true
+# this is the catalogue of calibrator images; if it doesn't exist, download from LBCS database and create
+! calibrator_catalogue 		 = /data/scratch/lb_bw/pipeline_test/lbcs_catalogue.csv
+! use_calibrator_catalogue		 = True
+
+#! manual_targets                 = True                                                     # Set to true if you want to specify a target list manually, otherwise targets selected using LOBOS                        
+#! manual_target_file             = /data/scratch/lb_bw/pipeline_test/lbcs_manual_target_list.txt          # only used if manual targets set to true
 # this is the target catalogue of directions to image; if it doesn't exist, it will be downloaded from the LoTSS database
 ! target_catalogue      	 = /data/scratch/lb_bw/pipeline_test/lotss_catalogue.csv
 ! use_target_catalogue      	 = True 							# "Force" : always download , "True" download if {{ target_skymodel }} does not exist , "False" : never download
@@ -58,6 +62,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! lin2circ_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/lin2circ.py
 ! closure_phase_script	 	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline//bin/closure_v2.py
 ! download_lotss_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lotss_catalogue.py
+! download_lbcs_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lbcs_catalogue.py
 ! self_cal_and_imaging_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/self_calibration_and_imaging.py
 
 #####################################################################################################################################################################
@@ -144,7 +149,7 @@ createmap_ps.control.pattern                         =   *.pre-cal.ms
 
 # find the phase solution tables
 createmap_ps_tables.control.kind		     =   plugin
-createmap_ps_tables.control.type		     =   createMapFile
+createmap_ps_tables.control.type		     =   createMapfile
 createmap_ps_tables.control.method		     =   add_suffix_to_file
 createmap_ps_tables.control.mapfile_in		     =   createmap_ps.output.mapfile
 createmap_ps_tables.control.add_suffix_to_file	     =   /instrument_directionindependent
@@ -237,15 +242,21 @@ ndppp_apply_cal.argument.applytheBeam.beammode       =   default
 #
 #####################################################################################################################################################################
 
-#get_calibrator_directions
+# access lotss to provide a catalogue of sources to use
+get_lbcs_catalogue.control.type         = pythonplugin
+get_lbcs_catalogue.executable           = {{ download_lbcs_script }}
+get_lbcs_catalogue.flags                = [ndppp_prep_target.output.mapfile]
+get_lbcs_catalogue.DoDownload           = {{ use_calibrator_catalogue }}
+get_lbcs_catalogue.SkymodelPath         = {{ calibrator_catalogue }}
+get_lbcs_catalogue.Radius               = 1.5
 
 # Loop through the target phase calibrator canditates
-
 calibrator_loop.control.kind                    =   loop
 calibrator_loop.control.type                    =   conditional
 calibrator_loop.control.loopcount               =   100
-calibrator_loop.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, dppp_concat, closure_phase, run_self_cal, make_cal_results_mapfile, move_cal_results ] 
+calibrator_loop.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, dppp_concat, closure_phase, run_self_cal, make_cal_results_mapfile, move_cal_results ]
 ## steps still to add: conditional on scatter, do: run model_engine, diagonal gain, clock/tec separation, self-calibration
+
 
 # Initialise file with all directions
 prep_dirs.control.kind                    =   plugin
@@ -256,8 +267,7 @@ prep_dirs.control.filename                =   prep_dirs.mapfile
 prep_dirs.control.wd                      =   {{ job_directory }}
 prep_dirs.control.nP                      =   3	# default was three
 prep_dirs.control.counter                 =   calibrator_loop.output.counter
-prep_dirs.control.manual                  =   {{ manual_targets }}  ##  get_calibrator_directions
-prep_dirs.control.target_file             =   {{ manual_target_file }} ## get_calibrator_directions
+prep_dirs.control.target_file             =   {{ calibrator_catalogue }} ## get_calibrator_directions
 
 # shift, average and add up stations for tied array
 dppp_phaseup.control.type                 =   dppp
