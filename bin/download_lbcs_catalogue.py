@@ -59,7 +59,7 @@ def input2strlist_nomapfile(invar):
         raise TypeError('input2strlist: Type '+str(type(invar))+' unknown!')
     return str_list
 
-def main(ms_input, SkymodelPath, ResultsFile, Radius=1.5, DoDownload="True"):
+def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
 
     """
     Download the LBCS calibrator list for the target field and find things with good P values
@@ -68,7 +68,7 @@ def main(ms_input, SkymodelPath, ResultsFile, Radius=1.5, DoDownload="True"):
     ----------
     ms_input : str
         String from the list (map) of the target MSs
-    SkymodelPath : str
+    ResultsFile : str
         Full name (with path) to the skymodel; if YES is true, the LOTSS skymodel will be downloaded here
     Radius : float (default = 1.5)
         Radius for the cone search in degrees
@@ -80,31 +80,31 @@ def main(ms_input, SkymodelPath, ResultsFile, Radius=1.5, DoDownload="True"):
     
     """
 
-    FileExists = os.path.isfile(SkymodelPath)
-    if (not FileExists and os.path.exists(SkymodelPath)):
-        raise ValueError("download_lbcs_catalogue: WTF! Path: \"%s\" exists but is not a file!"%(SkymodelPath))
+    FileExists = os.path.isfile(ResultsFile)
+    if (not FileExists and os.path.exists(ResultsFile)):
+        raise ValueError("download_lbcs_catalogue: WTF! Path: \"%s\" exists but is not a file!"%(ResultsFile))
     download_flag = False
     if DoDownload.upper() == "FORCE":
         if FileExists:
-            os.remove(SkymodelPath)
+            os.remove(ResultsFile)
         download_flag = True
     elif DoDownload.upper() == "TRUE" or DoDownload.upper() == "YES":
         if FileExists:
-            print "USING the exising catalogue in "+ SkymodelPath
+            print "USING the exising catalogue in "+ ResultsFile
             return
         else:
             download_flag = True
     elif DoDownload.upper() == "FALSE" or DoDownload.upper() == "NO":
          if FileExists:
-            print "USING the exising catalogue in "+ SkymodelPath
+            print "USING the exising catalogue in "+ ResultsFile
             return
          else:
-            raise ValueError("download_lbcs_catalogue: Path: \"%s\" does not exist and LBCS download is disabled!"%(SkymodelPath))
+            raise ValueError("download_lbcs_catalogue: Path: \"%s\" does not exist and LBCS download is disabled!"%(ResultsFile))
 
 
     # If we got here, then we are supposed to download the skymodel.
     assert download_flag == True # Jaja, belts and suspenders...
-    print "DOWNLOADING LOTSS Skymodel for the target into "+ SkymodelPath
+    print "DOWNLOADING LOTSS Skymodel for the target into "+ ResultsFile
 
     # Reading a MS to find the coordinate (pyrap)
     #[RATar,DECTar]=grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
@@ -150,7 +150,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=' Download LBCS catalogue for a target field and find good calibrators (more than 2 P values)')
 
     parser.add_argument('MSfile', type=str, nargs='+', help='One (or more MSs) for which an LBCS catalogue will be download.')
-    parser.add_argument('SkyTar', type=str, help='Full name (with path) to the skymodel; the LBCS catalogue will be downloaded here')
     parser.add_argument('--Radius', type=float, help='Radius for the LBCS cone search in degrees')
     parser.add_argument('--Outfile', type=str, help='Filename to save the results to')
 
@@ -159,4 +158,4 @@ if __name__ == "__main__":
     if args.Radius:
         radius=args.Radius
 
-    main(args.MSfile,args.SkyTar,args.Outfile,Radous=radius)
+    main(args.MSfile,args.Outfile,Radius=radius)
