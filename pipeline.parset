@@ -471,11 +471,19 @@ mv_fits.control.arguments     		=   [source,{{ calibrator_results_directory }}]
 
 # access lotss to provide a catalogue of sources to use
 get_imaging_catalogue.control.type	   = pythonplugin
-get_imaging_catalogue.executable  	   = {{ download_lotss_script }}
-get_imaging_catalogue.flags 		   = [ndppp_prep_target.output.mapfile]
-get_imaging_catalogue.DoDownload	   = {{ use_target_catalogue }}
-get_imaging_catalogue.SkymodelPath	   = {{ target_catalogue }}
-get_imaging_catalogue.Radius		   = 1.5
+get_imaging_catalogue.control.executable   = {{ download_lotss_script }}
+get_imaging_catalogue.argument.flags 	   = [ndppp_prep_target.output.mapfile]
+get_imaging_catalogue.argument.ResultsFile = {{ target_catalogue }}
+get_imaging_catalogue.argument.DoDownload  = {{ use_target_catalogue }}
+get_imaging_catalogue.argument.Radius	   = 1.5
+
+get_lbcs_catalogue.control.type                 = pythonplugin
+get_lbcs_catalogue.control.executable           = {{ download_lbcs_script }}
+get_lbcs_catalogue.argument.flags               = [ndppp_prep_target.output.mapfile]
+get_lbcs_catalogue.argument.ResultsFile         = {{ calibrator_catalogue }}
+get_lbcs_catalogue.argument.DoDownload          = {{ use_calibrator_catalogue }}
+get_lbcs_catalogue.argument.Radius              = 1.5
+
 
 
 # Loop through the target phase calibrator canditates

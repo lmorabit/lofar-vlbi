@@ -4,6 +4,7 @@ import os
 import glob
 import numpy as np
 import argparse
+import pyrap.tables as pt
 
 ## based on script by Leah Morabito
 ## updated by Kaspars and Atvars to work for lbcs
@@ -104,7 +105,7 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
 
     # If we got here, then we are supposed to download the skymodel.
     assert download_flag == True # Jaja, belts and suspenders...
-    print "DOWNLOADING LOTSS Skymodel for the target into "+ ResultsFile
+    print "DOWNLOADING LBCS catalogue to "+ ResultsFile
 
     # Reading a MS to find the coordinate (pyrap)
     #[RATar,DECTar]=grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
