@@ -59,7 +59,7 @@ def input2strlist_nomapfile(invar):
         raise TypeError('input2strlist: Type '+str(type(invar))+' unknown!')
     return str_list
 
-def main(ms_input, SkymodelPath, Radius=1.5, ResultsFile, DoDownload="True"):
+def main(ms_input, SkymodelPath, ResultsFile, Radius=1.5, DoDownload="True"):
 
     """
     Download the LoTSS skymodel for the target field
