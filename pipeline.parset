@@ -5,7 +5,7 @@
 
 # These are the steps to run.
 #pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop, createmap_plots, mv_closure_phase_png, createmap_fits, mv_fits, get_imaging_catalogue, imaging_loop ]
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop, createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop, createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
 # PARAMETER SETUP -- THINGS YOU WILL NEED TO CHANGE
 ## target data information
@@ -140,25 +140,35 @@ createmap_ps.control.method                          =   mapfile_from_folder
 createmap_ps.control.mapfile_dir                     =   input.output.mapfile_dir
 createmap_ps.control.filename                        =   createmap_ps.mapfile
 createmap_ps.control.folder                          =   {{ phase_sol_input_path }}
-createmap_ps.control.pattern                         =   {{ phase_sol_input_pattern }}
+createmap_ps.control.pattern                         =   *.pre-cal.ms
 
-##### hmmmmmmmm ... 
-#gsmcal_antmap.control.kind               =  plugin
-#gsmcal_antmap.control.type               =  createMapfile
-#gsmcal_antmap.control.method             =  add_suffix_to_file
-#gsmcal_antmap.control.mapfile_in         =  dpppconcat.output.mapfile
-#gsmcal_antmap.control.add_suffix_to_file =  /ANTENNA
-#gsmcal_antmap.control.mapfile_dir        =  input.output.mapfile_dir
-#gsmcal_antmap.control.filename = gsmcal_antmaps.mapfile
+# find the phase solution tables
+createmap_ps_tables.control.kind		     =   plugin
+createmap_ps_tables.control.type		     =   createMapFile
+createmap_ps_tables.control.method		     =   add_suffix_to_file
+createmap_ps_tables.control.mapfile_in		     =   createmap_ps.output.mapfile
+createmap_ps_tables.control.add_suffix_to_file	     =   /instrument_directionindependent
+createmap_ps_tables.control.mapfile_dir		     =   input.output.mapfile_dir
+createmap_ps_tables.control.filename		     =   phase_sols.mapfile
+
+# make mapfile with the filenames of the results that we want
+make_ps_out_mapfile.control.kind            =  plugin
+make_ps_out_mapfile.control.type            =  makeResultsMapfile
+make_ps_out_mapfile.control.mapfile_dir     =  input.output.mapfile_dir
+make_ps_out_mapfile.control.filename        =  make_ps_out_mapfile.mapfile
+make_ps_out_mapfile.control.mapfile_in      =  createmap_ps.output.mapfile
+make_ps_out_mapfile.control.target_dir      =  {{ job_directory }}
+make_ps_out_mapfile.control.make_target_dir =  True
+make_ps_out_mapfile.control.new_suffix      =  .phase_table
 
 # copy the phase solutions to the working directory
 copy_sols.control.kind                               =   recipe
 copy_sols.control.type                               =   executable_args
 copy_sols.control.executable                         =   /bin/cp
 copy_sols.control.max_per_node                       =   {{ num_proc_per_node }}
-copy_sols.control.mapfile_in                         =   createmap_ps.output.mapfile
+copy_sols.control.mapfile_in                         =   [createmap_ps_tables.output.mapfile,make_ps_out.output.mapfile]
 copy_sols.control.inputkey                           =   source
-copy_sols.control.arguments                          =   [-r,source,{{ job_directory }}]
+copy_sols.control.arguments                          =   [-r,source]
 
 # create a mapfile of the copied phase solution tables
 createmap_pstwo.control.kind                         =   plugin
