@@ -78,8 +78,10 @@ def plugin_main(args, **kwargs):
         if manual:
             with open(target_file, 'r') as f:			# if the user has provided a list of targets, use it: otherwise use Lobos to find good targets
                 for line in f:
-                     coords = (line.rstrip('\n')).split(',')
-                     map_out_big.data.append(DataProduct( '[\"'+coords[0]+'\",\"'+coords[1]+'\"]' , coords[2], False ))
+		    if 'raj2000' not in line:
+			if 'RA' not in line:
+                     	    coords = (line.rstrip('\n')).split(',')
+                     	    map_out_big.data.append(DataProduct( '[\"'+coords[0]+'\",\"'+coords[1]+'\"]' , coords[2], False ))
 
         else:
             infile = ((DataMap.load(infile_map))[0]).file	# get the actual filename from the map provided
@@ -112,14 +114,6 @@ def plugin_main(args, **kwargs):
                     hemisphere = '-' if '-' in hexdec else '+'
                     outfile = namera+hemisphere+namedec             ## outfilename
                     map_out_big.data.append(DataProduct('[\"'+dpppra+'\",\"'+dpppdec+'\"]', outfile, False ))
-
-	## remove coords that are 'RA' or 'raj2000' from map_out_big
-	for ii in range(0,len(map_out_big)):
-	    theHost = map_out_big[ii].host
-	    if 'ra' in theHost:
-		map_out_big[ii].skip = True
-	    if 'RA' in theHost:
-	    	map_out_big[ii].skip = True
 
         map_out_big.save(bigfileid)	        # save all directions
         current_coords = map_out_big[0].host	# save current direction
