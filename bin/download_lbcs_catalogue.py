@@ -109,7 +109,9 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
 
     # Reading a MS to find the coordinate (pyrap)
     RATar, DECTar=grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
-    mypos = ( RATar, DECTar )
+    print RATar
+    print DECTar
+    mypos = ( np.float(RATar), np.float(DECTar) )
     #mypos = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
     ## this is the tier 1 database to query
