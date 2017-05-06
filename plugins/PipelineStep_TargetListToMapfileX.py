@@ -48,9 +48,6 @@ def plugin_main(args, **kwargs):
     data        = DataMap.load(infile_map)	# these are actual MS files
     datalist    = [data[i].file for i in xrange(len(data))]
 
-
-    print 'HELLO HELLO HELLO HELLO DO I EVEN EXIST'
-    
     if manual:
         target_file = kwargs['target_file']
         pass
