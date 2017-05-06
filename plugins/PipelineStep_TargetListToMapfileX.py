@@ -73,6 +73,7 @@ def plugin_main(args, **kwargs):
         map_out_big = DataMap([])
 
         if manual:
+	    print 'MANUAL! MANUAL! MANUAL!'
             with open(target_file, 'r') as f:			# if the user has provided a list of targets, use it: otherwise use Lobos to find good targets
                 for line in f:
 		   if 'RA' not in line:
