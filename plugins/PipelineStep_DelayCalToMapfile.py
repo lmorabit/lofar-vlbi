@@ -56,17 +56,19 @@ def plugin_main(args, **kwargs):
 
     ## find the minimum scatter
     if len(scatter) > 1:
-	print 'I HAVE ENTERED THE IF STATEMENT!'
         min_scatter_index = np.where( scatter == np.min( scatter ) )[0]
-	print min_scatter_index[0]
         best_calibrator = direction[min_scatter_index[0]]
-	print best_calibrator
     else:
         best_calibrator = direction[0][0]
 
+    print 'HI THERE'
+    print best_calibrator
+
     delayCal = os.getcwd() + '/' + best_calibrator + '*' + 'concat'
+    print delayCal
 
     delay_ms = glob.glob( delayCal )[0]
+    print delay_ms
 
     map_out = DataMap([])
     map_out.append( DataProduct('localhost', delay_ms, False) )
