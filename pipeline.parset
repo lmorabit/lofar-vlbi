@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, closure_phase_file, find_delay_cal, delay_cal_model ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, closure_phase_file, find_delay_cal, delay_cal_model, delay_model_map ]
 
 #createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
