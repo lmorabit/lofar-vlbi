@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #--- model_engine.py: makes a (currently) two-component model
 #    from u-v data on a particular closure triangle
 #           v.1 Neal Jackson, 2015.09.29
@@ -474,6 +475,10 @@ if __name__ == "__main__":
     outname = vis + '-model_engine.sky'
     if args.outname:
         outname = args.outname
+
+    print args.vis
+    print args.TRNAME
+    pring outname
 
     main(args.vis,args.TRNAME,outname=outname)
 

@@ -372,7 +372,7 @@ find_delay_cal.control.mapfile_dir	  = input.output.mapfile_dir
 find_delay_cal.control.closurePhaseMap    = closure_phase_file.output.mapfile
 find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
 
-# generate the calibrator model using skynet
+# generate the calibrator model using model engine script
 delay_cal_model.control.kind		  = pythonplugin
 delay_cal_model.control.executable	  = {{ model_engine_script }}
 delay_cal_model.argument.flags		  = [ find_delay_cal.mapfile, {{ closure_phase_stations }} ]
