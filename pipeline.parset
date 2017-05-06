@@ -20,7 +20,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 
 # this is the catalogue of calibrator images; if it doesn't exist, download from LBCS database and create
 ! calibrator_catalogue 		 = /data/scratch/lb_bw/pipeline_test/lbcs_catalogue.csv
-! use_calibrator_catalogue		 = True
+! use_calibrator_catalogue       = True
 # name of output closure phase file
 ! closure_phase_file             = {{ job_directory }}/closure_phases.txt
 
@@ -270,6 +270,7 @@ prep_dirs.control.filename                =   prep_dirs.mapfile
 prep_dirs.control.wd                      =   {{ job_directory }}
 prep_dirs.control.nP                      =   3	# default was three
 prep_dirs.control.counter                 =   calibrator_loop1.output.counter
+prep_dirs.control.manual		  =   {{ use_calibrator_catalogue }}
 prep_dirs.control.target_file             =   {{ calibrator_catalogue }} ## get_calibrator_directions
 
 # shift, average and add up stations for tied array
@@ -503,6 +504,7 @@ prep_dirs_img.control.filename                =   prep_dirs_img.mapfile
 prep_dirs_img.control.wd                      =   {{ job_directory }}
 prep_dirs_img.control.nP                      =   3 # default was three
 prep_dirs_img.control.counter                 =   imaging_loop.output.counter
+prep_dirs_img.control.manual		      =   {{ use_target_catalogue }}
 prep_dirs_img.control.target_file             =   {{ target_catalogue }}   ###
 
 # shift, average and add up stations for tied array
