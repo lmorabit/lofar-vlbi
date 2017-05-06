@@ -16,7 +16,7 @@ def plugin_main(args, **kwargs):
     ----------
     mapfile_dir : str
         Directory for output mapfile
-    closurePhaseFile: str
+    closurePhaseMap: str
         Name of output mapfile
     closurePhase_file: str
 	Name of file with closure phase scatter
@@ -29,11 +29,14 @@ def plugin_main(args, **kwargs):
     """
     mapfile_dir 	= kwargs['mapfile_dir']
     mapfile_out 	= kwargs['mapfile_out']
-    closurePhaseFile    = kwargs['closurePhaseFile']
+    closurePhaseMap     = kwargs['closurePhaseMap']
 
     fileid    = os.path.join(mapfile_dir, mapfile_out)	           # this file holds all the output measurement sets
 
-    print 'I AM READING THIS FILE: '+ closurePhaseFile 
+    with open( closurePhaseMap, 'r' ) as f:
+	lines = f.readlines()
+    f.close()
+    closurePhaseFile = lines[0].split(',')[1].split(':')[1].strip().strip("'")
 
     # read the file
     with open( closurePhaseFile, 'r' ) as f:

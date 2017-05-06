@@ -368,7 +368,7 @@ find_delay_cal.control.kind		  = plugin
 find_delay_cal.control.type		  = DelayCalToMapfile
 find_delay_cal.control.mapfile_dir	  = input.output.mapfile_dir
 #find_delay_cal.control.closurePhaseFile   = {{ closure_phase_file }}
-find_delay_cal.control.closurePhaseFile   = closure_phase_file.output.mapfile
+find_delay_cal.control.closurePhaseMap    = closure_phase_file.output.mapfile
 find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
 
 
