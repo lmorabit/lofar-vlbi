@@ -23,6 +23,7 @@ def main(closure_phase_file):
 	name of the best calibrator
    
     """
+    print 'Reading file: '+closure_phase_file
 
     ## read the file with the scatter
     with open( closure_phase_file ) as f:
