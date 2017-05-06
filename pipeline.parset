@@ -63,7 +63,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! add_IS_script			 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/addInternationalStations.py
 ! download_lbcs_script           = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lbcs_catalogue.py
 ! closure_phase_script	 	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/closure_v2.py
-! find_delay_calibrator_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/find_calibrator_for_delays.py
+#! find_delay_calibrator_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/find_calibrator_for_delays.py
 ! execute_circ_conv_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/execute_circ_pol_conv.py
 ! lin2circ_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/lin2circ.py
 ! download_lotss_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lotss_catalogue.py
@@ -356,10 +356,17 @@ mv_closure_phase_png.control.arguments     =   [source,{{ inspection_directory }
 
 
 # automatically find the best calibrator 
-find_delay_cal.control.type               = pythonplugin
-find_delay_cal.control.executable         = {{ find_delay_calibrator_script }}
-find_delay_cal.control.error_tolerance    = {{ error_tolerance }}
-find_delay_cal.argument.flags             = [ {{ closure_phase_file }} ]
+#afind_delay_cal.control.type               = pythonplugin
+#find_delay_cal.control.executable         = {{ find_delay_calibrator_script }}
+#find_delay_cal.control.error_tolerance    = {{ error_tolerance }}
+#find_delay_cal.argument.flags             = [ {{ closure_phase_file }} ]
+
+find_delay_cal.control.kind		  = plugin
+find_delay_cal.control.type		  = DelayCalToMapfile
+find_delay_cal.control.mapfile_dir	  = input.output.mapfile_dir
+find_delay_cal.control.closurePhaseFile   = {{ closure_phase_file }}
+find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
+
 
 # extract from the mapfile from the previos step
 #best_delay_cal.control.kind              =  plugin
