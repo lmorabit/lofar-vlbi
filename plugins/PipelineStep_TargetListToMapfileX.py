@@ -76,8 +76,10 @@ def plugin_main(args, **kwargs):
             with open(target_file, 'r') as f:			# if the user has provided a list of targets, use it: otherwise use Lobos to find good targets
                 for line in f:
 		   if 'RA' not in line:
-                      coords = (line.rstrip('\n')).split(',')
-                      map_out_big.data.append(DataProduct( '[\"'+coords[0]+'\",\"'+coords[1]+'\"]' , coords[2], False ))
+		      if 'raj2000' not in line:
+                         coords = (line.rstrip('\n')).split(',')
+                         map_out_big.data.append(DataProduct( '[\"'+coords[0]+'\",\"'+coords[1]+'\"]' , coords[2], False ))
+                         print line
 
         else:
             infile = ((DataMap.load(infile_map))[0]).file	# get the actual filename from the map provided
