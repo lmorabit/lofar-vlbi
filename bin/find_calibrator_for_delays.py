@@ -55,7 +55,8 @@ def main(closure_phase_file):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Find best calibrator source')
-    parser.add_argument('closurePhaseFile', type=str, help='Name of closure phase file.')
+    parser.add_argument('--infile', dest='infile', type=str, help='Name of closure phase file.')
     args = parser.parse_args()
-    main( args.closurePhaseFile )
+
+    main( args.infile )
 
