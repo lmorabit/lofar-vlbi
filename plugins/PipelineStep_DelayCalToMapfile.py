@@ -52,15 +52,13 @@ def plugin_main(args, **kwargs):
         direction.append(l.split()[4])
         scatter.append(np.float(l.split()[6]))
 
-    print direction, scatter
-
-
     ## convert to numpy arrays
     direction = np.asarray( direction )
     scatter = np.asarray( scatter )
 
     ## find the minimum scatter
     if len(scatter) > 1:
+	print 'I HAVE ENTERED THE IF STATEMENT!'
         min_scatter_index = np.where( scatter == np.min( scatter ) )[0]
         best_calibrator = direction[min_scatter_index][0]
     else:
