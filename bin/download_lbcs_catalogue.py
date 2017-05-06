@@ -109,13 +109,13 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
 
     # Reading a MS to find the coordinate (pyrap)
     RATar, DECTar=grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
-    mypos = ( float(RATar), float(DECTar) )
+    mypos = [( float(RATar), float(DECTar) )]
     #mypos = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
     ## this is the tier 1 database to query
     url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
 
-    t = vo.conesearch( url, pos=mypos, radius=Radius )
+    t = vo.conesearch( url, pos=mypos, radius=float(Radius) )
     print 'I GOT PAST THE CONESEARCH!!'
 
     tb = t.votable.to_table()
