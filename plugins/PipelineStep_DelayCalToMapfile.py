@@ -65,7 +65,7 @@ def plugin_main(args, **kwargs):
 
     delayCal = os.getcwd() + '/' + best_calibrator + '*' + 'concat'
     print delayCal
-    print glob.glob( delayCal )
+    print closurePhaseFile
 
     delay_ms = glob.glob( delayCal )[0]
 
