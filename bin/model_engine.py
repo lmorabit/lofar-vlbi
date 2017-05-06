@@ -3,6 +3,9 @@
 #           v.1 Neal Jackson, 2015.09.29
 #           v.2 NJ, 2017.01.16 converted to CASA, many changes
 #           v.3 NJ, 2017.03.07 parallelised
+
+## adapted for generic pipeline parset May 2017 Leah Morabito
+
 import astropy,numpy as np,scipy,sys,os,glob,warnings,multiprocessing,matplotlib,idx_tels
 from matplotlib import pyplot as plt; from scipy import ndimage,optimize
 from correlate import *; from mkgauss import *
@@ -415,7 +418,7 @@ def write_skymodel (ra,dec,model,outname):
         f.close()
 
 #============= main script ========================
-def mainscript(vis,TRNAME,BSUB=0.3,GRIDSIZE=12.0,PLOTTYPE=20,AMPFIDDLE=True,outname='model_engine.sky'):
+def main(vis,TRNAME,BSUB=0.3,GRIDSIZE=12.0,PLOTTYPE=20,AMPFIDDLE=True,outname='model_engine.sky'):
     global bsub,gridsize,plottype,ampfiddle,glim,trname
     bsub,gridsize,plottype,ampfiddle,trname,gcou = BSUB,GRIDSIZE,PLOTTYPE,AMPFIDDLE,TRNAME,0
     os.system('rm model_engine*.png')
@@ -458,3 +461,22 @@ def mainscript(vis,TRNAME,BSUB=0.3,GRIDSIZE=12.0,PLOTTYPE=20,AMPFIDDLE=True,outn
     write_skymodel (ra,dec,model,outname)
 #mainscript('./SIM5.ms', ['ST001','DE601','DE605HBA'])
 #mainscript('./PP1_av_corr.ms', ['ST001','DE601HBA','DE605HBA'])
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Make a 2-point model of the source by fitting to closure phases')
+
+    parser.add_argument('vis', type=str, nargs='+', help='MS for which to generate a model.')
+    parser.add_argument('TRNAME', type=float, help='Radius for the LoTSS cone search in degreesa')
+    parser.add_argument('--outname', type=str, help='Filename to save the results to')
+
+    args = parser.parse_args()
+    outname = vis + '-model_engine.sky'
+    if args.outname:
+        outname = args.outname
+
+    main(args.vis,args.TRNAME,outname=outname)
+
+
+
+
