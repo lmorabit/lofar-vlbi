@@ -33,8 +33,6 @@ def plugin_main(args, **kwargs):
 
     fileid    = os.path.join(mapfile_dir, mapfile_out)	           # this file holds all the output measurement sets
 
-    print 'HELLLLLLLLOOOOOOOOOOOOOO THERE'
-
     # read the file
     with open( closurePhaseFile, 'r' ) as f:
 	lines = f.readlines()
@@ -46,6 +44,8 @@ def plugin_main(args, **kwargs):
     for l in lines:
         direction.append(l.split()[4])
         scatter.append(np.float(l.split()[6]))
+
+    print direction, scatter
 
     ## convert to numpy arrays
     direction = np.asarray( direction )
