@@ -43,6 +43,10 @@ def plugin_main(args, **kwargs):
 	lines = f.readlines()
     f.close()
 
+    print 'OKAY HERE WE GO AGAIN ....'
+    print len( lines )
+    print lines
+
     ## get lists of directions and scatter
     direction = []
     scatter = []
