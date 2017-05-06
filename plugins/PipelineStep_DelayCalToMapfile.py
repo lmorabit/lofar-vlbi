@@ -33,6 +33,8 @@ def plugin_main(args, **kwargs):
 
     fileid    = os.path.join(mapfile_dir, mapfile_out)	           # this file holds all the output measurement sets
 
+    print 'HELLLLLLLLOOOOOOOOOOOOOO THERE'
+
     # read the file
     with open( closurePhaseFile, 'r' ) as f:
 	lines = f.readlines()
