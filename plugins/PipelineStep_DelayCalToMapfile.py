@@ -60,6 +60,7 @@ def plugin_main(args, **kwargs):
     if len(scatter) > 1:
 	print 'I HAVE ENTERED THE IF STATEMENT!'
         min_scatter_index = np.where( scatter == np.min( scatter ) )[0]
+	print min_scatter_index
         best_calibrator = direction[min_scatter_index][0]
     else:
         best_calibrator = direction[0][0]
