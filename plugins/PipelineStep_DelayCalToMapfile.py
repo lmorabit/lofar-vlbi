@@ -62,13 +62,11 @@ def plugin_main(args, **kwargs):
         best_calibrator = direction[0][0]
 
     print 'HI THERE'
-    print best_calibrator
 
     delayCal = os.getcwd() + '/' + best_calibrator + '*' + 'concat'
-    print delayCal
+    print glob.glob( delayCal )
 
     delay_ms = glob.glob( delayCal )[0]
-    print delay_ms
 
     map_out = DataMap([])
     map_out.append( DataProduct('localhost', delay_ms, False) )
