@@ -44,8 +44,6 @@ def plugin_main(args, **kwargs):
     f.close()
 
     print 'OKAY HERE WE GO AGAIN ....'
-    print len( lines )
-    print lines
 
     ## get lists of directions and scatter
     direction = []
@@ -53,6 +51,8 @@ def plugin_main(args, **kwargs):
     for l in lines:
         direction.append(l.split()[4])
         scatter.append(np.float(l.split()[6]))
+
+    print direction, scatter
 
 
     ## convert to numpy arrays
