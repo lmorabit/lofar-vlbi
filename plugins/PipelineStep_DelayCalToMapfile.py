@@ -61,8 +61,6 @@ def plugin_main(args, **kwargs):
     else:
         best_calibrator = direction[0][0]
 
-    print 'HI THERE'
-
     job_dir = closurePhaseFile.replace('closure_phases.txt','')
 
     delayCal = job_dir + best_calibrator + '*' + 'concat'
