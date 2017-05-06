@@ -358,8 +358,7 @@ mv_closure_phase_png.control.arguments     =   [source,{{ inspection_directory }
 # automatically find the best calibrator 
 find_delay_cal.control.type               = pythonplugin
 find_delay_cal.control.executable         = {{ find_delay_calibrator_script }}
-find_delay_cal.control.error_tolerance    = {{ error_tolerance }}
-find_delay_cal.argument.flags             = {{ closure_phase_file }}
+find_delay_cal.argument.flag              = {{ closure_phase_file }}
 
 # extract from the mapfile from the previos step
 best_delay_cal.control.kind              =  plugin
