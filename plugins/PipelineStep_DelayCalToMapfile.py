@@ -43,8 +43,6 @@ def plugin_main(args, **kwargs):
 	lines = f.readlines()
     f.close()
 
-    print 'OKAY HERE WE GO AGAIN ....'
-
     ## get lists of directions and scatter
     direction = []
     scatter = []
@@ -60,7 +58,9 @@ def plugin_main(args, **kwargs):
     if len(scatter) > 1:
 	print 'I HAVE ENTERED THE IF STATEMENT!'
         min_scatter_index = np.where( scatter == np.min( scatter ) )[0]
+	print min_scatter_index[0]
         best_calibrator = direction[min_scatter_index[0]]
+	print best_calibrator
     else:
         best_calibrator = direction[0][0]
 
