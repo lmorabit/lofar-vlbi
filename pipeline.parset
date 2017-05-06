@@ -359,7 +359,7 @@ closure_phase_file.control.type	  	  = createMapfile
 closure_phase_file.control.method	  = mapfile_from_folder
 closure_phase_file.control.mapfile_dir 	  = input.output.mapfile_dir
 closure_phase_file.control.filename	  = closure_phase_file.mapfile
-closure_phase_file.control.folder	  = input.output.working_director/input.output.job_name
+closure_phase_file.control.folder	  = input.output.working_directory/input.output.job_name
 closure_phase_file.control.pattern	  = closure*.txt
 
 
