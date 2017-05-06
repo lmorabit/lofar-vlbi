@@ -37,6 +37,8 @@ def plugin_main(args, **kwargs):
     with open( closurePhaseFile, 'r' ) as f:
 	lines = f.readlines()
     f.close()
+    print 'PRINTING NUMBER OF LINES'
+    print len(lines)
 
     ## get lists of directions and scatter
     direction = []
@@ -45,7 +47,6 @@ def plugin_main(args, **kwargs):
         direction.append(l.split()[4])
         scatter.append(np.float(l.split()[6]))
 
-    print direction, scatter
 
     ## convert to numpy arrays
     direction = np.asarray( direction )
