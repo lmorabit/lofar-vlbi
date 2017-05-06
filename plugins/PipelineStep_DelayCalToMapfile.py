@@ -66,15 +66,11 @@ def plugin_main(args, **kwargs):
     job_dir = closurePhaseFile.replace('closure_phases.txt','')
 
     delayCal = job_dir + best_calibrator + '*' + 'concat'
-    print delayCal
-    print glob.glob( delayCal )
 
     delay_ms = glob.glob( delayCal )[0]
-    print delay_ms
 
     map_out = DataMap([])
     map_out.append( DataProduct('localhost', delay_ms, False) )
-
     
     map_out.save(fileid)
     

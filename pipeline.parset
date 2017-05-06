@@ -4,8 +4,9 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
-#pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, calibrator_loop1, createmap_plots, mv_closure_phase_png, createmap_fits, mv_fits, get_imaging_catalogue, imaging_loop ]
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, closure_phase_file, find_delay_cal, createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, closure_phase_file, find_delay_cal, delay_cal_model ]
+
+#createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
 # PARAMETER SETUP -- THINGS YOU WILL NEED TO CHANGE
 # job directory should match cfg file
@@ -63,6 +64,8 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! add_IS_script			 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/addInternationalStations.py
 ! download_lbcs_script           = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lbcs_catalogue.py
 ! closure_phase_script	 	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/closure_v2.py
+! skynet_script 		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/skynet.py
+! model_engine_script 		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/model_engine.py
 ! execute_circ_conv_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/execute_circ_pol_conv.py
 ! lin2circ_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/lin2circ.py
 ! download_lotss_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lotss_catalogue.py
@@ -362,14 +365,33 @@ closure_phase_file.control.filename	  = closure_phase_file.mapfile
 closure_phase_file.control.folder	  = input.output.working_directory/input.output.job_name
 closure_phase_file.control.pattern	  = closure*.txt
 
-
 # automatically find the best calibrator 
 find_delay_cal.control.kind		  = plugin
 find_delay_cal.control.type		  = DelayCalToMapfile
 find_delay_cal.control.mapfile_dir	  = input.output.mapfile_dir
-#find_delay_cal.control.closurePhaseFile   = {{ closure_phase_file }}
 find_delay_cal.control.closurePhaseMap    = closure_phase_file.output.mapfile
 find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
+
+# generate the calibrator model using skynet
+delay_cal_model.control.kind		  = pythonplugin
+delay_cal_model.control.executable	  = {{ model_engine_script }}
+delay_cal_model.argument.flags		  = [ find_delay_cal.mapfile, {{ closure_phase_stations }} ]
+
+# and now a mapfile of the skymodel
+delay_model_map.control.kind		  = plugin
+delay_model_map.control.type		  = createMapfile
+delay_model_map.control.method		  = mapfile_from_folder
+delay_model_map.control.mapfile_dir	  = input.output.mapfile_dir
+delay_model_map.control.filename	  = delay_model_map.output.mapfile
+delay_model_map.control.folder 		  = input.output.working_directory/input.output.job_name
+delay_model_map.control.pattern		  = *model_engine.sky
+
+# gain calibration
+
+# clock/tec separation
+
+# apply clock/tec to all data
+
 
 
 #####################################################################################################################################################################

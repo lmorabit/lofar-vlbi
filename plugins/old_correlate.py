@@ -1,20 +1,13 @@
 import numpy as np
-try:
-    import astLib;from astLib import astCoords
-    have_astLib = True
-except:
-    import astropy
-    from astropy.coordinates import SkyCoord
-    have_astLib = False
+from astropy.coordinates import SkyCoord
 import sys;from sys import stdout
 
-
-def astropy_sep (tra1,tdec1,tra2,tdec2):
-    sc1 = SkyCoord(tra1, tdec1, frame = 'fk5', unit='degree')
-    sc2 = SkyCoord(tra2, tdec2, frame = 'fk5', unit = 'degree')
-    return((sc1.separation(sc2)).degree)
-
 # correlate two arrays sorted in ra. array2 is the bigger one.
+
+def astropy_sep(tra1,tdec1,tra2,tdec2):
+	sc1 = SkyCoord(tra1, tdec1, frame = 'fk5', unit='degree')
+	sc2 = SkyCoord(tra2, tdec2, frame = 'fk5', unit = 'degree')
+	return((sc1.separation(sc2)).degree)
 
 def correlate (array1, ra1, dec1, array2, ra2, dec2, dist, \
                mindist=0.0, isabs=False, noisy=True):
@@ -38,20 +31,16 @@ def correlate (array1, ra1, dec1, array2, ra2, dec2, dist, \
             pass
         fstart=nfstart
         for j in range(fstart,fend):
-            r1,d1 = array1[i,ra1],array1[i,dec1]
-            r2,d2 = array2[j,ra2],array2[j,dec2]
-            radiff = r2-r1
+            radiff=array2[j,ra2]-array1[i,ra1]
             if radiff<-decfac*dist:
                 nfstart=j
             if radiff>decfac*dist:
                 break
-            if abs(d2-d1)>dist:
+            if abs(array2[j,dec2]-array1[i,dec1])>dist:
                 continue
-            if isabs:
-                adist = np.hypot(r1-r2,d1-d2)
-            else:
-                adist = astCoords.calcAngSepDeg(r1,d1,r2,d2) if have_astLib \
-                        else astropy_sep(r1,d2,r2,d2)
+            adist = np.hypot(array1[i,ra1]-array2[j,ra2],\
+                             array1[i,dec1]-array2[j,dec2]) if isabs \
+    else astropy_sep(array1[i,ra1],array1[i,dec1],array2[j,ra2],array2[j,dec2])
 
             if adist<dist and abs(radiff)<90.0 and adist>=mindist:
                 try:
@@ -61,3 +50,4 @@ def correlate (array1, ra1, dec1, array2, ra2, dec2, dist, \
 
     return correl
             
+#              else astCoords.calcAngSepDeg(array1[i,ra1],array1[i,dec1],array2[j,ra2],array2[j,dec2])
