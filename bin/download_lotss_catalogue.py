@@ -115,7 +115,14 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
     ## this is the tier 1 database to query
     url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
 
-    t = vo.conesearch( url, pos=mypos, radius=Radius )
+    ## this works
+    query = vo.dal.scs.SCSQuery( url )
+    query.ra = float( RATar )
+    query.dec = float( DECTar )
+    query.radius = float( Radius )
+    t = query.execute()   
+    ## this does not
+    #t = vo.conesearch( url, pos=mypos, radius=float(Radius) )
 
     ## convert to VO table
     tb = t.votable.to_table()
