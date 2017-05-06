@@ -64,6 +64,7 @@ def plugin_main(args, **kwargs):
     print 'HI THERE'
 
     delayCal = os.getcwd() + '/' + best_calibrator + '*' + 'concat'
+    print delayCal
     print glob.glob( delayCal )
 
     delay_ms = glob.glob( delayCal )[0]
