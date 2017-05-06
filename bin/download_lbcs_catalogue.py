@@ -5,6 +5,7 @@ import glob
 import numpy as np
 import argparse
 import pyrap.tables as pt
+import numbers
 
 ## based on script by Leah Morabito
 ## updated by Kaspars and Atvars to work for lbcs
@@ -109,9 +110,7 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
 
     # Reading a MS to find the coordinate (pyrap)
     RATar, DECTar=grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
-    print RATar
-    print DECTar
-    mypos = ( np.float(RATar), np.float(DECTar) )
+    mypos = ( numbers.Number(RATar), numbers.Number(DECTar) )
     #mypos = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
     ## this is the tier 1 database to query
