@@ -122,8 +122,6 @@ def main(ms_input, station_input):
     
     mslist = str(ms_input).lstrip('[').rstrip(']').replace("'","").replace(" ","").split(',')
     stationlist = str(station_input).lstrip('[').rstrip(']').replace("'","").replace(" ","").split(';')
-    os.system('rm closure_phases.txt')
-    os.system('touch closure_phases.txt')
     for ms in mslist:
       print 'Now operating on', ms
       scatterclosurephase = closure(ms, stationlist, lastv=-1)
