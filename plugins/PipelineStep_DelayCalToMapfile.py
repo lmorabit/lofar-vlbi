@@ -33,12 +33,12 @@ def plugin_main(args, **kwargs):
 
     fileid    = os.path.join(mapfile_dir, mapfile_out)	           # this file holds all the output measurement sets
 
+    print 'I AM READING THIS FILE: '+ closurePhaseFile 
+
     # read the file
     with open( closurePhaseFile, 'r' ) as f:
 	lines = f.readlines()
     f.close()
-    print 'PRINTING NUMBER OF LINES'
-    print len(lines)
 
     ## get lists of directions and scatter
     direction = []
