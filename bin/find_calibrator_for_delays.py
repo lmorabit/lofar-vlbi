@@ -41,8 +41,11 @@ def main(closure_phase_file):
     scatter = np.asarray( scatter )
 
     ## find the minimum scatter
-    min_scatter_index = np.where( scatter == np.min( scatter ) )[0]
-    best_calibrator = direction[min_scatter_index][0]	
+    if len(scatter) > 1:
+        min_scatter_index = np.where( scatter == np.min( scatter ) )[0]
+        best_calibrator = direction[min_scatter_index][0]	
+    else:
+        best_calibrator = direction[0][0]
 
     delayCal = os.getcwd() + '/' + best_calibrator
 
