@@ -478,7 +478,7 @@ if __name__ == "__main__":
 
     print args.vis
     print args.TRNAME
-    pring outname
+    print outname
 
     main(args.vis,args.TRNAME,outname=outname)
 
