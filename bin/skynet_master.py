@@ -593,6 +593,9 @@ def refine_points (model,cpts,itel,aplot,gcou):
     return model
 
 def write_skymodel (ra,dec,model,outname):
+
+    print model.shape()
+
     if outname!='':
         f = open(outname,'w')
         f.write ('# (Name, Type, Ra, Dec, I, MajorAxis, MinorAxis, Orientation) = format\n')
