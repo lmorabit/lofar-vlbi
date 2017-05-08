@@ -675,6 +675,7 @@ def skynet_NDPPP (vis,model,solint=1.0):
 def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
     
     ra,dec = taql_from (vis, 'FIELD', 'PHASE_DIR')
+    print ra, dec
     closure_scatter = closure(vis, closure_tels, plotfile='')
     if closure_scatter > cthr:
         return closure_scatter
