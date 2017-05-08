@@ -649,7 +649,7 @@ if __name__ == "__main__":
     parser.add_argument('--mode',type=int, help='Mode to use')
     parser.add_argument('--closureTels',type=str,help='Stations to use for calculating closure phase.')
     parser.add_argument('--threshold',type=float,help='Threshold for closure phase scatter.')
-    parser.add_argument('--model_only',action='store_true',default=False,help='run to get model only')
+    parser.add_argument('--model_only',type=int,default=0,help='set to 1 to get model only')
 
     args = parser.parse_args()
 
