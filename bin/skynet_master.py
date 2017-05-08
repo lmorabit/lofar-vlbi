@@ -597,11 +597,17 @@ def write_skymodel (ra,dec,model,outname):
         f = open(outname,'w')
         f.write ('# (Name, Type, Ra, Dec, I, MajorAxis, MinorAxis, Orientation) = format\n')
     for i in range(len(model)):
-        cosd = 3600.*np.cos(np.deg2rad(dec))
-        s = astropy.coordinates.SkyCoord(ra-model[i,0]/cosd,dec+model[i,1]/3600,unit='degree')
-        s = s.to_string(style='hmsdms')
-        sra = s.split()[0].replace('h',':').replace('m',':').replace('s','')
-        sdec = s.split()[1].replace('d','.').replace('m','.').replace('s','')
+	if isinstance( ra, str ):
+	    sra = ra
+	    sdec = dec
+	else:
+	    cosd = 3600.*np.cos(np.deg2rad(dec))
+            s = astropy.coordinates.SkyCoord(ra-model[i,0]/cosd,dec+model[i,1]/3600,unit='degree')
+            s = s.to_string(style='hmsdms')
+            sra = s.split()[0]
+	    sdec = s.split()[1]
+        sra = sra.replace('h',':').replace('m',':').replace('s','')
+        sdec = sdec.replace('d','.').replace('m','.').replace('s','')
         print 'ME%d, GAUSSIAN, %s, %s, %f, %f, %f, %f'%(i,sra,sdec,model[i,MF],\
               model[i,MW],model[i,MW]*model[i,MR],np.rad2deg(model[i,MP]))
         if outname!='':
@@ -675,7 +681,7 @@ def skynet_NDPPP (vis,model,solint=1.0):
 def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
     
     ra,dec = taql_from (vis, 'FIELD', 'PHASE_DIR')
-    print ra, dec
+    # convert to ??
     closure_scatter = closure(vis, closure_tels, plotfile='')
     if closure_scatter > cthr:
         return closure_scatter
