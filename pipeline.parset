@@ -36,7 +36,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! use_target_catalogue      	 = True 							# "Force" : always download , "True" download if {{ target_skymodel }} does not exist , "False" : never download
 
 # output directories
-! results_directory    		 = /data/scratch/lb_bw/pipeline_test/results/
+! results_directory    		 = /data/scratch/lb_bw/pipeline_test/results
 ! calibrator_results_directory   = {{ results_directory }}/calibrators/
 ! inspection_directory		 = {{ results_directory }}/inspection/
 
