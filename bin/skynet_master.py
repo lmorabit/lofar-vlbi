@@ -682,6 +682,7 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
     if mode == 1:     # this is the default of the self_calibration_pipeline_V2.
         os.system('python '+self_cal_script+' -m '+vis+' -p') # amplitudes?
     elif mode == 2:   # use NDPPP to selfcal the long baselines to a small (0.1") Gaussian
+	print vis+'skymodel'
         write_skymodel (ra,dec,np.array([0.0,0.0,1.0,0.1,0.0,0.0]),vis+'skymodel')
 	if not model_only:
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
