@@ -355,8 +355,8 @@ destmap_plots.control.target_dir      =  {{ inspection_directory }}
 
 
 # move the inspection plots
-mv_closure_phase_png.kind                 =   recipe
-mv_closure_phase_png.type                 =   executable_args
+mv_closure_phase_png.control.kind         =   recipe
+mv_closure_phase_png.control.type         =   executable_args
 mv_closure_phase_png.control.executable   =   /bin/mv
 mv_closure_phase_png.control.mapfiles_in  =   [createmap_plots.output.mapfile,destmap_plots.output.mapfile]
 mv_closure_phase_png.control.inputkeys    =   [source,destination]
@@ -381,7 +381,7 @@ find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
 # generate the calibrator model 
 delay_cal_model.control.kind		  = pythonplugin
 delay_cal_model.control.executable	  = {{ skynet_script }}
-delay_cal_model.argument.flags		  = [find_delay_cal.mapfile]
+delay_cal_model.argument.flags		  = [find_delay_cal.output.mapfile]
 delay_cal.model.argument.mode		  = 2
 delay_cal.model.argument.model_only	  = True
 
