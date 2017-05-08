@@ -660,5 +660,10 @@ if __name__ == "__main__":
     if args.threshold:
         threshold = args.threshold
 
+    print 'SKYNET'
+    print vis
+    print mode
+    print model_only
+
     main( args.vis, args.selfCal_script, mode=args.mode, closure_tels=closureTels, cthr=threshold, model_only=args.model_only )
 
