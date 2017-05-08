@@ -78,7 +78,7 @@ def plugin_main(args, **kwargs):
 		    if 'raj2000' not in line:
 			if 'RA' not in line:
                      	    coords = (line.rstrip('\n')).split(',')
-                     	    map_out_big.data.append(DataProduct( '[\"'+coords[0]+'\",\"'+coords[1]+'\"]' , coords[2], False ))
+                     	    map_out_big.data.append(DataProduct( '[\"'+coords[0]+'deg\",\"'+coords[1]+'deg\"]' , coords[2], False ))
 
         else:
             infile = ((DataMap.load(infile_map))[0]).file	# get the actual filename from the map provided
