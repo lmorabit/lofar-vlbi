@@ -597,7 +597,7 @@ def write_skymodel (ra,dec,model,outname):
         f = open(outname,'w')
         f.write ('# (Name, Type, Ra, Dec, I, MajorAxis, MinorAxis, Orientation) = format\n')
     for i in range(len(model)):
-        cosd = 3600.*np.cos(np.deg2rad(dec))
+        cosd = 3600.*np.cos(np.deg2rad(np.float(dec)))
         s = astropy.coordinates.SkyCoord(ra-model[i,0]/cosd,dec+model[i,1]/3600,unit='degree')
         s = s.to_string(style='hmsdms')
         sra = s.split()[0].replace('h',':').replace('m',':').replace('s','')
@@ -656,7 +656,7 @@ def model_engine(vis,TRNAME,BSUB=0.3,GRIDSIZE=12.0,PLOTTYPE=20,AMPFIDDLE=True,ou
 
 def skynet_NDPPP (vis,model,solint=1.0):
     os.system('rm -fr %s/sky\n'%vis)
-    os.system ('makesourcedb in=%s_mod out=%s/sky format=\'<\''%(vis,vis))
+    os.system ('makesourcedb in=%s/skymodel out=%s/sky format=\'<\''%(vis,vis))
     with open('NDPPP.parset','w') as f:
         f.write('msin=%s\n'%vis)
         f.write('msin.datacolumn=DATA\n')
@@ -680,7 +680,7 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
     if mode == 1:     # this is the default of the self_calibration_pipeline_V2.
         os.system('python '+self_cal_script+' -m '+vis+' -p') # amplitudes?
     elif mode == 2:   # use NDPPP to selfcal the long baselines to a small (0.1") Gaussian
-        write_skymodel (ra,dec,np.array([0.0,0.0,1.0,0.1,0.0,0.0]),vis+'_mod')
+        write_skymodel (ra,dec,np.array([0.0,0.0,1.0,0.1,0.0,0.0]),vis+'skymodel')
 	if not model_only:
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
