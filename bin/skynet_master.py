@@ -692,7 +692,8 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
         os.system('python '+self_cal_script+' -m '+vis+' -p') # amplitudes?
     if mode == 2:   # use NDPPP to selfcal the long baselines to a small (0.1") Gaussian
 	print vis+'skymodel'
-        write_skymodel (ra,dec,np.array([0.0,0.0,1.0,0.1,0.0,0.0]),vis+'skymodel')
+	point_model = np.array( [ [0.0,0.0,1.0,0.1,0.0,0.0] ] )
+	write_skymodel (ra,dec,point_model,vis+'skymodel')
 	if not model_only:
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
