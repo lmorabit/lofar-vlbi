@@ -619,7 +619,7 @@ def skynet_NDPPP (vis,model,solint=1.0):
     os.system('NDPPP NDPPP.parset')
 
 
-def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=False):
+def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
     ra,dec = taql_funcs.taql_from (vis, 'FIELD', 'PHASE_DIR')
     closure_scatter = closure.closure(vis, closure_tels, plotfile='')
     if closure_scatter > cthr:
@@ -649,7 +649,7 @@ if __name__ == "__main__":
     parser.add_argument('--mode',type=int, help='Mode to use')
     parser.add_argument('--closureTels',type=str,help='Stations to use for calculating closure phase.')
     parser.add_argument('--threshold',type=float,help='Threshold for closure phase scatter.')
-    parser.add_argument('--model_only',type=int,default=0,help='set to 1 to get model only')
+    parser.add_argument('--model_only',type=int,help='set to 1 to get model only')
 
     args = parser.parse_args()
 
@@ -659,11 +659,14 @@ if __name__ == "__main__":
     threshold = 1.6
     if args.threshold:
         threshold = args.threshold
+    model_only = 0
+    if args.model_only:
+	model_only = args.model_only
 
     print 'SKYNET'
     print vis
     print mode
     print model_only
 
-    main( args.vis, args.selfCal_script, mode=args.mode, closure_tels=closureTels, cthr=threshold, model_only=args.model_only )
+    main( args.vis, args.selfCal_script, mode=args.mode, closure_tels=closureTels, cthr=threshold, model_only=model_only )
 
