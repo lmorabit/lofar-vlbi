@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model ]
 
 #createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -345,13 +345,22 @@ createmap_plots.control.filename        =   createmap_plots.mapfile
 createmap_plots.control.folder          =   input.output.working_directory/input.output.job_name
 createmap_plots.control.pattern         =   *.png
 
+# create the results mapfile 
+destmap_plots.control.kind            =  plugin
+destmap_plots.control.type            =  makeResultsMapfile
+destmap_plots.control.mapfile_dir     =  input.output.mapfile_dir
+destmap_plots.control.filename        =  destmap_plots.mapfile
+destmap_plots.control.mapfile_in      =  createmap_plots.output.mapfile
+destmap_plots.control.target_dir      =  {{ inspection_directory }}
+
+
 # move the inspection plots
 mv_closure_phase_png.kind                 =   recipe
 mv_closure_phase_png.type                 =   executable_args
 mv_closure_phase_png.control.executable   =   /bin/cp
-mv_closure_phase_png.control.mapfile_in   =   createmap_plots.output.mapfile
-mv_closure_phase_png.control.inputkey     =   source
-mv_closure_phase_png.control.arguments     =  [source,{{ inspection_directory }}]
+mv_closure_phase_png.control.mapfiles_in  =   [createmap_plots.output.mapfile,destmap_plots.output.mapfile]
+mv_closure_phase_png.control.inputkeys    =   [source,destination]
+mv_closure_phase_png.control.arguments    =   [source,destination]
 
 # get a mapfile of the closure phase file
 closure_phase_file.control.kind 	  = plugin
