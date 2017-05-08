@@ -348,7 +348,7 @@ createmap_plots.control.pattern         =   *.png
 # move the inspection plots
 mv_closure_phase_png.kind                 =   recipe
 mv_closure_phase_png.type                 =   executable_args
-mv_closure_phase_png.control.executable   =   /bin/mv
+mv_closure_phase_png.control.executable   =   /bin/cp
 mv_closure_phase_png.control.mapfile_in   =   createmap_plots.output.mapfile
 mv_closure_phase_png.control.inputkey     =   source
 mv_closure_phase_png.control.arguments     =  [source,{{ inspection_directory }}]
