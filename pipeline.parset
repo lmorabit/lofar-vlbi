@@ -379,26 +379,15 @@ find_delay_cal.control.closurePhaseMap    = closure_phase_file.output.mapfile
 find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
 
 # generate the calibrator model 
-delay_cal_model.control.kind		  = pythonplugin
+delay_cal_model.control.type		  = pythonplugin
 delay_cal_model.control.executable	  = {{ skynet_script }}
 delay_cal_model.argument.flags		  = [find_delay_cal.output.mapfile]
 delay_cal.model.argument.mode		  = 2
 delay_cal.model.argument.model_only	  = True
 
-
-
 #delay_cal_model.control.kind		  = pythonplugin
 #delay_cal_model.control.executable	  = {{ model_engine_script }}
 #delay_cal_model.argument.flags		  = [ find_delay_cal.mapfile, {{ closure_phase_stations }} ]
-
-# and now a mapfile of the skymodel
-#delay_model_map.control.kind		  = plugin
-#delay_model_map.control.type		  = createMapfile
-#delay_model_map.control.method		  = mapfile_from_folder
-#delay_model_map.control.mapfile_dir	  = input.output.mapfile_dir
-#delay_model_map.control.filename	  = delay_model_map.output.mapfile
-#delay_model_map.control.folder 		  = input.output.working_directory/input.output.job_name
-#delay_model_map.control.pattern		  = *model_engine.sky
 
 # gain calibration
 
