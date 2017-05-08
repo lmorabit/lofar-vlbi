@@ -673,10 +673,6 @@ def skynet_NDPPP (vis,model,solint=1.0):
 
 
 def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
-    print 'in main'
-    print vis
-    print mode
-    print model_only
     
     ra,dec = taql_from (vis, 'FIELD', 'PHASE_DIR')
     closure_scatter = closure(vis, closure_tels, plotfile='')
@@ -684,13 +680,13 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
         return closure_scatter
     if mode == 1:     # this is the default of the self_calibration_pipeline_V2.
         os.system('python '+self_cal_script+' -m '+vis+' -p') # amplitudes?
-    elif mode == 2:   # use NDPPP to selfcal the long baselines to a small (0.1") Gaussian
+    if mode == 2:   # use NDPPP to selfcal the long baselines to a small (0.1") Gaussian
 	print vis+'skymodel'
         write_skymodel (ra,dec,np.array([0.0,0.0,1.0,0.1,0.0,0.0]),vis+'skymodel')
 	if not model_only:
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
-    elif mode == 3:   # make an engine model and selfcal against this
+    if mode == 3:   # make an engine model and selfcal against this
         model_engine (vis,closure_tels,PLOTTYPE=0,outname=vis+'_mod')
 	if not model_only:
             skynet_NDPPP (vis,vis+'_mod',solint=5)
