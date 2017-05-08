@@ -597,7 +597,7 @@ def write_skymodel (ra,dec,model,outname):
         f = open(outname,'w')
         f.write ('# (Name, Type, Ra, Dec, I, MajorAxis, MinorAxis, Orientation) = format\n')
     for i in range(len(model)):
-        cosd = 3600.*np.cos(np.deg2rad(np.float(dec)))
+        cosd = 3600.*np.cos(np.deg2rad(dec))
         s = astropy.coordinates.SkyCoord(ra-model[i,0]/cosd,dec+model[i,1]/3600,unit='degree')
         s = s.to_string(style='hmsdms')
         sra = s.split()[0].replace('h',':').replace('m',':').replace('s','')
@@ -674,6 +674,8 @@ def skynet_NDPPP (vis,model,solint=1.0):
 
 def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
     ra,dec = taql_from (vis, 'FIELD', 'PHASE_DIR')
+    print ra
+    print dec
     closure_scatter = closure(vis, closure_tels, plotfile='')
     if closure_scatter > cthr:
         return closure_scatter
