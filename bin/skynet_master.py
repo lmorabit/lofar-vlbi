@@ -717,8 +717,8 @@ if __name__ == "__main__":
 	model_only = args.model_only
 
     print 'SKYNET'
-    print vis
-    print mode
+    print args.vis
+    print args.mode
     print model_only
 
     main( args.vis, args.selfCal_script, mode=args.mode, closure_tels=closureTels, cthr=threshold, model_only=model_only )
