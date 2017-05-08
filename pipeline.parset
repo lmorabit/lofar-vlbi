@@ -261,8 +261,6 @@ calibrator_loop1.control.kind                    =   loop
 calibrator_loop1.control.type                    =   conditional
 calibrator_loop1.control.loopcount               =   100
 calibrator_loop1.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, dppp_concat, closure_phase ]
-## steps still to add: conditional on scatter, do: run model_engine, diagonal gain, clock/tec separation, self-calibration
-
 
 # Initialise file with all directions
 prep_dirs.control.kind                    =   plugin
@@ -351,10 +349,9 @@ createmap_plots.control.pattern         =   *.png
 mv_closure_phase_png.kind                 =   recipe
 mv_closure_phase_png.type                 =   executable_args
 mv_closure_phase_png.control.executable   =   /bin/mv
-mv_closure_phase_png.control.max_per_node =   {{ num_proc_per_node }}
 mv_closure_phase_png.control.mapfile_in   =   createmap_plots.output.mapfile
 mv_closure_phase_png.control.inputkey     =   source
-mv_closure_phase_png.control.arguments     =   [source,{{ inspection_directory }}]
+mv_closure_phase_png.control.arguments     =  [source,{{ inspection_directory }}]
 
 # get a mapfile of the closure phase file
 closure_phase_file.control.kind 	  = plugin
@@ -375,10 +372,10 @@ find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
 # generate the calibrator model 
 delay_cal_model.control.kind		  = pythonplugin
 delay_cal_model.control.executable	  = {{ skynet_script }}
-delay_cal_model.argument.flags		  = [ find_delay_cal.mapfile ]
-#delay_cal.model.argument.selfCal_script	  = {{ self_cal_and_imaging_script }}
+delay_cal_model.argument.flags		  = [find_delay_cal.mapfile]
 delay_cal.model.argument.mode		  = 2
 delay_cal.model.argument.model_only	  = True
+
 
 
 #delay_cal_model.control.kind		  = pythonplugin
