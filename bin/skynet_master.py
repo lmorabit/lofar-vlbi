@@ -176,7 +176,7 @@ def mxinv(a):
 
 def closure (vis, tel, lastv=-1, plotfile='clplot.png'):
     # Find which number is which antenna
-    itels = np.sort(idx_tels.get_idx_tels (vis, tel))
+    itels = np.sort(get_idx_tels (vis, tel))
     if itels == []:
         return -1
 
@@ -347,7 +347,7 @@ def data_extract (vis):
     ra = 15.0*(sra[0]+sra[1]/60.0+sra[2]/3600.0)
     dec = sdec[0]+sdec[1]/60.0+sdec[2]/3600.0
     wlength = np.mean(LIGHT/(ch0 + chw*np.arange(nspw*nchan)))
-    itel = np.array(idx_tels.get_idx_tels (vis,trname))
+    itel = np.array(get_idx_tels (vis,trname))
     # order of telescopes on baselines 0-1, 0-2, 1-2; -1 if in "wrong" order
     otel = 1.-2.*np.asarray([itel[0]>itel[1],itel[0]>itel[2],itel[1]>itel[2]],dtype=float)
     btel = [min(itel[0],itel[1]),max(itel[0],itel[1]),min(itel[0],itel[2]),\
