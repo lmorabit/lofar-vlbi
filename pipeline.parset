@@ -357,7 +357,7 @@ destmap_plots.control.target_dir      =  {{ inspection_directory }}
 # move the inspection plots
 mv_closure_phase_png.kind                 =   recipe
 mv_closure_phase_png.type                 =   executable_args
-mv_closure_phase_png.control.executable   =   /bin/cp
+mv_closure_phase_png.control.executable   =   /bin/mv
 mv_closure_phase_png.control.mapfiles_in  =   [createmap_plots.output.mapfile,destmap_plots.output.mapfile]
 mv_closure_phase_png.control.inputkeys    =   [source,destination]
 mv_closure_phase_png.control.arguments    =   [source,destination]
