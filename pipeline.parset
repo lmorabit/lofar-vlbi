@@ -374,13 +374,13 @@ closure_phase_file.control.pattern	  = closure*.txt
 find_delay_cal.control.kind		  = plugin
 find_delay_cal.control.type		  = DelayCalToMapfile
 find_delay_cal.control.mapfile_dir	  = input.output.mapfile_dir
-find_delay_cal.control.closurePhaseMap    = closure_phase_file.output.mapfile
 find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
+find_delay_cal.control.closurePhaseMap    = closure_phase_file.output.mapfile
 
 # generate the calibrator model 
 delay_cal_model.control.type		  = pythonplugin
 delay_cal_model.control.executable	  = {{ skynet_script }}
-delay_cal_model.argument.flags		  = [find_delay_cal.mapfile]
+delay_cal_model.argument.flags		  = [find_delay_cal.output.mapfile]
 delay_cal_model.argument.selfCal_script	  = {{ self_cal_and_imaging_script }}
 delay_cal_model.argument.mode		  = 2
 delay_cal_model.argument.closureTels	  = {{ closure_phase_stations }}

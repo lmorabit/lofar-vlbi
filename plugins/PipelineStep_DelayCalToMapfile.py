@@ -7,7 +7,6 @@ import glob
 
 # Leah Morabito, May 2017
 
-
 def plugin_main(args, **kwargs):
     """
     Reads in closure phase file and returns the best delay calibrator mapfile
@@ -71,4 +70,8 @@ def plugin_main(args, **kwargs):
     map_out.append( DataProduct('localhost', delay_ms, False) )
     
     map_out.save(fileid)
+    result = {'mapfile': fileid}
+
+    return result
     
+
