@@ -684,6 +684,9 @@ def skynet_NDPPP (vis,model,solint=1.0):
 
 
 def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
+
+    if not len(closure_tels) == 3:
+	closure_tels = closure_tels.split(';')
     
     ra,dec = taql_from (vis, 'FIELD', 'PHASE_DIR')
     # convert to ??
@@ -728,15 +731,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    closure_tels = ['DE601','DE605','ST001']
-    #if args.closure_tels:
-    #    closure_tels = args.closure_tels.split(';')
-    cthr = 1.6
-    if args.cthr:
-        cthr = args.cthr
-    model_only = 0
-    if args.model_only:
-	model_only = args.model_only
-
-    main( args.vis, args.self_cal_script, mode=args.mode, closure_tels=closure_tels, cthr=cthr, model_only=model_only )
+    main( args.vis, args.self_cal_script, mode=args.mode, closure_tels=args.closure_tels, cthr=args.cthr, model_only=args.model_only )
 
