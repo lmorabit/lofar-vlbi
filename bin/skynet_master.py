@@ -686,6 +686,7 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
     ra,dec = taql_from (vis, 'FIELD', 'PHASE_DIR')
     # convert to ??
     closure_scatter = closure(vis, closure_tels, plotfile='')
+    print closure_scatter
     if closure_scatter > cthr:
         return closure_scatter
     if mode == 1:     # this is the default of the self_calibration_pipeline_V2.
@@ -726,19 +727,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     closure_tels = ['DE601','DE605','ST001']
-    if args.closure_tels:
-        closure_tels = args.closure_tels.split(';')
+    #if args.closure_tels:
+    #    closure_tels = args.closure_tels.split(';')
     cthr = 1.6
     if args.cthr:
         cthr = args.cthr
     model_only = 0
     if args.model_only:
 	model_only = args.model_only
-
-    print 'SKYNET'
-    print args.vis
-    print args.mode
-    print model_only
 
     main( args.vis, args.self_cal_script, mode=args.mode, closure_tels=closure_tels, cthr=cthr, model_only=model_only )
 
