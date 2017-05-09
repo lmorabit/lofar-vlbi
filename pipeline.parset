@@ -384,7 +384,7 @@ delay_cal_model.argument.flags		  = [find_delay_cal.output.mapfile]
 delay_cal_model.argument.selfCal_script	  = {{ self_cal_and_imaging_script }}
 delay_cal_model.argument.mode		  = 2
 delay_cal_model.argument.closureTels	  = {{ closure_phase_stations }}
-delay_cal_model.argument.threshold	  = 2.0 ## until using data that isn't test data
+delay_cal_model.argument.cthr		  = 2.0 ## until using data that isn't test data
 delay_cal_model.argument.model_only	  = 1
 
 

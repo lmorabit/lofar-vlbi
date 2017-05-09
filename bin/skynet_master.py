@@ -720,7 +720,7 @@ if __name__ == "__main__":
     parser.add_argument('--selfCal_script',type=str, help='Self-calibration script to use')
     parser.add_argument('--mode',type=int, help='Mode to use')
     parser.add_argument('--closureTels',type=str,help='Stations to use for calculating closure phase.')
-    parser.add_argument('--threshold',type=float,help='Threshold for closure phase scatter.')
+    parser.add_argument('--cthr',type=float,help='Threshold for closure phase scatter.')
     parser.add_argument('--model_only',type=int,help='set to 1 to get model only')
 
     args = parser.parse_args()
@@ -728,9 +728,9 @@ if __name__ == "__main__":
     closureTels = ['DE601','DE605','ST001']
     if args.closureTels:
         closureTels = args.closureTels.split(';')
-    threshold = 1.6
-    if args.threshold:
-        threshold = args.threshold
+    cthr = 1.6
+    if args.cthr:
+        cthr = args.cthr
     model_only = 0
     if args.model_only:
 	model_only = args.model_only
@@ -740,5 +740,5 @@ if __name__ == "__main__":
     print args.mode
     print model_only
 
-    main( args.vis, args.selfCal_script, mode=args.mode, closure_tels=closureTels, cthr=threshold, model_only=model_only )
+    main( args.vis, args.selfCal_script, mode=args.mode, closure_tels=closureTels, cthr=cthr, model_only=model_only )
 
