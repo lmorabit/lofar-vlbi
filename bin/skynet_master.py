@@ -81,6 +81,8 @@ def taql_from (vis,vistable,qtab):
 # lower one first if reading data out of a MS.
 
 def get_idx_tels (data, tel):
+    print 'TELESCOPES'
+    print tel
     os.system('taql \'select NAME from %s/ANTENNA\' >closure_which'%data)
     f = open('closure_which')
     for line in f:
