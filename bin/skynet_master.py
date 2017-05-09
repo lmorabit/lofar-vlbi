@@ -717,17 +717,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Skynet script to handle LBCS calibrators.")
 
     parser.add_argument('vis', type=str, help='Measurement set for which to run skynet')
-    parser.add_argument('--selfCal_script',type=str, help='Self-calibration script to use')
+    parser.add_argument('--self_cal_script',type=str, help='Self-calibration script to use')
     parser.add_argument('--mode',type=int, help='Mode to use')
-    parser.add_argument('--closureTels',type=str,help='Stations to use for calculating closure phase.')
+    parser.add_argument('--closure_tels',type=str,help='Stations to use for calculating closure phase.')
     parser.add_argument('--cthr',type=float,help='Threshold for closure phase scatter.')
     parser.add_argument('--model_only',type=int,help='set to 1 to get model only')
 
     args = parser.parse_args()
 
-    closureTels = ['DE601','DE605','ST001']
-    if args.closureTels:
-        closureTels = args.closureTels.split(';')
+    closure_tels = ['DE601','DE605','ST001']
+    if args.closure_tels:
+        closure_tels = args.closure_tels.split(';')
     cthr = 1.6
     if args.cthr:
         cthr = args.cthr
@@ -740,5 +740,5 @@ if __name__ == "__main__":
     print args.mode
     print model_only
 
-    main( args.vis, args.selfCal_script, mode=args.mode, closure_tels=closureTels, cthr=cthr, model_only=model_only )
+    main( args.vis, args.self_cal_script, mode=args.mode, closure_tels=closure_tels, cthr=cthr, model_only=model_only )
 
