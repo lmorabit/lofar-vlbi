@@ -380,7 +380,7 @@ find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
 # generate the calibrator model 
 delay_cal_model.control.type		  = pythonplugin
 delay_cal_model.control.executable	  = {{ skynet_script }}
-delay_cal_model.argument.flags		  = [find_delay_cal.output.mapfile]
+delay_cal_model.argument.flags		  = [find_delay_cal.mapfile]
 delay_cal_model.argument.mode		  = 2
 delay_cal_model.argument.closureTels	  = {{ closure_phase_stations }}
 delay_cal_model.argument.threshold	  = 2.0 ## until using data that isn't test data
