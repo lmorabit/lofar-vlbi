@@ -689,15 +689,21 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
     if closure_scatter > cthr:
         return closure_scatter
     if mode == 1:     # this is the default of the self_calibration_pipeline_V2.
+	print 'mode 1: wsclean model'
         os.system('python '+self_cal_script+' -m '+vis+' -p') # amplitudes?
     if mode == 2:   # use NDPPP to selfcal the long baselines to a small (0.1") Gaussian
-	print vis+'skymodel'
+	print 'mode 2: point model'
 	point_model = np.array( [ [0.0,0.0,1.0,0.1,0.0,0.0] ] )
 	write_skymodel (ra,dec,point_model,vis+'skymodel')
 	if not model_only:
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
+	else:
+	    # run makesourcedb to generate sky
+	    os.system('rm -fr %s/sky\n'%vis)
+	    os.system ('makesourcedb in=%s/skymodel out=%s/sky format=\'<\''%(vis,vis))
     if mode == 3:   # make an engine model and selfcal against this
+	print 'mode 3: model_engine model'
         model_engine (vis,closure_tels,PLOTTYPE=0,outname=vis+'_mod')
 	if not model_only:
             skynet_NDPPP (vis,vis+'_mod',solint=5)
