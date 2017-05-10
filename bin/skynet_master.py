@@ -722,9 +722,9 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
 	if model_only == 0:
             skynet_NDPPP (vis,vis+'_mod',solint=5)
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
-    else:
-        return np.nan
-    return 0.0
+    #else:
+    #    return np.nan
+    #return 0.0
 
 
 if __name__ == "__main__":
