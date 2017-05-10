@@ -683,6 +683,14 @@ def skynet_NDPPP (vis,model,solint=1.0):
 
 def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
 
+    print 'ARGUMENTS'
+    print vis
+    print self_cal_script
+    print mode
+    print closure_tels
+    print cthr
+    print model_only
+
     if not len(closure_tels) == 3:
 	closure_tels = closure_tels.split(';')
     
