@@ -713,7 +713,7 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
 	print 'mode 2: point model'
 	point_model = np.array( [ [0.0,0.0,1.0,0.1,0.0,0.0] ] )
 	write_skymodel (ra,dec,point_model,vis+'skymodel')
-	if not model_only:
+	if model_only == 0:
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
 	else:
@@ -723,7 +723,7 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
     if mode == 3:   # make an engine model and selfcal against this
 	print 'mode 3: model_engine model'
         model_engine (vis,closure_tels,PLOTTYPE=0,outname=vis+'_mod')
-	if not model_only:
+	if model_only == 0:
             skynet_NDPPP (vis,vis+'_mod',solint=5)
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
     else:
