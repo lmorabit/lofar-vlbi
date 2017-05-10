@@ -686,12 +686,16 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
     print 'ARGUMENTS'
     print vis
     print self_cal_script
-    print mode
     print closure_tels
+
+    mode = int( mode )
+    cthr = float( cthr )
+    model_only = int( model_only )
+
+
+    print mode
     print cthr
     print model_only
-
-    mode = 2
 
     if not len(closure_tels) == 3:
 	closure_tels = closure_tels.split(';')
