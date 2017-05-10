@@ -722,7 +722,7 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
     else:
         return np.nan
-    return
+    return 0.0
 
 
 if __name__ == "__main__":
