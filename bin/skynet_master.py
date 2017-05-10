@@ -714,10 +714,12 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
 	point_model = np.array( [ [0.0,0.0,1.0,0.1,0.0,0.0] ] )
 	write_skymodel (ra,dec,point_model,vis+'skymodel')
 	if model_only == 0:
+	    print 'RUNNING SELF CAL'
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
 	else:
 	    # run makesourcedb to generate sky
+	    print 'MODEL ONLY'
 	    os.system('rm -fr %s/sky\n'%vis)
 	    os.system ('makesourcedb in=%s/skymodel out=%s/sky format=\'<\''%(vis,vis))
     if mode == 3:   # make an engine model and selfcal against this
