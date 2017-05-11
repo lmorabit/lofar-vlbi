@@ -4,7 +4,8 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, calib_cal_parmmap, calib_cal_sourcemap, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, ampl, plots ]
+
 
 #createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -39,6 +40,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! results_directory    		 = /data/scratch/lb_bw/pipeline_test/results
 ! calibrator_results_directory   = {{ results_directory }}/calibrators/
 ! inspection_directory		 = {{ results_directory }}/inspection/
+! cal_values_directory		 = {{ results_directory }}/delay_cal_results/
 
 ## VARIABLES TO CHANGE
 ## averaging parameters
@@ -70,6 +72,13 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! lin2circ_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/lin2circ.py
 ! download_lotss_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lotss_catalogue.py
 ! self_cal_and_imaging_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/self_calibration_and_imaging.py
+## prefactor scripts
+! losoto_importer		 = /data/scratch/lb_bw/prefactor/scripts/losotoImporter.py
+! fitclock_script		 = /data/scratch/lb_bw/prefactor/scripts/fit_clocktec_initialguess_losoto.py
+! fitamps_script		 = /data/scratch/lb_bw/prefactor/scripts/amplitudes_losoto_3.py
+! plotsols_script		 = /data/scratch/lb_bw/prefactor/scripts/examine_npys.py
+
+
 
 #####################################################################################################################################################################
 #
@@ -387,17 +396,180 @@ delay_cal_model.argument.closure_tels	  = {{ closure_phase_stations }}
 delay_cal_model.argument.cthr		  = 2.0 ## until using data that isn't test data
 delay_cal_model.argument.model_only	  = 1
 
+# generate mapfile with the parmDB names to be used in the gsmcal steps
+calib_cal_parmmap.control.kind               =  plugin
+calib_cal_parmmap.control.type               =  createMapfile
+calib_cal_parmmap.control.method             =  add_suffix_to_file
+calib_cal_parmmap.control.mapfile_in         =  find_delay_cal.output.mapfile
+calib_cal_parmmap.control.add_suffix_to_file =  /instrument
+calib_cal_parmmap.control.mapfile_dir        =  input.output.mapfile_dir
+calib_cal_parmmap.control.filename 	     =  calib_cal_parmdbs.mapfile
 
-#delay_cal_model.control.kind		  = pythonplugin
-#delay_cal_model.control.executable	  = {{ model_engine_script }}
-#delay_cal_model.argument.flags		  = [ find_delay_cal.mapfile, {{ closure_phase_stations }} ]
+# generate mapfile with the parmDB names to be used in the gsmcal steps
+calib_cal_sourcemap.control.kind               =  plugin
+calib_cal_sourcemap.control.type               =  createMapfile
+calib_cal_sourcemap.control.method             =  add_suffix_to_file
+calib_cal_sourcemap.control.mapfile_in         =  find_delay_cal.output.mapfile
+calib_cal_sourcemap.control.add_suffix_to_file =  /sky
+calib_cal_sourcemap.control.mapfile_dir        =  input.output.mapfile_dir
+calib_cal_sourcemap.control.filename 	       =  calib_cal_sourcemap.mapfile
 
-# gain calibration
 
-# clock/tec separation
+# generate gain solutions for clock/tec separation -- using NDPPP
+calib_cal.control.type                    =   dppp
+calib_cal.control.max_per_node            =   {{ num_proc_per_node_limit }}
+calib_cal.control.error_tolerance         =   {{ error_tolerance }}
+calib_cal.argument.numthreads             =   {{ max_dppp_threads }}
+calib_cal.argument.msin                   =   find_delay_cal.output.mapfile    # The input data.
+calib_cal.argument.msin.datacolumn        =   DATA
+calib_cal.argument.msin.baseline          =   *&
+calib_cal.argument.msout.datacolumn       =   DATA
+calib_cal.argument.msout.writefullresflag =   False
+calib_cal.argument.steps                  =   [gaincal]
+calib_cal.argument.gaincal.type           =   gaincal
+calib_cal.argument.gaincal.caltype	  =   diagonal
+calib_cal.argument.gaincal.parmdb	  =   calib_cal_parmmap.output.mapfile
+calib_cal.argument.gaincal.maxiter	  =   500
+calib_cal.argument.gaincal.nchan	  =   1
+calib_cal.argument.gaincal.solint	  =   1
+calib_cal.argument.gaincal.sourcedb	  =   calib_cal_sourcemap.output.mapfile
 
-# apply clock/tec to all data
+# import all instrument tables into one LoSoTo file
+h5imp_cal.control.type            =  pythonplugin
+h5imp_cal.control.executable      =  {{ losoto_importer }}
+h5imp_cal.control.error_tolerance =  {{ error_tolerance }}
+h5imp_cal.argument.flags          =  [h5imp_cal_losoto.h5,find_delay_cal.output.mapfile] 
+h5imp_cal.argument.instrument     =  /instrument
+h5imp_cal.argument.solsetName     =  sol000
+h5imp_cal.argument.compression    =  7
 
+# copy the LoSoTo file to the inspection_directory
+copy_h5imp_cal.control.kind               =  recipe
+copy_h5imp_cal.control.type               =  executable_args
+copy_h5imp_cal.control.executable         =  /bin/cp
+copy_h5imp_cal.control.mapfile_in         =  h5imp_cal.output.h5parm.mapfile
+copy_h5imp_cal.control.inputkey           =  source
+copy_h5imp_cal.control.arguments          =  [source,{{ inspection_directory }}]
+
+# now run the script that does the clock-TEC fitting
+fitclock.control.kind             = recipe
+fitclock.control.type             = executable_args
+fitclock.control.mapfile_in       = h5imp_cal.output.h5parm.mapfile
+fitclock.control.executable       = {{ fitclock_script }}
+# order for arguments is: [<input-filename>,<output-filename-base>,<NumThreads>]
+fitclock.control.arguments        = [h5gvds,caldata_transfer,{{ num_proc_per_node }}]
+fitclock.control.inputkey         = h5gvds
+
+# now run the script that filters the amplitudes
+ampl.control.kind             = recipe
+ampl.control.type             = executable_args
+ampl.control.mapfile_in       = h5imp_cal.output.h5parm.mapfile
+ampl.control.executable       = {{ fitamps_script }}
+# order for arguments is: [<input-filename>,<output-filename-base>,<num-ch/SB>,<subbans-to-flag>]
+# subbans-to-flag = semicolon-sperated list of integers in double-quotes
+# e.g.: ampl.control.arguments   = [h5gvds,caldata_transfer,4,"205;206;207"]
+ampl.control.arguments        = [h5gvds,caldata_transfer,4,""]
+ampl.control.inputkey = h5gvds
+
+
+# and generate some output plots
+plots.control.kind             = recipe
+plots.control.type             = executable_args
+plots.control.mapfile_in       = h5imp_cal.output.h5parm.mapfile
+plots.control.executable       = {{ plotsols_script }}
+plots.control.skip_infile      = True
+plots.control.arguments = [caldata_transfer] # Needs "<output-filename-base>" from the fitclock and ampl steps
+
+# fit the phase difference between X and Y
+phase.control.type            = pythonplugin
+phase.control.executable      = {{ fit_XYoffset_script }}
+# order for flags is: [<input-filename>,<output-filename-base>]
+phase.argument.flags = [h5imp_cal.output.h5parm.mapfile,caldata_transfer]
+
+# plot the phase solutions from the phase-only calibration of the target
+plot_cal_phases.control.kind                          =  recipe
+plot_cal_phases.control.type                          =  executable_args
+plot_cal_phases.control.executable                    =  {{ losoto_executable }}
+plot_cal_phases.control.max_per_node                  =  {{ num_proc_per_node }}
+plot_cal_phases.control.parsetasfile                  =  True
+plot_cal_phases.control.args_format                   =  losoto
+plot_cal_phases.control.mapfiles_in                   =  [h5imp_cal.output.h5parm.mapfile]
+plot_cal_phases.control.inputkeys                     =  [hdf5file]
+plot_cal_phases.argument.flags                        =  [hdf5file]
+plot_cal_phases.argument.LoSoTo.Steps                 =  [plot]
+plot_cal_phases.argument.LoSoTo.Solset                =  [sol000]
+plot_cal_phases.argument.LoSoTo.Soltab                =  [sol000/phase000]
+plot_cal_phases.argument.LoSoTo.SolType               =  [phase]
+plot_cal_phases.argument.LoSoTo.ant                   =  []
+plot_cal_phases.argument.LoSoTo.pol                   =  [XX,YY]
+plot_cal_phases.argument.LoSoTo.dir                   =  [pointing]
+plot_cal_phases.argument.LoSoTo.Steps.plot.Operation  =  PLOT
+plot_cal_phases.argument.LoSoTo.Steps.plot.PlotType   =  2D
+plot_cal_phases.argument.LoSoTo.Steps.plot.Axes       =  [time,freq]
+plot_cal_phases.argument.LoSoTo.Steps.plot.TableAxis  =  [ant]
+plot_cal_phases.argument.LoSoTo.Steps.plot.ColorAxis  =  [pol]
+plot_cal_phases.argument.LoSoTo.Steps.plot.Reference  =  {{ reference_station }}
+plot_cal_phases.argument.LoSoTo.Steps.plot.PlotFlag   =  False
+plot_cal_phases.argument.LoSoTo.Steps.plot.Prefix     =  {{ inspection_directory }}/cal_phases_
+
+# generate a mapfile of all the diagnostic pngs
+createmap_cal_pngs.control.kind            =   plugin
+createmap_cal_pngs.control.type            =   createMapfile
+createmap_cal_pngs.control.method          =   mapfile_from_folder
+createmap_cal_pngs.control.mapfile_dir     =   input.output.mapfile_dir
+createmap_cal_pngs.control.filename        =   diagnostic_pngs.mapfile
+createmap_cal_pngs.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_cal_pngs.control.pattern         =   *.png
+
+# copy the diagnostic pngs to the inspection directory
+copy_cal_pngs.control.kind               =  recipe
+copy_cal_pngs.control.type               =  executable_args
+copy_cal_pngs.control.executable         =  /bin/cp
+copy_cal_pngs.control.max_per_node       =  {{ num_proc_per_node_limit }}
+copy_cal_pngs.control.mapfile_in         =  createmap_cal_pngs.output.mapfile
+copy_cal_pngs.control.inputkey           =  source
+copy_cal_pngs.control.arguments          =  [source,{{ inspection_directory }}]
+
+# generate a mapfile of all the diagnostic txts
+createmap_cal_txts.control.kind            =   plugin
+createmap_cal_txts.control.type            =   createMapfile
+createmap_cal_txts.control.method          =   mapfile_from_folder
+createmap_cal_txts.control.mapfile_dir     =   input.output.mapfile_dir
+createmap_cal_txts.control.filename        =   diagnostic_txts.mapfile
+createmap_cal_txts.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_cal_txts.control.pattern         =   *.txt
+
+# copy the diagnostic txts to the inspection directory
+copy_cal_txts.control.kind               =  recipe
+copy_cal_txts.control.type               =  executable_args
+copy_cal_txts.control.executable         =  /bin/cp
+copy_cal_txts.control.max_per_node       =  {{ num_proc_per_node_limit }}
+copy_cal_txts.control.mapfile_in         =  createmap_cal_txts.output.mapfile
+copy_cal_txts.control.inputkey           =  source
+copy_cal_txts.control.arguments = [source,{{ inspection_directory }}]
+
+# create the cal_values_directory if needed
+mk_cal_values_dir.control.kind               =  plugin
+mk_cal_values_dir.control.type               =  makeDirectory
+mk_cal_values_dir.control.directory          =  {{ cal_values_directory }}
+
+# generate a mapfile of all the cal-value npys
+createmap_cal_npys.control.kind            =   plugin
+createmap_cal_npys.control.type            =   createMapfile
+createmap_cal_npys.control.method          =   mapfile_from_folder
+createmap_cal_npys.control.mapfile_dir     =   input.output.mapfile_dir
+createmap_cal_npys.control.filename        =   cal_value_npys.mapfile
+createmap_cal_npys.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_cal_npys.control.pattern         =   *.npy
+
+# copy the cal-value npys to the cal-values directory
+copy_cal_npys.control.kind               =  recipe
+copy_cal_npys.control.type               =  executable_args
+copy_cal_npys.control.executable         =  /bin/cp
+copy_cal_npys.control.max_per_node       =  {{ num_proc_per_node_limit }}
+copy_cal_npys.control.mapfile_in         =  createmap_cal_npys.output.mapfile
+copy_cal_npys.control.inputkey           =  source
+copy_cal_npys.control.arguments          = [source,{{ cal_values_directory }}]
 
 
 #####################################################################################################################################################################
