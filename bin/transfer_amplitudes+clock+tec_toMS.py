@@ -62,6 +62,8 @@ def make_empty_parmdb(outname):
 
 def main(msname, store_basename, inmsname, npdir='', newparmdbext='-instrument_amp_clock_tec'):
 
+    print 'ENTERED MAIN'
+
     ## core stations
     cs = [ 'CS001', 'CS002', 'CS003', 'CS004', 'CS005', 'CS006', 'CS007', 'CS011', 'CS013', 'CS017', 'CS021', 'CS024', 'CS026', 'CS028', 'CS030', 'CS031', 'CS032', 'CS101', 'CS103', 'CS201', 'CS301', 'CS302', 'CS401', 'CS501' ]
 
