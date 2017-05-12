@@ -60,7 +60,7 @@ def make_empty_parmdb(outname):
     myParmdb.addDefValues("RotationMeasure",1e-6)
     return myParmdb
 
-def main(msname, store_basename, inmsname, npdir='', newparmdbext='-instrument_amp_clock_tec'):
+def main(msname, inmsname, store_basename='caldata_transfer', npdir='', newparmdbext='-instrument_amp_clock_tec'):
 
     print 'ENTERED MAIN'
 
