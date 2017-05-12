@@ -469,7 +469,7 @@ ampl.control.executable       = {{ fitamps_script }}
 # order for arguments is: [<input-filename>,<output-filename-base>,<num-ch/SB>,<subbans-to-flag>]
 # subbans-to-flag = semicolon-sperated list of integers in double-quotes
 # e.g.: ampl.control.arguments   = [h5gvds,caldata_transfer,4,"205;206;207"]
-ampl.control.arguments        = [h5gvds,caldata_transfer,4,""]
+ampl.control.arguments        = [h5gvds,caldata_transfer,1,""]
 ampl.control.inputkey = h5gvds
 
 
