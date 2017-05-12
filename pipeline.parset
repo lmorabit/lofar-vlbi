@@ -72,7 +72,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! lin2circ_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/lin2circ.py
 ! download_lotss_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lotss_catalogue.py
 ! self_cal_and_imaging_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/self_calibration_and_imaging.py
-! transfer_delay_sols_script 	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/transfer_amplitudes+clock+tec_toMS.py
+! transfer_delay_sols_script 	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/transfer_clock+tec_toMS.py
 
 ## prefactor scripts
 ! losoto_importer		 = /data/scratch/lb_bw/prefactor/scripts/losotoImporter.py
@@ -563,11 +563,7 @@ ndppp_apply_cal2.argument.msin.baseline               =   *&
 ndppp_apply_cal2.argument.msout                       =   .
 ndppp_apply_cal2.argument.msout.datacolumn            =   CORRECTED_DATA
 ndppp_apply_cal2.argument.msout.writefullresflag      =   False
-ndppp_apply_cal2.argument.steps                       =   [applyAmp, applyClock, ApplyTec]
-ndppp_apply_cal2.argument.applyAmp.type               =   applycal
-ndppp_apply_cal2.argument.applyAmp.parmdb             =   transfer_delay_sols.output.mapfile
-ndppp_apply_cal2.argument.applyAmp.correction         =   gain
-ndppp_apply_cal2.argument.applyAmp.updateweights      =   false
+ndppp_apply_cal2.argument.steps                       =   [applyClock, ApplyTec]
 ndppp_apply_cal2.argument.applyClock.type             =   applycal
 ndppp_apply_cal2.argument.applyClock.parmdb           =   transfer_delay_sols.output.mapfile
 ndppp_apply_cal2.argument.applyClock.correction       =   clock
