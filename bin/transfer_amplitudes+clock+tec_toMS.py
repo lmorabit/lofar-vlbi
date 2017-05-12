@@ -60,12 +60,11 @@ def make_empty_parmdb(outname):
     myParmdb.addDefValues("RotationMeasure",1e-6)
     return myParmdb
 
-def main(msname, inmsname, store_basename='caldata_transfer', npdir='', newparmdbext='-instrument_amp_clock_tec'):
+def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_tec'):
 
     print 'ENTERED MAIN'
 
     print msname
-    print inmsname
 	
 
     ## core stations
@@ -84,15 +83,17 @@ def main(msname, inmsname, store_basename='caldata_transfer', npdir='', newparmd
 #    phases_array  = np.load(store_basename + '_phase_array.npy')
 #    station_names = np.load(npdir + '/'+store_basename + '_station_names.npy')
 
-    msinfo = ReadMs(inmsname)
-    station_names = msinfo.stations
-
     #print "phases shape:",np.shape(phases_array)
     #print "amps shape:",np.shape(amps_array)
     #print "clock shape:",np.shape(clock_array)
 
     #for ms in mslist: #this script works only on one MS!
     msinfo = ReadMs(msname)
+
+    print 'STATION NAMES'
+    print msinfo.station_names
+
+
     # this is the same for all antennas
     starttime = msinfo.timepara['start']
     endtime   = msinfo.timepara['end']
