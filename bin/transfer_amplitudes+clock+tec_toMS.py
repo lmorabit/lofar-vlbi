@@ -60,7 +60,7 @@ def make_empty_parmdb(outname):
     myParmdb.addDefValues("RotationMeasure",1e-6)
     return myParmdb
 
-def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_tec'):
+def main(msname, store_basename, inmsname, npdir='', newparmdbext='-instrument_amp_clock_tec'):
 
     ## core stations
     cs = [ 'CS001', 'CS002', 'CS003', 'CS004', 'CS005', 'CS006', 'CS007', 'CS011', 'CS013', 'CS017', 'CS021', 'CS024', 'CS026', 'CS028', 'CS030', 'CS031', 'CS032', 'CS101', 'CS103', 'CS201', 'CS301', 'CS302', 'CS401', 'CS501' ]
@@ -76,7 +76,10 @@ def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_t
     dtec_array = np.load(npdir + '/fitted_data_dTEC_' + store_basename + '_1st.npy')
 #    freqs_phase = np.load('freqs_for_phase_array.npy')
 #    phases_array  = np.load(store_basename + '_phase_array.npy')
-    station_names = np.load(npdir + '/'+store_basename + '_station_names.npy')
+#    station_names = np.load(npdir + '/'+store_basename + '_station_names.npy')
+
+    msinfo = ReadMs(inmsname)
+    station_names = msinfo.stations
 
     #print "phases shape:",np.shape(phases_array)
     #print "amps shape:",np.shape(amps_array)
