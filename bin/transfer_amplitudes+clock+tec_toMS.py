@@ -90,8 +90,10 @@ def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_t
     #for ms in mslist: #this script works only on one MS!
     msinfo = ReadMs(msname)
 
-    print 'STATION NAMES'
-    print msinfo.stations
+    station_names = msinfo.stations
+    ## get rid of core stations and replace with ST001
+    station_names = [ sn for sn in station_names if 'CS' not in sn ]
+    station_names.append('ST001')
 
 
     # this is the same for all antennas
