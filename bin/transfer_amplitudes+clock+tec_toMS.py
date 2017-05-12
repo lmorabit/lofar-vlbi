@@ -73,7 +73,7 @@ def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_t
     freqs_ampl = np.load(npdir + '/freqs_for_amplitude_array.npy')
     amps_array = np.load(npdir + '/'+store_basename + '_amplitude_array.npy')
     clock_array = np.load(npdir + '/fitted_data_dclock_' + store_basename + '_1st.npy')
-    dtec_array = np.loas(npdir + '/fitted_data_dTEC_' + store_basename + '_1st.npy')
+    dtec_array = np.load(npdir + '/fitted_data_dTEC_' + store_basename + '_1st.npy')
 #    freqs_phase = np.load('freqs_for_phase_array.npy')
 #    phases_array  = np.load(store_basename + '_phase_array.npy')
     station_names = np.load(npdir + '/'+store_basename + '_station_names.npy')
