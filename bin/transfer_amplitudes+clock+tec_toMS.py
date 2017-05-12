@@ -64,6 +64,10 @@ def main(msname, inmsname, store_basename='caldata_transfer', npdir='', newparmd
 
     print 'ENTERED MAIN'
 
+    print msname
+    print inmsname
+	
+
     ## core stations
     cs = [ 'CS001', 'CS002', 'CS003', 'CS004', 'CS005', 'CS006', 'CS007', 'CS011', 'CS013', 'CS017', 'CS021', 'CS024', 'CS026', 'CS028', 'CS030', 'CS031', 'CS032', 'CS101', 'CS103', 'CS201', 'CS301', 'CS302', 'CS401', 'CS501' ]
 
