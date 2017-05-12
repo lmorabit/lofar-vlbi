@@ -563,14 +563,14 @@ ndppp_apply_delay.argument.msin.baseline               =   *&
 ndppp_apply_delay.argument.msout                       =   .
 ndppp_apply_delay.argument.msout.datacolumn            =   CORRECTED_DATA
 ndppp_apply_delay.argument.msout.writefullresflag      =   False
-ndppp_apply_delay.argument.steps                       =   [applyClock, ApplyTec]
+ndppp_apply_delay.argument.steps                       =   [applyClock, applyTec]
 ndppp_apply_delay.argument.applyClock.type             =   applycal
 ndppp_apply_delay.argument.applyClock.parmdb           =   transfer_delay_sols.output.mapfile
 ndppp_apply_delay.argument.applyClock.correction       =   clock
 ndppp_apply_delay.argument.applyClock.updateweights    =   false
-ndppp_apply_delay.argument.applyTec.type		      =   applycal
-ndppp_apply_delay.argument.applyTec.parmdb	      =   transfer_delay_sols.output.mapfile
-ndppp_apply_delay.argument.applyTec.correction	      =   tec
+ndppp_apply_delay.argument.applyTec.type	       =   applycal
+ndppp_apply_delay.argument.applyTec.parmdb	       =   transfer_delay_sols.output.mapfile
+ndppp_apply_delay.argument.applyTec.correction	       =   tec
 ndppp_apply_delay.argument.applyTec.updateweights      =   false
 
 
