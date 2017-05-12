@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, calib_cal_parmmap, calib_cal_sourcemap, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_amp_clock_sols2 ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, calib_cal_parmmap, calib_cal_sourcemap, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols ]
 ## the step 'ampl' needs to be inserted after 'fitclock' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 
 #createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
@@ -540,15 +540,15 @@ copy_cal_npys.control.executable         =  /bin/cp
 copy_cal_npys.control.max_per_node       =  {{ num_proc_per_node_limit }}
 copy_cal_npys.control.mapfile_in         =  createmap_cal_npys.output.mapfile
 copy_cal_npys.control.inputkey           =  source
-copy_cal_npys.control.arguments          = [source,{{ cal_values_directory }}]
+copy_cal_npys.control.arguments          =  [source,{{ cal_values_directory }}]
 
 # transfer solutions to MSs
-transfer_amp_clock_sols2.control.type                 =   pythonplugin
-transfer_amp_clock_sols2.control.executable           =   {{ transfer_delay_sols_script }}
-transfer_amp_clock_sols2.argument.msname              =   ndppp_prep_target.output.mapfile
-transfer_amp_clock_sols2.argument.npdir               =   {{ cal_values_directory }}
-transfer_amp_clock_sols2.store_basename               =   {{ amp_sols_basename }}
-transfer_amp_clock_sols2.argument.output              =   outputkey
+transfer_delay_sols.control.type                 =   pythonplugin
+transfer_delay_sols.control.executable           =   {{ transfer_delay_sols_script }}
+transfer_delay_sols.argument.msname              =   ndppp_prep_target.output.mapfile
+transfer_delay_sols.argument.npdir               =   {{ cal_values_directory }}
+transfer_delay_sols.store_basename               =   {{ amp_sols_basename }}
+transfer_delay_sols.argument.output              =   outputkey
 
 # run NDPPP to apply the solutions to the target data
 ndppp_apply_cal2.control.type                         =   dppp
@@ -566,15 +566,15 @@ ndppp_apply_cal2.argument.msout.datacolumn            =   CORRECTED_DATA
 ndppp_apply_cal2.argument.msout.writefullresflag      =   False
 ndppp_apply_cal2.argument.steps                       =   [applyAmp, applyClock, ApplyTec]
 ndppp_apply_cal2.argument.applyAmp.type               =   applycal
-ndppp_apply_cal2.argument.applyAmp.parmdb             =   transfer_amp_clock_sols2.output.mapfile
+ndppp_apply_cal2.argument.applyAmp.parmdb             =   transfer_delay_sols.output.mapfile
 ndppp_apply_cal2.argument.applyAmp.correction         =   gain
 ndppp_apply_cal2.argument.applyAmp.updateweights      =   false
 ndppp_apply_cal2.argument.applyClock.type             =   applycal
-ndppp_apply_cal2.argument.applyClock.parmdb           =   transfer_amp_clock_sols2.output.mapfile
+ndppp_apply_cal2.argument.applyClock.parmdb           =   transfer_delay_sols.output.mapfile
 ndppp_apply_cal2.argument.applyClock.correction       =   clock
 ndppp_apply_cal2.argument.applyClock.updateweights    =   false
 ndppp_apply_cal2.argument.applyTec.type		      =   applycal
-ndppp_apply_cal2.argument.applyTec.parmdb	      =   transfer_amp_clock_sols2.output.mapfile
+ndppp_apply_cal2.argument.applyTec.parmdb	      =   transfer_delay_sols.output.mapfile
 ndppp_apply_cal2.argument.applyTec.correction	      =   tec
 ndppp_apply_cal2.argument.applyTec.updateweights      =   false
 
