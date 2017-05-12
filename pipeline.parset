@@ -548,7 +548,7 @@ transfer_delay_sols.control.executable           =   {{ transfer_delay_sols_scri
 transfer_delay_sols.argument.msname              =   ndppp_prep_target.output.mapfile
 transfer_delay_sols.argument.npdir               =   {{ cal_values_directory }}
 transfer_delay_sols.store_basename               =   {{ amp_sols_basename }}
-transfer_delay_sols.argument.output              =   outputkey
+#transfer_delay_sols.argument.output              =   outputkey
 
 # run NDPPP to apply the solutions to the target data
 ndppp_apply_cal2.control.type                         =   dppp
