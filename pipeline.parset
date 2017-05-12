@@ -72,6 +72,8 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! lin2circ_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/lin2circ.py
 ! download_lotss_script		 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/download_lotss_catalogue.py
 ! self_cal_and_imaging_script	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/self_calibration_and_imaging.py
+! transfer_delay_sols_script 	 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/bin/transfer_amplitudes+clock+tec_toMS.py
+
 ## prefactor scripts
 ! losoto_importer		 = /data/scratch/lb_bw/prefactor/scripts/losotoImporter.py
 ! fitclock_script		 = /data/scratch/lb_bw/prefactor/scripts/fit_clocktec_initialguess_losoto.py
@@ -542,7 +544,7 @@ copy_cal_npys.control.arguments          = [source,{{ cal_values_directory }}]
 
 # transfer solutions to MSs
 transfer_amp_clock_sols2.control.type                 =   pythonplugin
-transfer_amp_clock_sols2.control.executable           =   {{ transfer_amp_clock_sols_script }}
+transfer_amp_clock_sols2.control.executable           =   {{ transfer_delay_sols_script }}
 transfer_amp_clock_sols2.argument.msname              =   ndppp_prep_target.output.mapfile
 transfer_amp_clock_sols2.argument.npdir               =   {{ cal_values_directory }}
 transfer_amp_clock_sols2.store_basename               =   {{ amp_sols_basename }}
