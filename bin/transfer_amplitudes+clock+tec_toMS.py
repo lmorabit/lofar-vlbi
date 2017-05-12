@@ -91,7 +91,7 @@ def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_t
     msinfo = ReadMs(msname)
 
     print 'STATION NAMES'
-    print msinfo.station_names
+    print msinfo.stations
 
 
     # this is the same for all antennas
