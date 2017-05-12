@@ -545,7 +545,7 @@ copy_cal_npys.control.arguments          =  [source,{{ cal_values_directory }}]
 # transfer solutions to MSs
 transfer_delay_sols.control.type                 =   pythonplugin
 transfer_delay_sols.control.executable           =   {{ transfer_delay_sols_script }}
-transfer_delay_sols.argument.flags		 =   [ndppp_prep_target.output.mapfile, find_delay_cal.mapfile]
+transfer_delay_sols.argument.flags		 =   [ndppp_prep_target.output.mapfile, find_delay_cal.output.mapfile]
 transfer_delay_sols.argument.store_basename	 =   {{ amp_sols_basename }}
 transfer_delay_sols.argument.npdir               =   {{ cal_values_directory }}
 #transfer_delay_sols.argument.output              =   outputkey
