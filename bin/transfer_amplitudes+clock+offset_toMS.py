@@ -182,4 +182,3 @@ if __name__ == "__main__":
     #main('L411968_SB193_uv.dppp.MS','caldata_transfer','/international_instrument')
     main(msname, npdir, basename, instdir) 
 
-
