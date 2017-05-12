@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, calib_cal_parmmap, calib_cal_sourcemap, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, ampl, plots ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, calib_cal_parmmap, calib_cal_sourcemap, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys ]
 
 
 #createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
@@ -438,7 +438,8 @@ calib_cal.argument.gaincal.sourcedb	  =   calib_cal_sourcemap.output.mapfile
 h5imp_cal.control.type            =  pythonplugin
 h5imp_cal.control.executable      =  {{ losoto_importer }}
 h5imp_cal.control.error_tolerance =  {{ error_tolerance }}
-h5imp_cal.argument.flags          =  [h5imp_cal_losoto.h5,find_delay_cal.output.mapfile] 
+#h5imp_cal.argument.flags          =  [h5imp_cal_losoto.h5,find_delay_cal.output.mapfile] 
+h5imp_cal.argument.flags          =  [find_delay_cal.output.mapfile,h5imp_cal_losoto.h5] 
 h5imp_cal.argument.instrument     =  /instrument
 h5imp_cal.argument.solsetName     =  sol000
 h5imp_cal.argument.compression    =  7
@@ -480,38 +481,6 @@ plots.control.executable       = {{ plotsols_script }}
 plots.control.skip_infile      = True
 plots.control.arguments = [caldata_transfer] # Needs "<output-filename-base>" from the fitclock and ampl steps
 
-# fit the phase difference between X and Y
-phase.control.type            = pythonplugin
-phase.control.executable      = {{ fit_XYoffset_script }}
-# order for flags is: [<input-filename>,<output-filename-base>]
-phase.argument.flags = [h5imp_cal.output.h5parm.mapfile,caldata_transfer]
-
-# plot the phase solutions from the phase-only calibration of the target
-plot_cal_phases.control.kind                          =  recipe
-plot_cal_phases.control.type                          =  executable_args
-plot_cal_phases.control.executable                    =  {{ losoto_executable }}
-plot_cal_phases.control.max_per_node                  =  {{ num_proc_per_node }}
-plot_cal_phases.control.parsetasfile                  =  True
-plot_cal_phases.control.args_format                   =  losoto
-plot_cal_phases.control.mapfiles_in                   =  [h5imp_cal.output.h5parm.mapfile]
-plot_cal_phases.control.inputkeys                     =  [hdf5file]
-plot_cal_phases.argument.flags                        =  [hdf5file]
-plot_cal_phases.argument.LoSoTo.Steps                 =  [plot]
-plot_cal_phases.argument.LoSoTo.Solset                =  [sol000]
-plot_cal_phases.argument.LoSoTo.Soltab                =  [sol000/phase000]
-plot_cal_phases.argument.LoSoTo.SolType               =  [phase]
-plot_cal_phases.argument.LoSoTo.ant                   =  []
-plot_cal_phases.argument.LoSoTo.pol                   =  [XX,YY]
-plot_cal_phases.argument.LoSoTo.dir                   =  [pointing]
-plot_cal_phases.argument.LoSoTo.Steps.plot.Operation  =  PLOT
-plot_cal_phases.argument.LoSoTo.Steps.plot.PlotType   =  2D
-plot_cal_phases.argument.LoSoTo.Steps.plot.Axes       =  [time,freq]
-plot_cal_phases.argument.LoSoTo.Steps.plot.TableAxis  =  [ant]
-plot_cal_phases.argument.LoSoTo.Steps.plot.ColorAxis  =  [pol]
-plot_cal_phases.argument.LoSoTo.Steps.plot.Reference  =  {{ reference_station }}
-plot_cal_phases.argument.LoSoTo.Steps.plot.PlotFlag   =  False
-plot_cal_phases.argument.LoSoTo.Steps.plot.Prefix     =  {{ inspection_directory }}/cal_phases_
-
 # generate a mapfile of all the diagnostic pngs
 createmap_cal_pngs.control.kind            =   plugin
 createmap_cal_pngs.control.type            =   createMapfile
@@ -546,7 +515,7 @@ copy_cal_txts.control.executable         =  /bin/cp
 copy_cal_txts.control.max_per_node       =  {{ num_proc_per_node_limit }}
 copy_cal_txts.control.mapfile_in         =  createmap_cal_txts.output.mapfile
 copy_cal_txts.control.inputkey           =  source
-copy_cal_txts.control.arguments = [source,{{ inspection_directory }}]
+copy_cal_txts.control.arguments          = [source,{{ inspection_directory }}]
 
 # create the cal_values_directory if needed
 mk_cal_values_dir.control.kind               =  plugin
@@ -570,6 +539,9 @@ copy_cal_npys.control.max_per_node       =  {{ num_proc_per_node_limit }}
 copy_cal_npys.control.mapfile_in         =  createmap_cal_npys.output.mapfile
 copy_cal_npys.control.inputkey           =  source
 copy_cal_npys.control.arguments          = [source,{{ cal_values_directory }}]
+
+# apply to the data
+
 
 
 #####################################################################################################################################################################
