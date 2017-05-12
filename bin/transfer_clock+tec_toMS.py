@@ -63,20 +63,15 @@ def make_empty_parmdb(outname):
 def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_tec'):
 
     print 'ENTERED MAIN'
-
     print msname
-	
-
-    ## core stations
-    cs = [ 'CS001', 'CS002', 'CS003', 'CS004', 'CS005', 'CS006', 'CS007', 'CS011', 'CS013', 'CS017', 'CS021', 'CS024', 'CS026', 'CS028', 'CS030', 'CS031', 'CS032', 'CS101', 'CS103', 'CS201', 'CS301', 'CS302', 'CS401', 'CS501' ]
 
     # name (path) for parmdb to be written
     newparmDB = msname+newparmdbext
 
     # load the numpy arrays written by the previous scripts
     # (filenames constructed in the same way as in these scripts)
-    freqs_ampl = np.load(npdir + '/freqs_for_amplitude_array.npy')
-    amps_array = np.load(npdir + '/'+store_basename + '_amplitude_array.npy')
+#    freqs_ampl = np.load(npdir + '/freqs_for_amplitude_array.npy')
+#    amps_array = np.load(npdir + '/'+store_basename + '_amplitude_array.npy')
     clock_array = np.load(npdir + '/fitted_data_dclock_' + store_basename + '_1st.npy')
     dtec_array = np.load(npdir + '/fitted_data_dTEC_' + store_basename + '_1st.npy')
 #    freqs_phase = np.load('freqs_for_phase_array.npy')
@@ -91,6 +86,8 @@ def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_t
     msinfo = ReadMs(msname)
 
     station_names = msinfo.stations
+    ## get a list of core stations
+    cs = [ sn for sn in station_names if 'CS' in sn ]
     ## get rid of core stations and replace with ST001
     station_names = [ sn for sn in station_names if 'CS' not in sn ]
     station_names.append('ST001')
@@ -111,46 +108,7 @@ def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_t
         if antenna not in msinfo.stations:
             pass
 
-        # form median of amplitudes along the time axis, for both polarizations
-        amp_cal_00_all = np.median(amps_array[antenna_id,:,:,0],axis=0)
-        amp_cal_11_all = np.median(amps_array[antenna_id,:,:,1],axis=0)
-        # interpolate to target frequencies
-        amp_cal_00 = np.interp(msinfo.msfreqvalues, freqs_ampl, amp_cal_00_all)
-        amp_cal_11 = np.interp(msinfo.msfreqvalues, freqs_ampl, amp_cal_11_all)
-        # interpolate phases
-        #phase_cal_00   = 0.
-        #phase_cal_11   = np.interp(msinfo.msfreqvalues, freqs_phase, phases_array[:,antenna_id])
-
-        # convert to real and imaginary
-        real_00 = amp_cal_00*np.cos(phase_cal_00)
-        imag_00 = amp_cal_00*np.sin(phase_cal_00)
-        real_11 = amp_cal_11*np.cos(-1.*phase_cal_11)
-        imag_11 = amp_cal_11*np.sin(-1.*phase_cal_11)
-
-        real_00_pdb = real_00.reshape( (ntimes,nfreqs) )
-        imag_00_pdb = imag_00.reshape( (ntimes,nfreqs) )
-        real_11_pdb = real_11.reshape( (ntimes,nfreqs) )
-        imag_11_pdb = imag_11.reshape( (ntimes,nfreqs) )
-
-        # generate parmDB entries
-        ValueHolder = outDB.makeValue(values=real_00_pdb,
-                                      sfreq=startfreqs, efreq=endfreqs,
-                                      stime=starttime, etime=endtime, asStartEnd=True)
-        outDB.addValues('Gain:0:0:Real:'+antenna,ValueHolder)
-        ValueHolder = outDB.makeValue(values=imag_00_pdb,
-                                      sfreq=startfreqs, efreq=endfreqs,
-                                      stime=starttime, etime=endtime, asStartEnd=True)
-        outDB.addValues('Gain:0:0:Imag:'+antenna,ValueHolder)
-        ValueHolder = outDB.makeValue(values=real_11_pdb,
-                                      sfreq=startfreqs, efreq=endfreqs,
-                                      stime=starttime, etime=endtime, asStartEnd=True)
-        outDB.addValues('Gain:1:1:Real:'+antenna,ValueHolder)
-        ValueHolder = outDB.makeValue(values=imag_11_pdb,
-                                      sfreq=startfreqs, efreq=endfreqs,
-                                      stime=starttime, etime=endtime, asStartEnd=True)
-        outDB.addValues('Gain:1:1:Imag:'+antenna,ValueHolder)
-
-        #now handle the clock-value (no fancy interpolating needed)
+        #handle the clock-value (no fancy interpolating needed)
         clock_pdb = np.array( np.median(clock_array[:,antenna_id]) ,ndmin=2)
         ValueHolder = outDB.makeValue(values=clock_pdb,
                                       sfreq=startfreqs[0], efreq=endfreqs[-1],
@@ -167,47 +125,19 @@ def main(msname, store_basename, npdir='', newparmdbext='-instrument_amp_clock_t
 
         ## add core stations if it's the ST001 station
         if antenna == 'ST001':
-	    ## gains
-            ValueHolder = outDB.makeValue(values=real_00_pdb,
-                                          sfreq=startfreqs, efreq=endfreqs,
-                                          stime=starttime, etime=endtime, asStartEnd=True)
-            for cs_ant in cs:
-                outDB.addValues('Gain:0:0:Real:'+cs_ant+'0',ValueHolder)
-                outDB.addValues('Gain:0:0:Real:'+cs_ant+'1',ValueHolder)
-            ValueHolder = outDB.makeValue(values=imag_00_pdb,
-                                          sfreq=startfreqs, efreq=endfreqs,
-                                          stime=starttime, etime=endtime, asStartEnd=True)
-            for cs_ant in cs:
-                outDB.addValues('Gain:0:0:Imag:'+cs_ant+'0',ValueHolder)
-                outDB.addValues('Gain:0:0:Imag:'+cs_ant+'1',ValueHolder)
-            ValueHolder = outDB.makeValue(values=real_11_pdb,
-                                          sfreq=startfreqs, efreq=endfreqs,
-                                          stime=starttime, etime=endtime, asStartEnd=True)
-            for cs_ant in cs:
-                outDB.addValues('Gain:1:1:Real:'+cs_ant+'0',ValueHolder)
-                outDB.addValues('Gain:1:1:Real:'+cs_ant+'1',ValueHolder)
-            ValueHolder = outDB.makeValue(values=imag_11_pdb,
-                                          sfreq=startfreqs, efreq=endfreqs,
-                                          stime=starttime, etime=endtime, asStartEnd=True)
-            for cs_ant in cs:
-                outDB.addValues('Gain:1:1:Imag:'+cs_ant+'0',ValueHolder)
-                outDB.addValues('Gain:1:1:Imag:'+cs_ant+'1',ValueHolder)
-
 	    ## clock values
             ValueHolder = outDB.makeValue(values=clock_pdb,
                                           sfreq=startfreqs[0], efreq=endfreqs[-1],
                                           stime=starttime, etime=endtime, asStartEnd=True)
 	    for cs_ant in cs:
-		outDB.addValues('Clock:'+cs_ant+'0',ValueHolder)
-		outDB.addValues('Clock:'+cs_ant+'1',ValueHolder)
+		outDB.addValues('Clock:'+cs_ant,ValueHolder)
 	
 	    ## tec values
 	    ValueHolder = outDB.makeValue(values=dtec_pdb,
                                           sfreq=startfreqs[0], efreq=endfreqs[-1],
                                           stime=starttime, etime=endtime, asStartEnd=True)
             for cs_ant in cs:
-                outDB.addValues('TEC:'+cs_ant+'0',ValueHolder)
-                outDB.addValues('TEC:'+cs_ant+'1',ValueHolder)
+                outDB.addValues('TEC:'+cs_ant,ValueHolder)
 
     outDB = False
     return {'transfer_parmDB': newparmDB }
