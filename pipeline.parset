@@ -21,7 +21,6 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! amp_sols_basename              = caldata_transfer
 ## phase soutions from previous pre-factor run on target (phase solution parmdbs)
 ! phase_sol_input_path           = /data/scratch/lb_bw/prefactor_solutions/prefactor/results/                        # directory where the direction-independent phase solutions of the target field are stored
-! phase_sol_input_pattern        = L401323*phase_table
 
 # this is the catalogue of calibrator images; if it doesn't exist, download from LBCS database and create
 ! calibrator_catalogue 		 = /data/scratch/lb_bw/pipeline_test/lbcs_catalogue.csv
@@ -199,7 +198,7 @@ createmap_pstwo.control.method                       =   mapfile_from_folder
 createmap_pstwo.control.mapfile_dir                  =   input.output.mapfile_dir
 createmap_pstwo.control.filename                     =   createmap_pstwo.mapfile
 createmap_pstwo.control.folder                       =   {{ job_directory }}
-createmap_pstwo.control.pattern                      =   {{ phase_sol_input_pattern }}
+createmap_pstwo.control.pattern                      =   *.phase_table
 
 # Find appropriate MSs to match with phase solutions (which are probably from a group)
 # This is a custom plugin. It is matching the frequency information of the parmdbs with the corresponding measurement sets
