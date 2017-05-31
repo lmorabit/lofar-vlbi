@@ -91,7 +91,7 @@ def plugin_main(args, **kwargs):
     result['mapfile'] = fileid
 
     fileid = os.path.join(mapfile_dir, filename + '_parmdbs')
-    map_out_Mstables.save(fileid)
+    map_out_MStables.save(fileid)
     result['parmdbs'] = fileid
 
     fileid = os.path.join(mapfile_dir, filename + '_ISparmdbs')
