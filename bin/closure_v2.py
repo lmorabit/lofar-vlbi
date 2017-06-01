@@ -3,6 +3,8 @@ import sys
 import os
 import numpy as np
 import pyrap; from pyrap import tables as pt
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib
 from matplotlib import pyplot as plt
 from lofarpipe.support.data_map import DataMap
