@@ -126,7 +126,7 @@ def main():
             os.system( ss )
             imagename = "%s-CLN-PO%s"%(tgtname,str(ii+1))
             if bandwidth > freq_range:
-                ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s-CLN %s"%(imsize,imsize,imtrim,imtrim,nchan,tgtname,msname)
+                ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,nchan,imagename,msname)
             else:
                 ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,imagename,msname)
             os.system( ss )
@@ -139,7 +139,7 @@ def main():
         os.system( ss )
         imagename = "%s-CLN-PA-final"%(tgtname)
         if bandwidth > freq_range:
-            ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s-CLN %s"%(imsize,imsize,imtrim,imtrim,nchan,tgtname,msname)
+            ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,nchan,imagename,msname)
         else:
             ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,imagename,msname)
         os.system( ss )
