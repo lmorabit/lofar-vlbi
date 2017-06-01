@@ -4,8 +4,10 @@ import os
 import sys
 import glob
 import astropy
-from matplotlib import pyplot as plt
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib
+from matplotlib import pyplot as plt
 import time
 import pyrap.tables as pt
 # neal specific
@@ -266,7 +268,7 @@ plt.rcParams['image.interpolation']='nearest'
 warnings.simplefilter('ignore')
 RAD2ARC = 3600.*180./np.pi
 LIGHT = 2.99792458E+8
-FIRSTNPY = './first_2008.simple.npy'
+#FIRSTNPY = './first_2008.simple.npy'
 MX,MY,MF,MW,MR,MP = range(6)
 ISPARALLEL = int(os.popen('nproc').read())>4
 
@@ -481,11 +483,11 @@ def mod_func (x0, *x):
             plt.clf()
     return goodness
 
-def getmodel(coord,beam):
+def getmodel(coord,beam,firstnpy):
     gsiz = int(gridsize/(bsub*beam))   # original grid very big
     ginc = bsub*beam                   # arcsec/pix grid size
     grid = np.ones((gsiz,gsiz))*np.nan # original grid full of NaN
-    first = np.load(FIRSTNPY)
+    first = np.load(firstnpy)
     pflux,pcoord = [],[]
     a = correlate (np.array([coord]),0,1,first,0,1,0.5/60)
     cosdec = np.cos(np.deg2rad(coord[1]))
@@ -619,7 +621,7 @@ def write_skymodel (ra,dec,model,outname):
     if outname!='':
         f.close()
 
-def model_engine(vis,TRNAME,BSUB=0.3,GRIDSIZE=12.0,PLOTTYPE=20,AMPFIDDLE=True,outname='model_engine.sky'):
+def model_engine(vis,TRNAME,firstnpy,BSUB=0.3,GRIDSIZE=12.0,PLOTTYPE=20,AMPFIDDLE=True,outname='model_engine.sky'):
     global bsub,gridsize,plottype,ampfiddle,glim,trname
     bsub,gridsize,plottype,ampfiddle,trname,gcou = BSUB,GRIDSIZE,PLOTTYPE,AMPFIDDLE,TRNAME,0
     os.system('rm model_engine*.png')
@@ -628,7 +630,7 @@ def model_engine(vis,TRNAME,BSUB=0.3,GRIDSIZE=12.0,PLOTTYPE=20,AMPFIDDLE=True,ou
     flux1,flux2 = np.median(s_amp), 0.5*(s_amp[int(0.99*ls)]-s_amp[int(0.01*ls)])
     flux = np.median(a01)
     beam = RAD2ARC/np.nanmax(abs(uvw01)); print 'Beam:',beam,'arcsec'
-    grid,ginc,gsiz,pflux,pcoord = getmodel (np.array([ra,dec]),beam)
+    grid,ginc,gsiz,pflux,pcoord = getmodel (np.array([ra,dec]),beam,firstnpy)
     if not len(pflux):   # no FIRST source, search the whole grid
         grid = np.zeros_like (grid)
     aplot = np.ones_like(grid)*np.nan
@@ -665,7 +667,9 @@ def model_engine(vis,TRNAME,BSUB=0.3,GRIDSIZE=12.0,PLOTTYPE=20,AMPFIDDLE=True,ou
 
 def skynet_NDPPP (vis,model,solint=1.0):
     os.system('rm -fr %s/sky\n'%vis)
-    os.system ('makesourcedb in=%s/skymodel out=%s/sky format=\'<\''%(vis,vis))
+    ss = 'makesourcedb in=%s out=%s/sky format=\'<\''%(model,vis)
+    print ss
+    os.system (ss)
     with open('NDPPP.parset','w') as f:
         f.write('msin=%s\n'%vis)
         f.write('msin.datacolumn=DATA\n')
@@ -681,7 +685,7 @@ def skynet_NDPPP (vis,model,solint=1.0):
     os.system('NDPPP NDPPP.parset')
 
 
-def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
+def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
 
     ## make sure the parameters are the correct format
     mode = int( mode )
@@ -718,7 +722,7 @@ def main (vis, self_cal_script, mode=3, closure_tels=['ST001','DE601','DE605'],c
 	    os.system ( ss )
     if mode == 3:   # make an engine model and selfcal against this
 	print 'mode 3: model_engine model'
-        model_engine (vis,closure_tels,PLOTTYPE=0,outname=vis+'_mod')
+        model_engine (vis,closure_tels,firstnpy,PLOTTYPE=0,outname=vis+'_mod')
 	if model_only == 0:
             skynet_NDPPP (vis,vis+'_mod',solint=5)
             os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
@@ -733,12 +737,13 @@ if __name__ == "__main__":
 
     parser.add_argument('vis', type=str, help='Measurement set for which to run skynet')
     parser.add_argument('--self_cal_script',type=str, help='Self-calibration script to use')
-    parser.add_argument('--mode',type=int, help='Mode to use')
-    parser.add_argument('--closure_tels',type=str,help='Stations to use for calculating closure phase.')
-    parser.add_argument('--cthr',type=float,help='Threshold for closure phase scatter.')
-    parser.add_argument('--model_only',type=int,help='set to 1 to get model only')
+    parser.add_argument('--firstnpy',type=str,help='absolute path of first_2008.simple.npy')
+    parser.add_argument('--mode',type=int, help='Mode to use', default=3)
+    parser.add_argument('--closure_tels',type=str,help='Stations to use for calculating closure phase.', default='ST001;DE601;DE605' )
+    parser.add_argument('--cthr',type=float,help='Threshold for closure phase scatter.', default=1.6)
+    parser.add_argument('--model_only',type=int,help='set to 1 to get model only',default=0)
 
     args = parser.parse_args()
 
-    main( args.vis, args.self_cal_script, mode=args.mode, closure_tels=args.closure_tels, cthr=args.cthr, model_only=args.model_only )
+    main( args.vis, args.self_cal_script, args.firstnpy, mode=args.mode, closure_tels=args.closure_tels, cthr=args.cthr, model_only=args.model_only )
 
