@@ -55,7 +55,7 @@ def closure(vis, tel, lastv=-1):
         os.system('rm chan_width')
         chan_width = np.float(lines[-1].split(',')[0].strip('['))
 	if chan_width < 195312:
-	    nchans = np.ceiling(195312/chan_width)
+	    nchans = np.ceil(195312/chan_width)
         else:
 	    nchans = 1
 
