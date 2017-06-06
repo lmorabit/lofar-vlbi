@@ -98,7 +98,7 @@ def main():
 
     ## check if MFS needs to be turned on
     if bandwidth > freq_range:
-        ss = "wsclean -datacolumn %s -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s-CLN %s"%(data_col,imsize,imsize,imtrim,imtrim,nchan,tgtname,msname)
+        ss = "wsclean -datacolumn %s -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s-CLN %s"%(data_col,imsize,imsize,imtrim,imtrim,nchan,tgtname,msname)
     else:
         ss = "wsclean -datacolumn %s -scale 0.05asec -size %i %i -trim %i %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s-CLN %s"%(data_col,imsize,imsize,imtrim,imtrim,tgtname,msname)
 
@@ -123,6 +123,7 @@ def main():
             ## probably want to change the bl-length and solint for more iterations
             writePhaseOnlyParset( solint=solints[ii] )
             ss = "NDPPP phaseonly.parset msin=%s gaincal.parmdb=%s/phaseonly-%s gaincal.blrange=[%i,%i] >> ndppp_%s.log 2>&1"%(msname,msname,str(ii+1),bl_min[ii],bl_max[ii],tgtname)
+	    print ss
             os.system( ss )
             imagename = "%s-CLN-PO%s"%(tgtname,str(ii+1))
             if bandwidth > freq_range:
