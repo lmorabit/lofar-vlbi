@@ -39,29 +39,6 @@ def closure(vis, tel, lastv=-1):
         print 'Did not find one or more of the telescopes'
         exit()
 
-    # get the bandwidth
-    command = 'taql \'select TOTAL_BANDWIDTH from %s/SPECTRAL_WINDOW\' >total_bandwidth'%vis
-    os.system(command)
-    with open('total_bandwidth') as f:
-	lines = f.readlines()
-    f.close()
-    os.system('rm total_bandwidth')
-    bandwidth = np.float(lines[-1].rstrip('\n'))
-    if bandwidth > 2e6:
-	# get channel width
-        command = 'taql \'select CHAN_WIDTH from %s/SPECTRAL_WINDOW\' >chan_width'%vis
-	os.system(command)
-        with open('chan_width') as f:
-            lines = f.readlines()
-        f.close()
-        os.system('rm chan_width')
-        chan_width = np.float(lines[-1].split(',')[0].strip('['))
-	if chan_width < 195312:
-	    nchans = np.ceil(195312/chan_width)
-        else:
-	    nchans = 1
-
-
     # Make three reference MSs with pointers
     os.system('rm -fr closure_temp*.ms')
     command = 'taql \'select from %s where ANTENNA1==%d and ANTENNA2==%d giving closure_temp1.ms\'' %(vis,idx_tels[0],idx_tels[1])
@@ -77,7 +54,9 @@ def closure(vis, tel, lastv=-1):
     ut = t1.select('TIME')
     spw = t1.select('DATA_DESC_ID')
     d1,d2,d3 = t1.select('DATA'), t2.select('DATA'), t3.select('DATA')
-    cp,a1,a2,a3 = get_amp_clph(d1[:lastv],d2[:lastv],d3[:lastv],spw[:lastv])
+    nchans = np.int( len( d1[0]['DATA'] ) )
+    #cp,a1,a2,a3 = get_amp_clph(d1[:lastv],d2[:lastv],d3[:lastv],spw[:lastv],nchans=np.int(nchans))
+    cp = get_amp_clph(d1[:lastv],d2[:lastv],d3[:lastv],spw[:lastv],nchans=np.int(nchans))
     # mask wrapped values
     # unwrap phases: it will correct an array of phases modulo 2pi such that all jumps are less than or equal to pi
     cp = np.unwrap(cp)
@@ -97,14 +76,14 @@ def get_amp_clph(d1,d2,d3,spw,nspw=0,pol=0,nchans=1):
     for i in range(len(d1)):
         if spw[i].values()[0] != nspw:
             continue
-        vis1,vis2,vis3 = d1[i]['DATA'][0:1,pol],d2[i]['DATA'][0:1,pol],d3[i]['DATA'][0:1,pol]
-        a1 = np.append(a1,abs(vis1).sum()/len(vis1))
-        a2 = np.append(a2,abs(vis2).sum()/len(vis2))
-        a3 = np.append(a3,abs(vis3).sum()/len(vis3))
+        vis1,vis2,vis3 = d1[i]['DATA'][0:nchans,pol],d2[i]['DATA'][0:nchans,pol],d3[i]['DATA'][0:nchans,pol]
+        #a1 = np.append(a1,abs(vis1).sum()/len(vis1))
+        #a2 = np.append(a2,abs(vis2).sum()/len(vis2))
+        #a3 = np.append(a3,abs(vis3).sum()/len(vis3))
         p1 = np.append(p1,np.arctan2 (vis1.sum().imag,vis1.sum().real))
         p2 = np.append(p2,np.arctan2 (vis2.sum().imag,vis2.sum().real))
         p3 = np.append(p3,np.arctan2 (vis3.sum().imag,vis3.sum().real))
-    return p1+p2-p3,a1,a2,a3
+    return p1+p2-p3 #,a1,a2,a3
 
 
 def main(ms_input, station_input):
