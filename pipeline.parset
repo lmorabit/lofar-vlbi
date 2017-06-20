@@ -362,7 +362,7 @@ createmap_plots.control.type            =   createMapfile
 createmap_plots.control.method          =   mapfile_from_folder
 createmap_plots.control.mapfile_dir     =   input.output.mapfile_dir
 createmap_plots.control.filename        =   createmap_plots.mapfile
-createmap_plots.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_plots.control.folder          =   {{ job_directory }}
 createmap_plots.control.pattern         =   *.png
 
 # create the results mapfile 
