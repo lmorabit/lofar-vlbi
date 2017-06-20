@@ -389,7 +389,7 @@ closure_phase_file.control.type	  	  = createMapfile
 closure_phase_file.control.method	  = mapfile_from_folder
 closure_phase_file.control.mapfile_dir 	  = input.output.mapfile_dir
 closure_phase_file.control.filename	  = closure_phase_file.mapfile
-closure_phase_file.control.folder	  = input.output.working_directory/input.output.job_name
+closure_phase_file.control.folder	  = {{ job_directory }}
 closure_phase_file.control.pattern	  = closure*.txt
 
 # automatically find the best calibrator 
@@ -435,7 +435,7 @@ calib_cal.control.error_tolerance  =  {{ error_tolerance }}
 calib_cal.argument.force           =  True
 calib_cal.argument.observation     =  find_delay_cal.output.mapfile  # mapfile for the NDPPP-ed calibrator data
 calib_cal.argument.parset          =  {{ calib_cal_parset }}
-calib_cal.argument.catalog         =  delay_cal_model_map.output.FilePath
+calib_cal.argument.catalog         =  delay_cal_model_map.output.mapfile
 
 # import all instrument tables into one LoSoTo file
 h5imp_cal.control.type            =  pythonplugin
@@ -490,7 +490,7 @@ createmap_cal_pngs.control.type            =   createMapfile
 createmap_cal_pngs.control.method          =   mapfile_from_folder
 createmap_cal_pngs.control.mapfile_dir     =   input.output.mapfile_dir
 createmap_cal_pngs.control.filename        =   diagnostic_pngs.mapfile
-createmap_cal_pngs.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_cal_pngs.control.folder          =   {{ job_directory }}
 createmap_cal_pngs.control.pattern         =   *.png
 
 # copy the diagnostic pngs to the inspection directory
@@ -508,7 +508,7 @@ createmap_cal_txts.control.type            =   createMapfile
 createmap_cal_txts.control.method          =   mapfile_from_folder
 createmap_cal_txts.control.mapfile_dir     =   input.output.mapfile_dir
 createmap_cal_txts.control.filename        =   diagnostic_txts.mapfile
-createmap_cal_txts.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_cal_txts.control.folder          =   {{ job_directory }}
 createmap_cal_txts.control.pattern         =   *.txt
 
 # copy the diagnostic txts to the inspection directory
@@ -531,7 +531,7 @@ createmap_cal_npys.control.type            =   createMapfile
 createmap_cal_npys.control.method          =   mapfile_from_folder
 createmap_cal_npys.control.mapfile_dir     =   input.output.mapfile_dir
 createmap_cal_npys.control.filename        =   cal_value_npys.mapfile
-createmap_cal_npys.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_cal_npys.control.folder          =   {{ job_directory }} 
 createmap_cal_npys.control.pattern         =   *.npy
 
 # copy the cal-value npys to the cal-values directory
@@ -643,7 +643,7 @@ createmap_fits.control.type            =   createMapfile
 createmap_fits.control.method          =   mapfile_from_folder
 createmap_fits.control.mapfile_dir     =   input.output.mapfile_dir
 createmap_fits.control.filename        =   createmap_fits.mapfile
-createmap_fits.control.folder          =   input.output.working_directory/input.output.job_name
+createmap_fits.control.folder          =   {{ job_directory }} 
 createmap_fits.control.pattern         =   *.fits
 
 # move to the calibrator results directory
