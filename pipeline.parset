@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 # These are the steps to run.
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, calib_cal_parmmap, calib_cal_sourcemap, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'fitclock' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 
 #createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
@@ -30,6 +30,8 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 # location of FIRST numpy array for model_engine
 ! firstnpy_file			 = /data/scratch/lb_bw/pipeline_test/long_baseline_pipeline/data/first_2008.simple.npy
 
+# delay calibration parset -- use prefactor. needs to be done with bbs
+! delay_cal_parset 		 = /home/morabito/software/prefactor/parsets/calibcal.parset
 
 #! manual_targets                 = True                                                     # Set to true if you want to specify a target list manually, otherwise targets selected using LOBOS                        
 #! manual_target_file             = /data/scratch/lb_bw/pipeline_test/lbcs_manual_target_list.txt          # only used if manual targets set to true
@@ -409,42 +411,31 @@ delay_cal_model.argument.model_only	  = 1
 delay_cal_model.argument.firstnpy	  = {{ firstnpy_file }}
 
 # generate mapfile with the parmDB names to be used in the gsmcal steps
-calib_cal_parmmap.control.kind               =  plugin
-calib_cal_parmmap.control.type               =  createMapfile
-calib_cal_parmmap.control.method             =  add_suffix_to_file
-calib_cal_parmmap.control.mapfile_in         =  find_delay_cal.output.mapfile
-calib_cal_parmmap.control.add_suffix_to_file =  /instrument
-calib_cal_parmmap.control.mapfile_dir        =  input.output.mapfile_dir
-calib_cal_parmmap.control.filename 	     =  calib_cal_parmdbs.mapfile
+#calib_cal_parmmap.control.kind               =  plugin
+#calib_cal_parmmap.control.type               =  createMapfile
+#calib_cal_parmmap.control.method             =  add_suffix_to_file
+#calib_cal_parmmap.control.mapfile_in         =  find_delay_cal.output.mapfile
+#calib_cal_parmmap.control.add_suffix_to_file =  /instrument
+#calib_cal_parmmap.control.mapfile_dir        =  input.output.mapfile_dir
+#calib_cal_parmmap.control.filename 	     =  calib_cal_parmdbs.mapfile
 
 # generate mapfile with the parmDB names to be used in the gsmcal steps
-calib_cal_sourcemap.control.kind               =  plugin
-calib_cal_sourcemap.control.type               =  createMapfile
-calib_cal_sourcemap.control.method             =  add_suffix_to_file
-calib_cal_sourcemap.control.mapfile_in         =  find_delay_cal.output.mapfile
-calib_cal_sourcemap.control.add_suffix_to_file =  /sky
-calib_cal_sourcemap.control.mapfile_dir        =  input.output.mapfile_dir
-calib_cal_sourcemap.control.filename 	       =  calib_cal_sourcemap.mapfile
-
+delay_cal_model_map.control.kind               =  plugin
+delay_cal_model_map.control.type               =  createMapfile
+delay_cal_model_map.control.method             =  add_suffix_to_file
+delay_cal_model_map.control.mapfile_in         =  find_delay_cal.output.mapfile
+delay_cal_model_map.control.add_suffix_to_file =  /skymodel
+delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
+delay_cal_model_map.control.filename 	       =  delay_cal_model_map.mapfile
 
 # generate gain solutions for clock/tec separation -- using NDPPP
-calib_cal.control.type                    =   dppp
-calib_cal.control.max_per_node            =   {{ num_proc_per_node_limit }}
-calib_cal.control.error_tolerance         =   {{ error_tolerance }}
-calib_cal.argument.numthreads             =   {{ max_dppp_threads }}
-calib_cal.argument.msin                   =   find_delay_cal.output.mapfile    # The input data.
-calib_cal.argument.msin.datacolumn        =   DATA
-calib_cal.argument.msin.baseline          =   *&
-calib_cal.argument.msout.datacolumn       =   DATA
-calib_cal.argument.msout.writefullresflag =   False
-calib_cal.argument.steps                  =   [gaincal]
-calib_cal.argument.gaincal.type           =   gaincal
-calib_cal.argument.gaincal.caltype	  =   diagonal
-calib_cal.argument.gaincal.parmdb	  =   calib_cal_parmmap.output.mapfile
-calib_cal.argument.gaincal.maxiter	  =   500
-calib_cal.argument.gaincal.nchan	  =   1
-calib_cal.argument.gaincal.solint	  =   1
-calib_cal.argument.gaincal.sourcedb	  =   calib_cal_sourcemap.output.mapfile
+calib_cal.control.type             =  python-calibrate-stand-alone
+calib_cal.control.max_per_node     =  {{ num_proc_per_node }}
+calib_cal.control.error_tolerance  =  {{ error_tolerance }}
+calib_cal.argument.force           =  True
+calib_cal.argument.observation     =  find_delay_cal.output.mapfile  # mapfile for the NDPPP-ed calibrator data
+calib_cal.argument.parset          =  {{ calib_cal_parset }}
+calib_cal.argument.catalog         =  delay_cal_model_map.output.FilePath
 
 # import all instrument tables into one LoSoTo file
 h5imp_cal.control.type            =  pythonplugin
