@@ -82,6 +82,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! fitclock_script		 = /data/scratch/lb_bw/prefactor/scripts/fit_clocktec_initialguess_losoto.py
 ! fitamps_script		 = /data/scratch/lb_bw/prefactor/scripts/amplitudes_losoto_3.py
 ! plotsols_script		 = /data/scratch/lb_bw/prefactor/scripts/examine_npys.py
+! sort_concat_script		 = /data/scratch/lb_bw/prefactor/scripts/sort_times_into_freqGroups.py
 
 
 
@@ -282,7 +283,7 @@ get_lbcs_catalogue.argument.Radius              = 1.5
 calibrator_loop1.control.kind                    =   loop
 calibrator_loop1.control.type                    =   conditional
 calibrator_loop1.control.loopcount               =   100
-calibrator_loop1.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, dppp_concat, closure_phase ]
+calibrator_loop1.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, closure_phase ]
 
 # Initialise file with all directions
 prep_dirs.control.kind                    =   plugin
@@ -332,10 +333,27 @@ make_concatmap.control.mapfile_in         =  dppp_phaseup.output.mapfile
 make_concatmap.control.mapfile_dir        =  input.output.mapfile_dir
 make_concatmap.control.filename           =  make_concatmap.mapfile
 
+sort_concatmap.control.type               =   pythonplugin  
+sort_concatmap.control.executable         =   {{ sort_concat_script }}
+sort_concatmap.argument.flags             =   [make_concatmap.output.mapfile]
+sort_concatmap.argument.filename          =   sort_concatmap
+sort_concatmap.argument.mapfile_dir       =   input.output.mapfile_dir
+sort_concatmap.argument.target_path       =   {{ job_directory }}
+sort_concatmap.argument.NDPPPfill         =   True
+sort_concatmap.argument.stepname          =   dpppconcat
+sort_concatmap.argument.firstSB           =   None
+
+# convert the output of sort_concatmap into usable mapfiles
+do_sortmap_maps.control.kind              =  plugin
+do_sortmap_maps.control.type              =  mapfilenamesFromMapfiles
+do_sortmap_maps.control.mapfile_groupmap  =  sort_concatmap.output.groupmapfile.mapfile
+do_sortmap_maps.control.mapfile_datamap   =  sort_concatmap.output.mapfile.mapfile
+
 # concatenate all of the files into one
 dppp_concat.control.type                  =   dppp
 dppp_concat.control.max_per_node          =   {{ num_proc_per_node }}
-dppp_concat.argument.msin         	  =   make_concatmap.output.mapfile  # use the mapfile from the make_concatmap step
+dppp_concat.argument.msin         	  =   do_sortmap_maps.output.datamap
+dppp_concat.argument.msout		  =   do_sortmap_maps.output.groupmap
 dppp_concat.argument.msin.datacolumn      =   DATA
 dppp_concat.argument.msin.missingdata     =   True    #\ these two lines will make DPPP generate dummy data when
 dppp_concat.argument.msin.orderms         =   False   #/ concatenating data
@@ -420,13 +438,13 @@ delay_cal_model.argument.firstnpy	  = {{ firstnpy_file }}
 #calib_cal_parmmap.control.filename 	     =  calib_cal_parmdbs.mapfile
 
 # generate mapfile with the parmDB names to be used in the gsmcal steps
-delay_cal_model_map.control.kind               =  plugin
-delay_cal_model_map.control.type               =  createMapfile
-delay_cal_model_map.control.method             =  add_suffix_to_file
-delay_cal_model_map.control.mapfile_in         =  find_delay_cal.output.mapfile
-delay_cal_model_map.control.add_suffix_to_file =  /skymodel
-delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
-delay_cal_model_map.control.filename 	       =  delay_cal_model_map.mapfile
+#delay_cal_model_map.control.kind               =  plugin
+#delay_cal_model_map.control.type               =  createMapfile
+#delay_cal_model_map.control.method             =  add_suffix_to_file
+#delay_cal_model_map.control.mapfile_in         =  find_delay_cal.output.mapfile
+#delay_cal_model_map.control.add_suffix_to_file =  /skymodel
+#delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
+#delay_cal_model_map.control.filename 	       =  delay_cal_model_map.mapfile
 
 # generate gain solutions for clock/tec separation -- using NDPPP
 calib_cal.control.type             =  python-calibrate-stand-alone
