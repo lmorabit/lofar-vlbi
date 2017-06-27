@@ -283,7 +283,7 @@ get_lbcs_catalogue.argument.Radius              = 1.5
 calibrator_loop1.control.kind                    =   loop
 calibrator_loop1.control.type                    =   conditional
 calibrator_loop1.control.loopcount               =   100
-calibrator_loop1.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, closure_phase ]
+calibrator_loop1.control.loopsteps               =   [ prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, closure_phase, delete_intermediate_files ]
 
 # Initialise file with all directions
 prep_dirs.control.kind                    =   plugin
@@ -366,6 +366,13 @@ closure_phase.control.type                =   pythonplugin
 closure_phase.control.executable          =   {{ closure_phase_script }}
 closure_phase.argument.flags              =   [dppp_concat.output.mapfile, {{ closure_phase_stations }}]
 
+# clean up the intermediate files
+delete_intermediate_files.kind		  =   recipe
+delete_intermediate_files.type		  =   executable_args
+delete_intermediate_files.executable	  =   /bin/rm
+delete_intermediate_files.mapfile_in	  =   make_concatmap.output.mpafile
+delete_intermediate_files.inputkey	  =   concatfiles
+delete_intermediate_files.arguments	  =   [-r,concatfiles]
 
 #####################################################################################################################################################################
 #
