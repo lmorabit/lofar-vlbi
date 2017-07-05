@@ -342,6 +342,7 @@ sort_concatmap.argument.target_path       = {{ job_directory }}
 sort_concatmap.argument.NDPPPfill         = True
 sort_concatmap.argument.stepname          = dpppconcat
 sort_concatmap.argument.firstSB           = None
+sort_concatmap.argument.truncateLastSBs	  = False
 
 # convert the output of sort_concatmap into usable mapfile
 do_sortmap_maps.control.kind              =  plugin
@@ -352,12 +353,16 @@ do_sortmap_maps.control.mapfile_datamap   =  sort_concatmap.output.mapfile.mapfi
 # concatenate all measurement sets into one
 dppp_concat.control.type                  = dppp
 dppp_concat.control.max_per_node          = {{ num_proc_per_node }}
-dppp_concat.argument.msin         	  = do_sortmap_maps.output.datamap
-dppp_concat.argument.msout		  = do_sortmap_maps.output.groupmap
+dppp_concat.control.error_tolerance       = {{ error_tolerance }}
+dppp_concat.control.mapfile_out           = do_sortmap_maps.output.groupmap
+dppp_concat.control.mapfiles_in           = [do_sortmap_maps.output.datamap]
+dppp_concat.control.inputkey              = msin
 dppp_concat.argument.msin.datacolumn      = DATA
-dppp_concat.argument.msin.missingdata     = True  
-dppp_concat.argument.msin.orderms         = False 
+dppp_concat.argument.msin.missingdata     = True
+dppp_concat.argument.msin.orderms         = False
 dppp_concat.argument.msout.datacolumn     = DATA
+dppp_concat.argument.msout.writefullresflag = False
+dppp_concat.argument.msout.overwrite      = True
 dppp_concat.argument.steps                = []
 dppp_concat.argument.numthreads           = {{ max_dppp_threads }} 
 
