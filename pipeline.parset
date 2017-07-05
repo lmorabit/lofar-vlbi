@@ -372,12 +372,12 @@ closure_phase.control.executable          = {{ closure_phase_script }}
 closure_phase.argument.flags              = [dppp_concat.output.mapfile, {{ closure_phase_stations }}]
 
 # clean up the individual subband files -- keep only the concatenated calibrator data
-delete_intermediate_files.kind		  = recipe
-delete_intermediate_files.type		  = executable_args
-delete_intermediate_files.executable	  = /bin/rm
-delete_intermediate_files.mapfile_in	  = make_concatmap.output.mpafile
-delete_intermediate_files.inputkey	  = concatfiles
-delete_intermediate_files.arguments	  = [-r,concatfiles]
+delete_intermediate_files.control.kind		  = recipe
+delete_intermediate_files.control.type		  = executable_args
+delete_intermediate_files.control.executable	  = /bin/rm
+delete_intermediate_files.control.mapfile_in	  = dppp_phaseup.output.mapfile
+delete_intermediate_files.control.inputkey	  = tempfiles
+delete_intermediate_files.control.arguments	  = [-r,tempfiles]
 
 
 ##################################################################
