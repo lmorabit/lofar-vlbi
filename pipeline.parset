@@ -4,9 +4,9 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 ## STEPS TO RUN
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, mv_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'fitclock' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
-#createmap_plots, mv_closure_phase_png, get_imaging_catalogue, imaging_loop ]
+#createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
 ###########################################################################
 ## PARAMETER SETUP
@@ -404,12 +404,12 @@ destmap_plots.control.mapfile_in      =  createmap_plots.output.mapfile
 destmap_plots.control.target_dir      =  {{ inspection_directory }}
 
 # move the inspection plots
-mv_closure_phase_png.control.kind         = recipe
-mv_closure_phase_png.control.type         = executable_args
-mv_closure_phase_png.control.executable   = /bin/mv
-mv_closure_phase_png.control.mapfiles_in  = [createmap_plots.output.mapfile,destmap_plots.output.mapfile]
-mv_closure_phase_png.control.inputkeys    = [source,destination]
-mv_closure_phase_png.control.arguments    = [source,destination]
+cp_closure_phase_png.control.kind         = recipe
+cp_closure_phase_png.control.type         = executable_args
+cp_closure_phase_png.control.executable   = /bin/cp
+cp_closure_phase_png.control.mapfiles_in  = [createmap_plots.output.mapfile,destmap_plots.output.mapfile]
+cp_closure_phase_png.control.inputkeys    = [source,destination]
+cp_closure_phase_png.control.arguments    = [source,destination]
 
 # get a mapfile of the closure phase file
 closure_phase_file.control.kind 	  = plugin
@@ -600,7 +600,7 @@ ndppp_apply_delay.argument.applyTec.updateweights      = false
 #calibrator_loop2.control.kind                    = loop
 #calibrator_loop2.control.type                    = conditional
 #calibrator_loop2.control.loopcount               = 100
-#calibrator_loop2.control.loopsteps               = [ run_self_cal ] ## , make_cal_results_mapfile, move_cal_results ]
+#calibrator_loop2.control.loopsteps               = [ run_self_cal ] ## , make_cal_results_mapfile, cp_cal_results ]
 
 # Initialise file with all directions  -- THIS NEEDS TO BE CHANGED
 #prep_dirs.control.kind                    = plugin
@@ -628,13 +628,13 @@ ndppp_apply_delay.argument.applyTec.updateweights      = false
 #make_cal_results_mapfile.control.make_target_dir =  True
 
 # move the final measurement set to the calibrator results directory  (probably not till after the phase-only calibrations)
-#move_cal_results.control.kind               =  recipe
-#move_cal_results.control.type               =  executable_args
-#move_cal_results.control.executable         =  /bin/mv
-#move_cal_results.control.max_per_node       =  {{ num_proc_per_node_limit }}
-#move_cal_results.control.mapfiles_in        =  [dppp_concat.output.mapfile,make_results_mapfile.output.mapfile]
-#move_cal_results.control.inputkeys          =  [source,destination]
-#move_cal_results.control.arguments          =  [source,destination]
+#cp_cal_results.control.kind               =  recipe
+#cp_cal_results.control.type               =  executable_args
+#cp_cal_results.control.executable         =  /bin/cp
+#cp_cal_results.control.max_per_node       =  {{ num_proc_per_node_limit }}
+#cp_cal_results.control.mapfiles_in        =  [dppp_concat.output.mapfile,make_results_mapfile.output.mapfile]
+#cp_cal_results.control.inputkeys          =  [source,destination]
+#cp_cal_results.control.arguments          =  [source,destination]
 
 # get a list of final images
 createmap_fits.control.kind            = plugin
@@ -646,13 +646,13 @@ createmap_fits.control.folder          = {{ job_directory }}
 createmap_fits.control.pattern         = *.fits
 
 # move to the calibrator results directory
-mv_fits.kind                	       	= recipe
-mv_fits.type                 	       	= executable_args
-mv_fits.control.executable   		= /bin/mv
-mv_fits.control.max_per_node 		= {{ num_proc_per_node }}
-mv_fits.control.mapfile_in   		= createmap_fits.output.mapfile
-mv_fits.control.inputkey     		= source
-mv_fits.control.arguments     		= [source,{{ calibrator_results_directory }}]
+cp_fits.kind                	       	= recipe
+cp_fits.type                 	       	= executable_args
+cp_fits.control.executable   		= /bin/cp
+cp_fits.control.max_per_node 		= {{ num_proc_per_node }}
+cp_fits.control.mapfile_in   		= createmap_fits.output.mapfile
+cp_fits.control.inputkey     		= source
+cp_fits.control.arguments     		= [source,{{ calibrator_results_directory }}]
 
 ##################################################################
 #                                                               ##
@@ -758,13 +758,13 @@ dppp_concat_img.argument.numthreads           = {{ max_dppp_threads }}  ## this 
 #make_results_mapfile.control.new_suffix      =  .pre-cal.ms
 
 # move the results to where we want them
-#mv_results.control.kind               =  recipe
-#mv_results.control.type               =  executable_args
-#mv_results.control.executable         =  /bin/mv
-#mv_results.control.max_per_node       =  {{ num_proc_per_node_limit }}
-#mv_results.control.mapfiles_in        =  [check_unflagged_map.output.mapfile,make_results_mapfile.output.mapfile]
-#mv_results.control.inputkeys          =  [source,destination]
-#mv_results.control.arguments          =  [source,destination]
+#cp_results.control.kind               =  recipe
+#cp_results.control.type               =  executable_args
+#cp_results.control.executable         =  /bin/cp
+#cp_results.control.max_per_node       =  {{ num_proc_per_node_limit }}
+#cp_results.control.mapfiles_in        =  [check_unflagged_map.output.mapfile,make_results_mapfile.output.mapfile]
+#cp_results.control.inputkeys          =  [source,destination]
+#cp_results.control.arguments          =  [source,destination]
 
 ##################################################################
 #                                                               ##
