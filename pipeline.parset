@@ -438,6 +438,15 @@ delay_cal_model.argument.cthr		  = 2.0 ## until using data that isn't test data
 delay_cal_model.argument.model_only	  = 1
 delay_cal_model.argument.firstnpy	  = {{ firstnpy_file }}
 
+# generate mapfile with the parmDB names to be used in the gsmcal steps
+delay_cal_model_map.control.kind               =  plugin
+delay_cal_model_map.control.type               =  createMapfile
+delay_cal_model_map.control.method             =  add_suffix_to_file
+delay_cal_model_map.control.mapfile_in         =  find_delay_cal.output.mapfile
+delay_cal_model_map.control.add_suffix_to_file =  /skymodel
+delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
+delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
+
 # generate gain solutions for clock/tec separation using BBS
 calib_cal.control.type             =  python-calibrate-stand-alone
 calib_cal.control.max_per_node     =  {{ num_proc_per_node }}
