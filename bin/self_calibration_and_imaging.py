@@ -68,8 +68,10 @@ def main():
     ss = 'wsclean --version > wsclean.version'
     os.system( ss )
     with open( 'wsclean.version', 'r' ) as f:
-        lines = readlines(f)
+        lines = f.readlines()
     f.close()
+    ss = 'rm wsclean.version'
+    os.system( ss )
 
     wsclean_version = lines[1].split()[2]
     if wsclean_version == '2.3':
