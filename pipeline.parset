@@ -4,7 +4,8 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 ## STEPS TO RUN
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target , ndppp_prep_target , transfer_amp_clock_sols, is_amp_gains, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, transfer_amp_clock_sols ]
+#, is_amp_gains, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'fitclock' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 #createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -130,36 +131,8 @@ createmap_target.control.filename         = createmap_target.mapfile
 createmap_target.control.folder           = {{ target_input_path }}
 createmap_target.control.pattern          = {{ target_input_pattern }}
 
-# run NDPPP on the target data
-ndppp_prep_target.control.type                    = dppp
-ndppp_prep_target.control.max_per_node            = {{ num_proc_per_node_limit }}
-ndppp_prep_target.control.error_tolerance         = {{ error_tolerance }}
-ndppp_prep_target.argument.numthreads             = {{ max_dppp_threads }}
-ndppp_prep_target.argument.msin                   = createmap_target.output.mapfile  
-ndppp_prep_target.argument.msin.datacolumn        = DATA
-ndppp_prep_target.argument.msin.baseline          = *&
-ndppp_prep_target.argument.msout.datacolumn       = DATA
-ndppp_prep_target.argument.msout.writefullresflag = False
-ndppp_prep_target.argument.steps                  = [flag,flagamp]
-ndppp_prep_target.argument.flag.type              = preflagger
-ndppp_prep_target.argument.flag.baseline          = {{ flag_baselines }}
-ndppp_prep_target.argument.flagamp.type           = preflagger
-ndppp_prep_target.argument.flagamp.amplmin        = 1e-30
-ndppp_prep_target.argument.doflagging.type        = aoflagger
-ndppp_prep_target.argument.doflagging.strategy    = {{ lofar_directory }}/share/rfistrategies/HBAdefault
-
-# transfer prefactor solutions to MSs
-transfer_amp_clock_sols.control.type                 = pythonplugin  
-transfer_amp_clock_sols.control.executable           = {{ transfer_amp_clock_sols_script }}
-transfer_amp_clock_sols.argument.msname              = ndppp_prep_target.output.mapfile
-transfer_amp_clock_sols.argument.npdir               = {{ transfer_amp_clock_sols_store }}
-transfer_amp_clock_sols.store_basename               = {{ amp_sols_basename }}
-transfer_amp_clock_sols.argument.output              = outputkey
-
-# scale international amplitudes in solutions
-is_amp_gains.control.type                            = pythonplugin  
-is_amp_gains.control.executable                      = {{ update_ISgains_script }}
-is_amp_gains.argument.flags                          = [ transfer_amp_clock_sols.output.mapfile ]
+## at this point, prepare the solution tables, which will avoid processing subbands 
+## for which no solutions are present. 
 
 # create a mapfile of the phase solution measurement sets
 createmap_ps.control.kind                            = plugin
@@ -213,7 +186,39 @@ match_files.control.type                             = FindCorrespondingMSnew
 match_files.control.mapfile_dir                      = input.output.mapfile_dir
 match_files.control.filename                         = match_files.mapfile
 match_files.control.mapfile_grpd                     = createmap_pstwo.output.mapfile
-match_files.control.mapfile_ms                       = ndppp_prep_target.output.mapfile
+match_files.control.mapfile_ms                       = createmap_target.output.mapfile
+
+# run NDPPP on the target data
+ndppp_prep_target.control.type                    = dppp
+ndppp_prep_target.control.max_per_node            = {{ num_proc_per_node_limit }}
+ndppp_prep_target.control.error_tolerance         = {{ error_tolerance }}
+ndppp_prep_target.argument.numthreads             = {{ max_dppp_threads }}
+ndppp_prep_target.argument.msin                   = match_files.output.mapfile  
+ndppp_prep_target.argument.msin.datacolumn        = DATA
+ndppp_prep_target.argument.msin.baseline          = *&
+ndppp_prep_target.argument.msout.datacolumn       = DATA
+ndppp_prep_target.argument.msout.writefullresflag = False
+ndppp_prep_target.argument.steps                  = [flag,flagamp]
+ndppp_prep_target.argument.flag.type              = preflagger
+ndppp_prep_target.argument.flag.baseline          = {{ flag_baselines }}
+ndppp_prep_target.argument.flagamp.type           = preflagger
+ndppp_prep_target.argument.flagamp.amplmin        = 1e-30
+#ndppp_prep_target.argument.doflagging.type        = aoflagger
+#ndppp_prep_target.argument.doflagging.strategy    = {{ lofar_directory }}/share/rfistrategies/HBAdefault
+
+# create a new parmdb for transferring amplitude and clock solutions
+transfer_amp_clock_sols.control.type                 = pythonplugin  
+transfer_amp_clock_sols.control.executable           = {{ transfer_amp_clock_sols_script }}
+transfer_amp_clock_sols.argument.msname              = ndppp_prep_target.output.mapfile
+transfer_amp_clock_sols.argument.npdir               = {{ transfer_amp_clock_sols_store }}
+transfer_amp_clock_sols.store_basename               = {{ amp_sols_basename }}
+transfer_amp_clock_sols.argument.output              = outputkey
+
+
+# scale international amplitudes in solutions
+is_amp_gains.control.type                            = pythonplugin  
+is_amp_gains.control.executable                      = {{ update_ISgains_script }}
+is_amp_gains.argument.flags                          = [ transfer_amp_clock_sols.output.mapfile ]
 
 # add international stations to phase solutions
 is_add_phase.control.type                            = pythonplugin  
@@ -227,7 +232,7 @@ map_transfer_amp_clock_sols.control.kind	     = plugin
 map_transfer_amp_clock_sols.control.type	     = makeResultsMapfile
 map_transfer_amp_clock_sols.control.mapfile_dir      = input.output.mapfile_dir
 map_transfer_amp_clock_sols.control.filename         = map_transfer_amp_clock_sols.mapfile
-map_transfer_amp_clock_sols.control.mapfile_in       = match_files.output.mapfile
+map_transfer_amp_clock_sols.control.mapfile_in       = ndppp_prep_target.output.mapfile
 map_transfer_amp_clock_sols.control.target_dir       = {{ job_directory }}
 map_transfer_amp_clock_sols.control.new_suffix       = .transfer_amp_clock_sols
 
