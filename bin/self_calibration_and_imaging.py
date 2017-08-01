@@ -64,6 +64,23 @@ def main():
         ## split into channels
         nchan = int( np.ceil( bandwidth / freq_range ) )
 
+    ## get wsclean version -- there are differences between 2.3 and 2.4 that cause it to fail.
+    ss = 'wsclean --version > wsclean.version'
+    os.system( ss )
+    with open( 'wsclean.version', 'r' ) as f:
+        lines = f.readlines()
+    f.close()
+    ss = 'rm wsclean.version'
+    os.system( ss )
+
+    wsclean_version = lines[1].split()[2]
+    if wsclean_version == '2.3':
+	rms_bkg = '-rms-background-window'
+        save_cc = '-save-component-list'
+    else:
+	rms_bkg = '-local-rms'
+	save_cc = '-save-source-list'
+
     ## INITIAL DIRTY IMAGES AT THREE DIFFERENT SCALES
     print "Inverting visibilities at 3 scales to check for signal."
     ## wsclean can take a list of measurement sets -- they don't need to be concatenated prior to running wsclean
@@ -83,7 +100,7 @@ def main():
 	    imsize = sizes[ii]*2
 	    imtrim = sizes[ii]
         ## run wsclean
-	    ss = "wsclean -datacolumn DATA -make-psf -scale %s -size %i %i -trim %i %i -maxuv-l %i -reorder -name %s-%sL-NOCLN %s"%(scale,imsize,imsize,imtrim,imtrim,maxuv,tgtname,str(maxuv),msname)
+	    ss = "wsclean -datacolumn %s -make-psf -scale %s -size %i %i -trim %i %i -maxuv-l %i -reorder -name %s-%sL-NOCLN %s"%(data_col,scale,imsize,imsize,imtrim,imtrim,maxuv,tgtname,str(maxuv),msname)
 	    os.system( ss )
 
     ## FIRST CLEAN IMAGE
@@ -98,9 +115,9 @@ def main():
 
     ## check if MFS needs to be turned on
     if bandwidth > freq_range:
-        ss = "wsclean -datacolumn %s -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol 2 -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s-CLN %s"%(data_col,imsize,imsize,imtrim,imtrim,nchan,tgtname,msname)
+        ss = "wsclean -datacolumn %s -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol 2 %s -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 %s -reorder -name %s-CLN %s"%(data_col,imsize,imsize,imtrim,imtrim,nchan,rms_bkg,save_cc,tgtname,msname)
     else:
-        ss = "wsclean -datacolumn %s -scale 0.05asec -size %i %i -trim %i %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s-CLN %s"%(data_col,imsize,imsize,imtrim,imtrim,tgtname,msname)
+        ss = "wsclean -datacolumn %s -scale 0.05asec -size %i %i -trim %i %i %s -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 %s -reorder -name %s-CLN %s"%(data_col,imsize,imsize,imtrim,imtrim,rms_bkg,save_cc,tgtname,msname)
 
     ## run imaging
     os.system( ss )
@@ -127,9 +144,9 @@ def main():
             os.system( ss )
             imagename = "%s-CLN-PO%s"%(tgtname,str(ii+1))
             if bandwidth > freq_range:
-                ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol 2 -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,nchan,imagename,msname)
+                ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol 2 %s -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 %s -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,nchan,rms_bkg,save_cc,imagename,msname)
             else:
-                ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,imagename,msname)
+                ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i %s -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 %s -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,rms_bkg,save_cc,imagename,msname)
             os.system( ss )
 
     if do_ampphase:
@@ -140,9 +157,9 @@ def main():
         os.system( ss )
         imagename = "%s-CLN-PA-final"%(tgtname)
         if bandwidth > freq_range:
-            ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol 2 -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,nchan,imagename,msname)
+            ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -joinchannels -channelsout %i -fit-spectral-pol 2 %s -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 %s -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,nchan,rms_bkg,save_cc,imagename,msname)
         else:
-            ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i -rms-background -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 -save-component-list -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,imagename,msname)
+            ss = "wsclean -datacolumn CORRECTED_DATA -scale 0.05asec -size %i %i -trim %i %i %s -maxuv-l 800000 -gain 0.1 -mgain 0.85 -niter 100000 -weighting-rank-filter 3 -weighting-rank-filter-size 256 -auto-threshold 5 -multiscale -auto-mask 7 %s -reorder -name %s %s"%(imsize,imsize,imtrim,imtrim,rms_bkg,save_cc,imagename,msname)
         os.system( ss )
 
 if __name__=="__main__":
