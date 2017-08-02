@@ -67,7 +67,8 @@ phasearray = np.asarray( phasetab.val )
 phaseOffsetArray = np.asarray( phaseOffsetTab.val )
 ## extend default values to other frequencies
 tmpPhaseOffset = phaseOffsetArray.repeat( len(freq_per_sb) )
-phaseOffsetArray = tmpPhaseOffset.reshape( len(anttab), len(freq_per_sb) )
+tmpPhaseOffset2 = tmpPhaseOffset.reshape( len(anttab), len(freq_per_sb) )
+phaseOffsetArray = np.transpose( tmpPhaseOffset2 )
 clockarray = np.asarray( clocktab.val )
 tecarray   = np.asarray( tectab.val )
 
