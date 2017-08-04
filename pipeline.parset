@@ -300,9 +300,9 @@ prep_dirs.control.mapfile_dir             = input.output.mapfile_dir
 prep_dirs.control.infile                  = ndppp_prep_target.output.mapfile
 prep_dirs.control.filename                = prep_dirs.mapfile
 prep_dirs.control.wd                      = {{ job_directory }}
-prep_dirs.control.nP                      = 3	# default was three?
+prep_dirs.control.nP                      = 3	# this is the default setting
 prep_dirs.control.counter                 = calibrator_loop1.output.counter
-prep_dirs.control.manual		  = {{ use_calibrator_catalogue }}
+prep_dirs.control.manual		  = True ## use the catalogue specified in get_lbcs_catalogue step
 prep_dirs.control.target_file             = {{ calibrator_catalogue }}
 
 # shift, average and add up stations for tied array
