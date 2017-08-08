@@ -210,11 +210,12 @@ ndppp_prep_target.argument.flagamp.amplmin        = 1e-30
 # create a new parmdb for transferring amplitude and clock solutions
 transfer_amp_clock_sols.control.type                 = pythonplugin  
 transfer_amp_clock_sols.control.executable           = {{ transfer_amp_clock_sols_script }}
+transfer_amp_clock_sols.control.max_per_node	     = {{ num_proc_per_node }}
+transfer_amp_clock_sols.control.error_tolerance	     = {{ error_tolerance }}
 transfer_amp_clock_sols.argument.msname              = ndppp_prep_target.output.mapfile
 transfer_amp_clock_sols.argument.npdir               = {{ transfer_amp_clock_sols_store }}
-transfer_amp_clock_sols.store_basename               = {{ amp_sols_basename }}
-transfer_amp_clock_sols.argument.output              = outputkey
-
+transfer_amp_clock_sols.argument.store_basename      = {{ amp_sols_basename }}
+transfer_amp_clock_sols.argument.newparmdbext        = transfer_amp_clock_sols
 
 # scale international amplitudes in solutions
 is_amp_gains.control.type                            = pythonplugin  

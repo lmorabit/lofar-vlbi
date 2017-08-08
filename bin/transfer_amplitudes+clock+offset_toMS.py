@@ -61,13 +61,16 @@ def make_empty_parmdb(outname):
     return myParmdb
 
 #def main(msname, store_basename, newparmdbext='-instrument_amp_clock_offset'):
-def main(msname, npdir='', store_basename='', newparmdbext='.transfer_amp_clock_sols'):
+def main(msname, npdir='', store_basename='', newparmdbext='transfer_amp_clock_sols'):
     # name (path) for parmdb to be written
     print msname
     # strippedmsname = msname.split('/')[-1]
     # newparmDB = instdir + '/' + strippedmsname + '.ampdelay_intl_instrument'
     store_basename = 'caldata_transfer'
-    newparmDB = msname + newparmdbext
+
+    tmp = msname.split('.')
+    tmp[-1] = newparmdbext
+    newparmDB = '.'.join(tmp)
 
     # load the numpy arrays written by the previous scripts
     # (filenames constructed in the same way as in these scripts)
