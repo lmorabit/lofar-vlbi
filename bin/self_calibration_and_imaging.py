@@ -75,7 +75,7 @@ def main():
 
     wsclean_version = lines[1].split()[2]
     if wsclean_version == '2.3':
-	rms_bkg = '-rms-background-window'
+	rms_bkg = '-rms-background-window 25'
         save_cc = '-save-component-list'
     else:
 	rms_bkg = '-local-rms'
