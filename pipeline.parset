@@ -13,8 +13,9 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ## SECTION 1: things that absolutely need to be configured
 
 ## global information
-! base_directory 		        = /data/lofar/morabito/xmm_lss/L424611
-! job_directory		 	        = {{ base_directory }}/pipeline/ ## must match name of parset or config file
+! base_directory 		        = input.output.working_directory  ## this is taken from the config file -- DO NOT CHANGE
+! job_directory		 	        = input.output.job_directory	  ## this is taken from the config file -- DO NOT CHANGE
+
 ! long_baseline_pipeline_dir 		= /home/morabito/software/long_baseline_pipeline
 ! prefactor_dir			        = /home/morabito/software/prefactor
 ! losoto_executable			= /home/morabito/software/losoto/bin/losoto
@@ -26,7 +27,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ## Prefactor solution information
 ! transfer_amp_clock_sols_store = /data/lofar/morabito/xmm_lss/L424607/results/ ## directory with amplitude and clock solutions of prefactor (*.npy files)
 ! amp_sols_basename             = caldata_transfer
-! phase_sol_input_path          = /data/lofar/morabito/xmm_lss/L424611/prefactor/phase_solutions ## directory with direction-independent phase solutions of the target field
+! phase_sol_input_path          = /data/lofar/morabito/xmm_lss/L424611/prefactor/phase_solutions ## directory with measurement sets containing direction-independent phase solutions of the target field
 
 ## Calibrator catalogue
 ! calibrator_catalogue 		= /data/lofar/morabito/xmm_lss/L424611/lbcs_catalogue.csv
