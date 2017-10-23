@@ -89,6 +89,9 @@ def main(parmdbfile, targetms, phaseonly = True):
                                            asStartEnd=False)
 
             if phaseonly:
+		## in case the values already exist (and may be NaN) they need to be deleted first
+                parmdb.deleteValues("Gain:0:0:Phase:" + antenna)
+                parmdb.deleteValues("Gain:1:1:Phase:" + antenna)	
                 parmdb.addValues("Gain:0:0:Phase:" + antenna,ValueHolder)
                 parmdb.addValues("Gain:1:1:Phase:" + antenna,ValueHolder)
             else:
@@ -98,6 +101,11 @@ def main(parmdbfile, targetms, phaseonly = True):
                                            stime=examplevalue_ones['times'], 
                                            etime=examplevalue_ones['timewidths'], 
                                            asStartEnd=False)
+                ## in case the values already exist (and may be NaN) they need to be deleted first
+                parmdb.deleteValues("Gain:0:0:Real:" + antenna)
+                parmdb.deleteValues("Gain:1:1:Real:" + antenna)
+                parmdb.deleteValues("Gain:0:0:Imag:" + antenna)
+                parmdb.deleteValues("Gain:1:1:Imag:" + antenna)
                 parmdb.addValues("Gain:0:0:Real:" + antenna,ValueHolder_ones)
                 parmdb.addValues("Gain:0:0:Imag:" + antenna,ValueHolder)
                 parmdb.addValues("Gain:1:1:Real:" + antenna,ValueHolder_ones)
