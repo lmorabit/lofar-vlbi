@@ -4,8 +4,8 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, transfer_amp_clock_sols, is_amp_gains, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, fitclock, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
-## the step 'ampl' needs to be inserted after 'fitclock' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, transfer_amp_clock_sols, is_amp_gains, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
+## the step 'ampl' needs to be inserted after 'process_losoto' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 #createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
 ###########################################################################
@@ -89,10 +89,11 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ! transfer_delay_sols_script        = {{ long_baseline_pipeline_dir }}/bin/transfer_clock+tec_toMS.py
 ! delay_cal_parset                  = {{ long_baseline_pipeline_dir }}/parsets/delaycalib.parset
 ! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
+! convert_ct_script		    = {{ long_baseline_pipeline_dir }}/bin/convert_clocktec_to_npy.py
 
 ## Configuration for prefactor scripts (update prefactor_dir at top)
 ! losoto_importer       = {{ prefactor_dir }}/scripts/losotoImporter.py
-! fitclock_script       = {{ prefactor_dir }}/scripts/fit_clocktec_initialguess_losoto.py
+! process_losoto_script       = {{ prefactor_dir }}/scripts/fit_clocktec_initialguess_losoto.py
 ! fitamps_script        = {{ prefactor_dir }}/scripts/amplitudes_losoto_3.py
 ! plotsols_script       = {{ prefactor_dir }}/scripts/examine_npys.py
 ! sort_concat_script    = {{ prefactor_dir }}/scripts/sort_times_into_freqGroups.py
@@ -255,23 +256,22 @@ ndppp_apply_cal.argument.msin.baseline               = *&
 ndppp_apply_cal.argument.msout                       = .
 ndppp_apply_cal.argument.msout.datacolumn            = CORRECTED_DATA
 ndppp_apply_cal.argument.msout.writefullresflag      = False
-ndppp_apply_cal.argument.steps                       = [applyAmp, applyClock, ApplyPhase, applytheBeam]
-ndppp_apply_cal.argument.applyAmp.type               = applycal
-ndppp_apply_cal.argument.applyAmp.parmdb             = map_transfer_amp_clock_sols.output.mapfile
-ndppp_apply_cal.argument.applyAmp.correction         = gain
-ndppp_apply_cal.argument.applyAmp.updateweights      = false
-ndppp_apply_cal.argument.applyClock.type             = applycal
-ndppp_apply_cal.argument.applyClock.parmdb           = map_transfer_amp_clock_sols.output.mapfile
-ndppp_apply_cal.argument.applyClock.correction       = clock
-ndppp_apply_cal.argument.applyClock.updateweights    = false
-ndppp_apply_cal.argument.ApplyPhase.type             = applycal
-ndppp_apply_cal.argument.ApplyPhase.parmdb           = parmdbs
-ndppp_apply_cal.argument.ApplyPhase.correction       = gain
-ndppp_apply_cal.argument.ApplyPhase.updateweights    = false
-ndppp_apply_cal.argument.applytheBeam.type           = applybeam
-ndppp_apply_cal.argument.applytheBeam.usechannelfreq = true
-ndppp_apply_cal.argument.applytheBeam.invert         = true
-ndppp_apply_cal.argument.applytheBeam.beammode       = default
+ndppp_apply_cal.argument.steps                    = [applyclock,applygain,applybeam,applyrotate,applyphase]
+ndppp_apply_cal.argument.applyclock.type          = applycal
+ndppp_apply_cal.argument.applyclock.parmdb        = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_cal.argument.applyclock.correction    = clock
+ndppp_apply_cal.argument.applygain.type           = applycal
+ndppp_apply_cal.argument.applygain.parmdb         = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_cal.argument.applygain.correction     = gain
+ndppp_apply_cal.argument.applygain.updateweights  = True
+ndppp_apply_cal.argument.applybeam.type           = applybeam
+ndppp_apply_cal.argument.applybeam.usechannelfreq = True
+ndppp_apply_cal.argument.applybeam.updateweights  = True
+ndppp_apply_cal.argument.applyrotate.type         = applycal
+ndppp_apply_cal.argument.applyrotate.parmdb       = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_cal.argument.applyphase.type	  = applycal
+ndppp_apply_cal.argument.applyphase.parmdb	  = parmdbs
+ndppp_apply_cal.argument.applyphase.correction	  = gain
 
 
 ##################################################################
@@ -485,50 +485,48 @@ copy_h5imp_cal.control.inputkey           =  source
 copy_h5imp_cal.control.arguments          =  [source,{{ inspection_directory }}]
 
 # try losoto clock/tec fitting
-fitclock.control.kind                                    =  recipe
-fitclock.control.type                                    =  executable_args
-fitclock.control.executable                              =  {{ losoto_executable }}
-fitclock.control.max_per_node                            =  {{ num_proc_per_node }}
-fitclock.control.parsetasfile                            =  True
-fitclock.control.args_format                             =  losoto
-fitclock.control.mapfiles_in                             =  [h5imp_cal.output.h5parm.mapfile]
-fitclock.control.inputkeys                               =  [hdf5file]
-fitclock.argument.flags                                  =  [hdf5file]
-fitclock.argument.LoSoTo.Steps                           =  [ClockTec,plotCLOCK,plotTEC]
-fitclock.argument.LoSoTo.Solset                          =  [sol000]
-fitclock.argument.LoSoTo.Soltab                          =  []
-fitclock.argument.LoSoTo.SolType                         =  []
-fitclock.argument.LoSoTo.ant                             =  []
-fitclock.argument.LoSoTo.pol                             =  []
-fitclock.argument.LoSoTo.dir                             =  []
-fitclock.argument.LoSoTo.Steps.ClockTec.Operation        =  CLOCKTEC
-fitclock.argument.LoSoTo.Steps.ClockTec.Soltab           =  [sol000/phase000]
-fitclock.argument.LoSoTo.Steps.ClockTec.CombinePol       =  True
-fitclock.argument.LoSoTo.Steps.ClockTec.FlagBadChannels  =  False
-fitclock.argument.LoSoTo.Steps.ClockTec.Fit3rdOrder      =  False
-fitclock.argument.LoSoTo.Steps.ClockTec.Circular         =  False
-fitclock.argument.LoSoTo.Steps.plotCLOCK.Operation       =  PLOT
-fitclock.argument.LoSoTo.Steps.plotCLOCK.Soltab          =  [sol000/clock000]
-fitclock.argument.LoSoTo.Steps.plotCLOCK.Axes            =  [time]
-fitclock.argument.LoSoTo.Steps.plotCLOCK.TableAxis       =  ant
-fitclock.argument.LoSoTo.Steps.plotCLOCK.Prefix          =  {{ inspection_directory }}/losoto_clock
-fitclock.argument.LoSoTo.Steps.plotCLOCK.PlotFlag        =  False
-fitclock.argument.LoSoTo.Steps.plotTEC.Operation         =  PLOT
-fitclock.argument.LoSoTo.Steps.plotTEC.Soltab            =  [sol000/tec000]
-fitclock.argument.LoSoTo.Steps.plotTEC.Axes              =  [time]
-fitclock.argument.LoSoTo.Steps.plotTEC.TableAxis         =  ant
-fitclock.argument.LoSoTo.Steps.plotTEC.Prefix            =  {{ inspection_directory }}/losoto_tec
-fitclock.argument.LoSoTo.Steps.plotTEC.PlotFlag          =  False
+process_losoto.control.kind                                    =  recipe
+process_losoto.control.type                                    =  executable_args
+process_losoto.control.executable                              =  {{ losoto_executable }}
+process_losoto.control.max_per_node                            =  {{ num_proc_per_node }}
+process_losoto.control.parsetasfile                            =  True
+process_losoto.control.args_format                             =  losoto
+process_losoto.control.mapfiles_in                             =  [h5imp_cal.output.h5parm.mapfile]
+process_losoto.control.inputkeys                               =  [hdf5file]
+process_losoto.argument.flags                                  =  [hdf5file]
+process_losoto.argument.LoSoTo.Steps                           =  [ClockTec,plotCLOCK,plotTEC]
+process_losoto.argument.LoSoTo.Solset                          =  [sol000]
+process_losoto.argument.LoSoTo.Soltab                          =  []
+process_losoto.argument.LoSoTo.SolType                         =  []
+process_losoto.argument.LoSoTo.ant                             =  []
+process_losoto.argument.LoSoTo.pol                             =  []
+process_losoto.argument.LoSoTo.dir                             =  []
+process_losoto.argument.LoSoTo.Steps.ClockTec.Operation        =  CLOCKTEC
+process_losoto.argument.LoSoTo.Steps.ClockTec.Soltab           =  [sol000/phase000]
+process_losoto.argument.LoSoTo.Steps.ClockTec.CombinePol       =  True
+process_losoto.argument.LoSoTo.Steps.ClockTec.FlagBadChannels  =  False
+process_losoto.argument.LoSoTo.Steps.ClockTec.Fit3rdOrder      =  False
+process_losoto.argument.LoSoTo.Steps.ClockTec.Circular         =  False
+process_losoto.argument.LoSoTo.Steps.plotCLOCK.Operation       =  PLOT
+process_losoto.argument.LoSoTo.Steps.plotCLOCK.Soltab          =  [sol000/clock000]
+process_losoto.argument.LoSoTo.Steps.plotCLOCK.Axes            =  [time]
+process_losoto.argument.LoSoTo.Steps.plotCLOCK.TableAxis       =  ant
+process_losoto.argument.LoSoTo.Steps.plotCLOCK.Prefix          =  {{ inspection_directory }}/losoto_clock
+process_losoto.argument.LoSoTo.Steps.plotCLOCK.PlotFlag        =  False
+process_losoto.argument.LoSoTo.Steps.plotTEC.Operation         =  PLOT
+process_losoto.argument.LoSoTo.Steps.plotTEC.Soltab            =  [sol000/tec000]
+process_losoto.argument.LoSoTo.Steps.plotTEC.Axes              =  [time]
+process_losoto.argument.LoSoTo.Steps.plotTEC.TableAxis         =  ant
+process_losoto.argument.LoSoTo.Steps.plotTEC.Prefix            =  {{ inspection_directory }}/losoto_tec
+process_losoto.argument.LoSoTo.Steps.plotTEC.PlotFlag          =  False
 
-
-
-#fitclock.control.kind             = recipe
-#fitclock.control.type             = executable_args
-#fitclock.control.mapfile_in       = h5imp_cal.output.h5parm.mapfile
-#fitclock.control.executable       = {{ fitclock_script }}
-# order for arguments is: [<input-filename>,<output-filename-base>,<NumThreads>]
-#fitclock.control.arguments        = [h5gvds,caldata_transfer,{{ num_proc_per_node }}]
-#fitclock.control.inputkey         = h5gvds
+## convert the clock-tec values to numpy arrays
+convert_ct.control.kind          = recipe
+convert_ct.control.type          = executable_args
+convert_ct.control.mapfile_in    = h5imp_cal.output.h5parm.mapfile
+convert_ct.control.executable    = {{ convert_ct_script }}
+convert_ct.control.arguments     = [h5gvds,caldata_transfer]
+convert_ct.control.inputkey      = h5gvds
 
 # run the script that filters the amplitudes
 ampl.control.kind             = recipe
@@ -547,7 +545,7 @@ plots.control.type             = executable_args
 plots.control.mapfile_in       = h5imp_cal.output.h5parm.mapfile
 plots.control.executable       = {{ plotsols_script }}
 plots.control.skip_infile      = True
-plots.control.arguments        = [caldata_transfer] # Needs "<output-filename-base>" from the fitclock and ampl steps
+plots.control.arguments        = [caldata_transfer] # Needs "<output-filename-base>" from the process_losoto and ampl steps
 
 # generate a mapfile of all the diagnostic pngs
 createmap_cal_pngs.control.kind            = plugin
