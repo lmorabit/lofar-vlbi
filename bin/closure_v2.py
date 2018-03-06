@@ -39,6 +39,9 @@ def closure(vis, tel, lastv=-1):
         print 'Did not find one or more of the telescopes'
         exit()
 
+    ## fix the order of the idx tels
+    idx_tels = np.sort(idx_tels)
+
     # Make three reference MSs with pointers
     os.system('rm -fr closure_temp*.ms')
     command = 'taql \'select from %s where ANTENNA1==%d and ANTENNA2==%d giving closure_temp1.ms\'' %(vis,idx_tels[0],idx_tels[1])
@@ -66,7 +69,7 @@ def closure(vis, tel, lastv=-1):
     os.system('rm closure_out_%s.png' % target_id)
     plt.clf()
     plt.ylabel(r'$\phi$ $[rad]$') ; plt.plot(cp,'k+') #; plt.grid(True)
-    plt.title('Scatter for target %s is %s' % (target_id,np.mean(np.gradient(cp)**2)))
+    plt.title('Scatter for target %s is %s' % (target_id,np.nanmean(np.gradient(cp)**2)))
     plt.savefig('closure_out_%s.png' % target_id)
     return np.mean(np.gradient(cp)**2)
 
