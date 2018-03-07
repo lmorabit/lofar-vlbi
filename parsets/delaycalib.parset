@@ -7,14 +7,14 @@ Strategy.Steps = [solve, correct]
 
 Step.solve.Operation = SOLVE
 Step.solve.Model.Sources = []  
-Step.solve.Model.Beam.Enable = True
+Step.solve.Model.Beam.Enable = F
 Step.solve.Model.Cache.Enable = T
 Step.solve.Model.Phasors.Enable = F
 Step.solve.Model.Bandpass.Enable = F
 Step.solve.Model.Gain.Enable = T
 Step.solve.Model.DirectionalGain.Enable = F
-Step.solve.Model.CommonRotation.Enable = T  
-Step.solve.Solve.Parms = ["Gain:0:0:*","Gain:1:1:*","CommonRotationAngle:*"]
+Step.solve.Model.CommonRotation.Enable = F
+Step.solve.Solve.Parms = ["Gain:0:0:*","Gain:1:1:*"]
 Step.solve.Solve.UVRange = [0,1e30] 
 Step.solve.Solve.ExclParms = []
 Step.solve.Solve.CellSize.Freq = 1 # so we get a solution per channel 
@@ -32,7 +32,7 @@ Step.solve.Solve.Options.UseSVD = T
 Step.correct.Operation = CORRECT
 Step.correct.Model.Sources = []
 Step.correct.Model.Gain.Enable = T 
-Step.correct.Model.Beam.Enable = T  
-Step.correct.Model.CommonRotation.Enable = T
+Step.correct.Model.Beam.Enable = F
+Step.correct.Model.CommonRotation.Enable = F
 Step.correct.Output.Column = CORRECTED_DATA
 

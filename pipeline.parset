@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/varenius/long_baseline_pipeline/tree/master/surveys_processing/lofar_lb_gpipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, transfer_amp_clock_sols, is_amp_gains, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, transfer_delay_sols, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'process_losoto' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 #createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -75,7 +75,8 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 ## SECTION 3: Do not update
 
 ## Configuration for long baseline pipeline (update long_baseline_pipeline_dir at top)
-! transfer_amp_clock_sols_script    = {{ long_baseline_pipeline_dir }}/bin/transfer_amplitudes+clock+offset_toMS.py
+# ! transfer_amp_clock_sols_script    = {{ long_baseline_pipeline_dir }}/bin/transfer_amplitudes+clock+offset_toMS.py
+! transfer_amp_clock_sols_script    = {{ prefactor_dir }}/scripts/transfer_gains_RMextract.py
 ! update_ISgains_script             = {{ long_baseline_pipeline_dir }}/bin/updateISGains.py
 ! add_IS_script                     = {{ long_baseline_pipeline_dir }}/bin/addInternationalStations.py
 ! download_lbcs_script              = {{ long_baseline_pipeline_dir }}/bin/download_lbcs_catalogue.py
@@ -93,10 +94,23 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, createmap_t
 
 ## Configuration for prefactor scripts (update prefactor_dir at top)
 ! losoto_importer       = {{ prefactor_dir }}/scripts/losotoImporter.py
-! process_losoto_script       = {{ prefactor_dir }}/scripts/fit_clocktec_initialguess_losoto.py
 ! fitamps_script        = {{ prefactor_dir }}/scripts/amplitudes_losoto_3.py
 ! plotsols_script       = {{ prefactor_dir }}/scripts/examine_npys.py
 ! sort_concat_script    = {{ prefactor_dir }}/scripts/sort_times_into_freqGroups.py
+
+## IONEX server information
+# the URL of the server where  the IONEX files can be downloaded
+# leave it at "None" to disable downloads, or set it to:
+#   ftp://ftp.unibe.ch/aiub/CODE/
+# to download from the "standard" server
+! ionex_server  = ftp://ftp.unibe.ch/aiub/CODE/
+# the prefix of the IONEX files
+! ionex_prefix  = CODG
+# path where the IONEX files can be stored or are already stored
+! ionex_path    = {{ job_directory }}/IONEX/
+# script to download files
+! get_ion_script  = {{ prefactor_dir }}/bin/download_IONEX.py
+
 
 ##
 ## END CONFIGURATION
@@ -123,6 +137,11 @@ mk_calresults_dir.control.directory	  = {{ calibrator_results_directory }}
 mk_inspect_dir.control.kind               = plugin
 mk_inspect_dir.control.type               = makeDirectory
 mk_inspect_dir.control.directory          = {{ inspection_directory }}
+
+# create a directory for the ionex files
+mk_ionex_dir.control.kind		  = plugin
+mk_ionex_dir.control.type		  = makeDirectory
+mk_ionex_dir.control.directory		  = {{ job_directory }}/IONEX
 
 # generate a mapfile of all the target data
 createmap_target.control.kind             = plugin
@@ -209,15 +228,38 @@ ndppp_prep_target.argument.flagamp.amplmin        = 1e-30
 #ndppp_prep_target.argument.doflagging.type        = aoflagger
 #ndppp_prep_target.argument.doflagging.strategy    = {{ lofar_directory }}/share/rfistrategies/HBAdefault
 
-# create a new parmdb for transferring amplitude and clock solutions
-transfer_amp_clock_sols.control.type                 = pythonplugin  
-transfer_amp_clock_sols.control.executable           = {{ transfer_amp_clock_sols_script }}
-transfer_amp_clock_sols.control.max_per_node	     = {{ num_proc_per_node }}
-transfer_amp_clock_sols.control.error_tolerance	     = {{ error_tolerance }}
-transfer_amp_clock_sols.argument.msname              = ndppp_prep_target.output.mapfile
-transfer_amp_clock_sols.argument.npdir               = {{ transfer_amp_clock_sols_store }}
-transfer_amp_clock_sols.argument.store_basename      = {{ amp_sols_basename }}
-transfer_amp_clock_sols.argument.newparmdbext        = transfer_amp_clock_sols
+# combine all entries into one mapfile, for the download ionex script
+combine_data_target_map.control.kind            =   plugin
+combine_data_target_map.control.type            =   createMapfile
+combine_data_target_map.control.method          =   mapfile_all_to_one
+combine_data_target_map.control.mapfile_dir     =   input.output.mapfile_dir
+combine_data_target_map.control.filename        =   combine_data_tar_map.mapfile
+combine_data_target_map.control.mapfile_in      =   ndppp_prep_target.output.mapfile
+
+# get ionex files once for every day that is covered by one of the input MSs
+get_ion_files.control.type            = pythonplugin
+get_ion_files.control.executable      = {{ get_ion_script }}
+get_ion_files.control.max_per_node    =  1
+get_ion_files.control.error_tolerance = {{ error_tolerance }}
+get_ion_files.argument.flags          = [combine_data_target_map.output.mapfile]
+get_ion_files.argument.ionex_server   = {{ ionex_server }}
+get_ion_files.argument.ionex_prefix   = {{ ionex_prefix }}
+get_ion_files.argument.ionexPath      = {{ ionex_path }}
+
+# generate parmDB with the interpolated calibrator data to apply to the traget
+transfer_amp_clock_sols.control.type              =  pythonplugin
+transfer_amp_clock_sols.control.executable        =  {{ transfer_amp_clock_sols_script }}
+transfer_amp_clock_sols.control.max_per_node      =  {{ num_proc_per_node }}
+transfer_amp_clock_sols.control.error_tolerance   =  {{ error_tolerance }}
+transfer_amp_clock_sols.control.mapfile_in        =  ndppp_prep_target.output.mapfile
+transfer_amp_clock_sols.control.inputkey          =  indata
+transfer_amp_clock_sols.argument.flags            =  [indata]
+transfer_amp_clock_sols.argument.store_basename   =  {{ amp_sols_basename }}
+transfer_amp_clock_sols.argument.store_directory  =  {{ transfer_amp_clock_sols_store }}
+transfer_amp_clock_sols.argument.newparmdbext     =  /instrumenat_amp_clock_offset
+transfer_amp_clock_sols.argument.ionex_server     =  {{ ionex_server }}
+transfer_amp_clock_sols.argument.ionex_prefix     =  {{ ionex_prefix }}
+transfer_amp_clock_sols.argument.ionexPath        =  {{ ionex_path }}
 
 # scale international amplitudes in solutions
 is_amp_gains.control.type                            = pythonplugin  
@@ -458,7 +500,7 @@ delay_cal_model_map.control.add_suffix_to_file =  /skymodel
 delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
 
-# generate gain solutions for clock/tec separation using BBS
+# generate gain solutions for clock/tec separation
 calib_cal.control.type             =  python-calibrate-stand-alone
 calib_cal.control.max_per_node     =  {{ num_proc_per_node }}
 calib_cal.control.error_tolerance  =  {{ error_tolerance }}
@@ -484,7 +526,7 @@ copy_h5imp_cal.control.mapfile_in         =  h5imp_cal.output.h5parm.mapfile
 copy_h5imp_cal.control.inputkey           =  source
 copy_h5imp_cal.control.arguments          =  [source,{{ inspection_directory }}]
 
-# try losoto clock/tec fitting
+# do losoto clock/tec fitting
 process_losoto.control.kind                                    =  recipe
 process_losoto.control.type                                    =  executable_args
 process_losoto.control.executable                              =  {{ losoto_executable }}
@@ -636,181 +678,12 @@ ndppp_apply_delay.argument.applyTec.parmdb	       = parmdb_file
 ndppp_apply_delay.argument.applyTec.correction	       = tec
 ndppp_apply_delay.argument.applyTec.updateweights      = false
 
-##################################################################
-#                                                               ##
-#       CALIBRATOR LOOP 2: PHASE CALIBRATION		        ##
-#                                                               ##
-##################################################################
+## AT THIS POINT, PHASE ONLY SOLUTIONS NEED TO BE FOUND FOR TIER 1 CALIBRATORS.
+## THEN THOSE CALIBRATORS SHOULD BE SUBTRACTED.
+## THEN PHASE ONLY SOLUTIONS FOR TIER 2 CALIBRATORS
+## (AND THEN TIER 3?)
+## THEN LOOP2 SHOULD BE RUN.
 
-# Loop through the target phase calibrator canditates
-#calibrator_loop2.control.kind                    = loop
-#calibrator_loop2.control.type                    = conditional
-#calibrator_loop2.control.loopcount               = 100
-#calibrator_loop2.control.loopsteps               = [ run_self_cal ] ## , make_cal_results_mapfile, cp_cal_results ]
-
-# Initialise file with all directions  -- THIS NEEDS TO BE CHANGED
-#prep_dirs.control.kind                    = plugin
-#prep_dirs.control.type                    = TargetListToMapfileX
-#prep_dirs.control.mapfile_dir             = input.output.mapfile_dir
-#prep_dirs.control.infile                  = ndppp_prep_target.output.mapfile
-#prep_dirs.control.filename                = prep_dirs.mapfile
-#prep_dirs.control.wd                      = {{ job_directory }}
-#prep_dirs.control.nP                      = 3	# default was three
-#prep_dirs.control.counter                 = calibrator_loop2.output.counter
-#prep_dirs.control.target_file             = {{ calibrator_catalogue }} ## get_calibrator_directions
-
-#run_self_cal.control.type		  = pythonplugin
-#run_self_cal.control.executable           = {{ self_cal_and_imaging_script }}
-#run_self_cal.argument.flags		  = [ dppp_concat.output.mapfile ]
-#run_self_cal.argument.freq_range	  = 20
-
-# make mapfile with the filenames of the results that we want
-#make_cal_results_mapfile.control.kind            =  plugin
-#make_cal_results_mapfile.control.type            =  makeResultsMapfile
-#make_cal_results_mapfile.control.mapfile_dir     =  input.output.mapfile_dir
-#make_cal_results_mapfile.control.filename        =  make_results_mapfile.mapfile
-#make_cal_results_mapfile.control.mapfile_in      =  dppp_concat.output.mapfile
-#make_cal_results_mapfile.control.target_dir      =  {{ calibrator_results_directory }}
-#make_cal_results_mapfile.control.make_target_dir =  True
-
-# move the final measurement set to the calibrator results directory  (probably not till after the phase-only calibrations)
-#cp_cal_results.control.kind               =  recipe
-#cp_cal_results.control.type               =  executable_args
-#cp_cal_results.control.executable         =  /bin/cp
-#cp_cal_results.control.max_per_node       =  {{ num_proc_per_node_limit }}
-#cp_cal_results.control.mapfiles_in        =  [dppp_concat.output.mapfile,make_results_mapfile.output.mapfile]
-#cp_cal_results.control.inputkeys          =  [source,destination]
-#cp_cal_results.control.arguments          =  [source,destination]
-
-# get a list of final images
-createmap_fits.control.kind            = plugin
-createmap_fits.control.type            = createMapfile
-createmap_fits.control.method          = mapfile_from_folder
-createmap_fits.control.mapfile_dir     = input.output.mapfile_dir
-createmap_fits.control.filename        = createmap_fits.mapfile
-createmap_fits.control.folder          = {{ job_directory }} 
-createmap_fits.control.pattern         = *.fits
-
-# move to the calibrator results directory
-cp_fits.kind                	       	= recipe
-cp_fits.type                 	       	= executable_args
-cp_fits.control.executable   		= /bin/cp
-cp_fits.control.max_per_node 		= {{ num_proc_per_node }}
-cp_fits.control.mapfile_in   		= createmap_fits.output.mapfile
-cp_fits.control.inputkey     		= source
-cp_fits.control.arguments     		= [source,{{ calibrator_results_directory }}]
-
-##################################################################
-#                                                               ##
-#                      TARGET IMAGING LOOP                      ##
-#                                                               ##
-##################################################################
-
-# access lotss to provide a catalogue of sources to use
-get_imaging_catalogue.control.type	   = pythonplugin
-get_imaging_catalogue.control.executable   = {{ download_lotss_script }}
-get_imaging_catalogue.argument.flags 	   = [ndppp_prep_target.output.mapfile]
-get_imaging_catalogue.argument.ResultsFile = {{ target_catalogue }}
-get_imaging_catalogue.argument.DoDownload  = {{ use_target_catalogue }}
-get_imaging_catalogue.argument.Radius	   = 1.5
-
-get_lbcs_catalogue.control.type                 = pythonplugin
-get_lbcs_catalogue.control.executable           = {{ download_lbcs_script }}
-get_lbcs_catalogue.argument.flags               = [ndppp_prep_target.output.mapfile]
-get_lbcs_catalogue.argument.ResultsFile         = {{ calibrator_catalogue }}
-get_lbcs_catalogue.argument.DoDownload          = {{ use_calibrator_catalogue }}
-get_lbcs_catalogue.argument.Radius              = 1.5
-
-
-
-# Loop through the target phase calibrator canditates
-imaging_loop.control.kind                    = loop
-imaging_loop.control.type                    = conditional
-imaging_loop.control.loopcount               = 100
-#imaging_loop.control.loopsteps               = [prep_dirs_img, dppp_phaseup_img, make_circ_img, make_concatmap_img, dppp_concat_img, run_imaging ]
-imaging_loop.control.loopsteps               = [prep_dirs_img, dppp_phaseup_img, make_circ_img, make_concatmap_img, dppp_concat_img ]
-## steps still to add: find phase solutions from nearest calibrator and copy them, run self-calibration sript (but only to image)
-
-# Initialise file with all directions
-prep_dirs_img.control.kind                    = plugin
-prep_dirs_img.control.type                    = TargetListToMapfileX
-prep_dirs_img.control.mapfile_dir             = input.output.mapfile_dir
-prep_dirs_img.control.infile                  = ndppp_prep_target.output.mapfile ## ??
-prep_dirs_img.control.filename                = prep_dirs_img.mapfile
-prep_dirs_img.control.wd                      = {{ job_directory }}
-prep_dirs_img.control.nP                      = 3 # default was three
-prep_dirs_img.control.counter                 = imaging_loop.output.counter
-prep_dirs_img.control.manual		      = {{ use_target_catalogue }}
-prep_dirs_img.control.target_file             = {{ target_catalogue }}   ###
-
-# shift, average and add up stations for tied array
-dppp_phaseup_img.control.type                 = dppp
-dppp_phaseup_img.control.max_per_node         = {{ num_proc_per_node }}
-dppp_phaseup_img.control.mapfile_out          = prep_dirs_img.output.mapfile # tell the pipeline to give the output useful names
-dppp_phaseup_img.argument.msin                = ndppp_prep_target.output.mapfile    # The input data.
-dppp_phaseup_img.argument.msin.datacolumn     = CORRECTED_DATA
-dppp_phaseup_img.argument.msout.datacolumn    = DATA
-dppp_phaseup_img.argument.msout.overwrite     = True
-dppp_phaseup_img.argument.steps               = [shift, avg, adder, filter]
-dppp_phaseup_img.argument.shift.type          = phaseshift
-dppp_phaseup_img.argument.shift.phasecenter   = prep_dirs_img.output.cords
-dppp_phaseup_img.argument.avg.type            = squash
-dppp_phaseup_img.argument.avg.freqstep        = {{ tgt_shift_avg_freqstep }}
-dppp_phaseup_img.argument.avg.timestep        = {{ tgt_shift_avg_timestep }}
-dppp_phaseup_img.argument.adder.type          = stationadder
-dppp_phaseup_img.argument.adder.stations      = {{ phaseup_command }}
-dppp_phaseup_img.argument.filter.type         = filter
-dppp_phaseup_img.argument.filter.baseline     = {{ filter_command }}
-dppp_phaseup_img.argument.filter.remove       = True
-dppp_phaseup_img.argument.numthreads          = {{ max_dppp_threads }}  ## this supersedes the control.environment
-
-# Convert to circular polarisation (in place)
-make_circ_img.control.type                    = pythonplugin
-make_circ_img.control.executable              = {{ execute_circ_conv_script }}
-make_circ_img.argument.flags                  = [ dppp_phaseup_img.output.mapfile ]
-make_circ_img.argument.cpath                  = {{ lin2circ_script }}
-make_circ_img.argument.mode                   = lin2circ
-
-# get a list of all subbands
-make_concatmap_img.control.kind               =  plugin
-make_concatmap_img.control.type               =  createMapfile
-make_concatmap_img.control.method             =  mapfile_all_to_one
-make_concatmap_img.control.mapfile_in         =  dppp_phaseup_img.output.mapfile
-make_concatmap_img.control.mapfile_dir        =  input.output.mapfile_dir
-make_concatmap_img.control.filename           =  make_concatmap_img.mapfile
-
-# concatenate all of the files into one
-dppp_concat_img.control.type                  = dppp
-dppp_concat_img.control.max_per_node          = {{ num_proc_per_node }}
-dppp_concat_img.argument.msin          	      = make_concatmap_img.output.mapfile  # use the mapfile from the make_concatmap step
-dppp_concat_img.argument.msin.datacolumn      = DATA
-dppp_concat_img.argument.msin.missingdata     = True    #\ these two lines will make DPPP generate dummy data when
-dppp_concat_img.argument.msin.orderms         = False   #/ concatenating data
-dppp_concat_img.argument.msout.datacolumn     = DATA
-dppp_concat_img.argument.steps                = []
-dppp_concat_img.argument.numthreads           = {{ max_dppp_threads }}  ## this supersedes the control.environment
-
-#run_imaging.control.type 		      = pythonplugin
-#run_imaging.control.executable		      = {{ self_cal_and_imaging_script }}
-
-# make mapfile with the filenames of the results that we want
-#make_results_mapfile.control.kind            =  plugin
-#make_results_mapfile.control.type            =  makeResultsMapfile
-#make_results_mapfile.control.mapfile_dir     =  input.output.mapfile_dir
-#make_results_mapfile.control.filename        =  make_results_mapfile.mapfile
-#make_results_mapfile.control.mapfile_in      =  check_unflagged_map.output.mapfile
-#make_results_mapfile.control.target_dir      =  {{ results_directory }}
-#make_results_mapfile.control.make_target_dir =  True
-#make_results_mapfile.control.new_suffix      =  .pre-cal.ms
-
-# move the results to where we want them
-#cp_results.control.kind               =  recipe
-#cp_results.control.type               =  executable_args
-#cp_results.control.executable         =  /bin/cp
-#cp_results.control.max_per_node       =  {{ num_proc_per_node_limit }}
-#cp_results.control.mapfiles_in        =  [check_unflagged_map.output.mapfile,make_results_mapfile.output.mapfile]
-#cp_results.control.inputkeys          =  [source,destination]
-#cp_results.control.arguments          =  [source,destination]
 
 ##################################################################
 #                                                               ##

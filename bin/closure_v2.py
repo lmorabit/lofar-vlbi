@@ -71,7 +71,7 @@ def closure(vis, tel, lastv=-1):
     plt.ylabel(r'$\phi$ $[rad]$') ; plt.plot(cp,'k+') #; plt.grid(True)
     plt.title('Scatter for target %s is %s' % (target_id,np.nanmean(np.gradient(cp)**2)))
     plt.savefig('closure_out_%s.png' % target_id)
-    return np.mean(np.gradient(cp)**2)
+    return np.nanmean(np.gradient(cp)**2)
 
 def get_amp_clph(d1,d2,d3,spw,nspw=0,pol=0,nchans=1):
     a1,a2,a3,cp = np.array([]),np.array([]),np.array([]),np.array([])
