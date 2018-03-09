@@ -96,7 +96,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ! losoto_importer       = {{ prefactor_dir }}/scripts/losotoImporter.py
 ! fitamps_script        = {{ prefactor_dir }}/scripts/amplitudes_losoto_3.py
 # ! plotsols_script       = {{ prefactor_dir }}/scripts/examine_npys.py
-! plotsols_script       = {{ long_baseline_pipeline_dir }}/scripts/examine_npys_losoto.py
+! plotsols_script       = {{ long_baseline_pipeline_dir }}/bin/examine_npys_losoto.py
 ! sort_concat_script    = {{ prefactor_dir }}/scripts/sort_times_into_freqGroups.py
 
 ## IONEX server information
