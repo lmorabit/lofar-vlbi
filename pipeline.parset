@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/lmorabit/long_baseline_pipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, map_transfer_amp_clock_sols, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'process_losoto' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 #createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -266,7 +266,11 @@ transfer_amp_clock_sols.argument.ionexPath        =  {{ ionex_path }}
 # scale international amplitudes in solutions
 is_amp_gains.control.type                            = pythonplugin  
 is_amp_gains.control.executable                      = {{ update_ISgains_script }}
-is_amp_gains.argument.flags                          = [ transfer_amp_clock_sols.output.mapfile ]
+is_amp_gains.control.mapfile_in                      = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
+is_amp_gains.control.inputkey                        = parmdbs
+is_amp_gains.argument.parmdbfile                     = parmdbs
+is_amp_gains.argument.targetms                       = ndppp_prep_target.output.mapfile
+is_amp_gains.argument.phaseonly                      = False
 
 # add international stations to phase solutions
 # only needs to to be done for the phase tables, which are 
@@ -276,15 +280,6 @@ is_add_phase.control.executable                      = {{ add_IS_script }}
 is_add_phase.control.mapfile_in                      = match_files.output.ISparmdbs
 is_add_phase.control.inputkey                        = tables
 is_add_phase.argument.flags                          = [tables,match_files.output.mapfile]
-
-# make a list of the correct transfer_amp_clock_sols files
-map_transfer_amp_clock_sols.control.kind	     = plugin
-map_transfer_amp_clock_sols.control.type	     = makeResultsMapfile
-map_transfer_amp_clock_sols.control.mapfile_dir      = input.output.mapfile_dir
-map_transfer_amp_clock_sols.control.filename         = map_transfer_amp_clock_sols.mapfile
-map_transfer_amp_clock_sols.control.mapfile_in       = ndppp_prep_target.output.mapfile
-map_transfer_amp_clock_sols.control.target_dir       = {{ job_directory }}
-map_transfer_amp_clock_sols.control.new_suffix       = .transfer_amp_clock_sols
 
 # run NDPPP to apply the solutions to the target data
 ndppp_apply_cal.control.type                         = dppp
@@ -302,17 +297,17 @@ ndppp_apply_cal.argument.msout.datacolumn            = CORRECTED_DATA
 ndppp_apply_cal.argument.msout.writefullresflag      = False
 ndppp_apply_cal.argument.steps                    = [applyclock,applygain,applybeam,applyrotate,applyphase]
 ndppp_apply_cal.argument.applyclock.type          = applycal
-ndppp_apply_cal.argument.applyclock.parmdb        = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_cal.argument.applyclock.parmdb        = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
 ndppp_apply_cal.argument.applyclock.correction    = clock
 ndppp_apply_cal.argument.applygain.type           = applycal
-ndppp_apply_cal.argument.applygain.parmdb         = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_cal.argument.applygain.parmdb         = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
 ndppp_apply_cal.argument.applygain.correction     = gain
 ndppp_apply_cal.argument.applygain.updateweights  = True
 ndppp_apply_cal.argument.applybeam.type           = applybeam
 ndppp_apply_cal.argument.applybeam.usechannelfreq = True
 ndppp_apply_cal.argument.applybeam.updateweights  = True
 ndppp_apply_cal.argument.applyrotate.type         = applycal
-ndppp_apply_cal.argument.applyrotate.parmdb       = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_cal.argument.applyrotate.parmdb       = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
 ndppp_apply_cal.argument.applyphase.type	  = applycal
 ndppp_apply_cal.argument.applyphase.parmdb	  = parmdbs
 ndppp_apply_cal.argument.applyphase.correction	  = gain
