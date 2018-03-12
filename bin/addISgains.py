@@ -135,7 +135,7 @@ def main(parmdbfile, targetms, phaseonly = True):
         parmdb = 0
 
         return(0)
-   else:
+    else:
 	parmdb = 0
 	return(0)
 
