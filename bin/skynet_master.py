@@ -685,7 +685,7 @@ def skynet_NDPPP (vis,model,solint=1.0):
     os.system('NDPPP NDPPP.parset')
 
 
-def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0):
+def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0, smodel=1.0):
 
     ## make sure the parameters are the correct format
     mode = int( mode )
@@ -706,7 +706,7 @@ def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601',
         os.system('python '+self_cal_script+' '+vis+' -p') # amplitudes?
     if mode == 2:   # use NDPPP to selfcal the long baselines to a small (0.1") Gaussian
 	print 'mode 2: point model'
-	point_model = np.array( [ [0.0,0.0,1.0,0.1,0.0,0.0] ] )
+	point_model = np.array( [ [0.0,0.0,smodel,0.1,0.0,0.0] ] )
 	write_skymodel (ra,dec,point_model,vis+'/skymodel')
 	if model_only == 0:
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
@@ -741,9 +741,10 @@ if __name__ == "__main__":
     parser.add_argument('--mode',type=int, help='Mode to use', default=3)
     parser.add_argument('--closure_tels',type=str,help='Stations to use for calculating closure phase.', default='ST001;DE601;DE605' )
     parser.add_argument('--cthr',type=float,help='Threshold for closure phase scatter.', default=1.6)
+    parser.add_argument('--smodel',type=float,help='Flux density in Jy of point source.', default=1.0)
     parser.add_argument('--model_only',type=int,help='set to 1 to get model only',default=0)
 
     args = parser.parse_args()
 
-    main( args.vis, args.self_cal_script, args.firstnpy, mode=args.mode, closure_tels=args.closure_tels, cthr=args.cthr, model_only=args.model_only )
+    main( args.vis, args.self_cal_script, args.firstnpy, mode=args.mode, closure_tels=args.closure_tels, cthr=args.cthr, smodel=args.smodel, model_only=args.model_only )
 

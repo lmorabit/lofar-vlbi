@@ -485,6 +485,7 @@ delay_cal_model.argument.mode		  = 2
 delay_cal_model.argument.closure_tels	  = {{ closure_phase_stations }}
 delay_cal_model.argument.cthr		  = 2.0 ## until using data that isn't test data
 delay_cal_model.argument.model_only	  = 1
+delay_cal_model.argument.smodel		  = 1.0
 delay_cal_model.argument.firstnpy	  = {{ firstnpy_file }}
 
 # generate mapfile with the parmDB names to be used in the gsmcal steps
