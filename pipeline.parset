@@ -51,7 +51,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ## SECTION 2: things that are probably fine as is, but should be checked
 
 ## Output directories
-! results_directory             = {{ base_directory }}/results
+! results_directory             = {{ job_directory }}/results
 ! calibrator_results_directory  = {{ results_directory }}/calibrators/
 ! inspection_directory          = {{ results_directory }}/inspection/
 ! cal_values_directory          = {{ results_directory }}/delay_cal_results/
@@ -77,7 +77,6 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ## Configuration for long baseline pipeline (update long_baseline_pipeline_dir at top)
 # ! transfer_amp_clock_sols_script    = {{ long_baseline_pipeline_dir }}/bin/transfer_amplitudes+clock+offset_toMS.py
 ! transfer_amp_clock_sols_script    = {{ prefactor_dir }}/scripts/transfer_gains_RMextract.py
-# ! update_ISgains_script             = {{ long_baseline_pipeline_dir }}/bin/updateISGains.py
 ! update_ISgains_script             = {{ long_baseline_pipeline_dir }}/bin/addISgains.py
 ! add_IS_script                     = {{ long_baseline_pipeline_dir }}/bin/addInternationalStations.py
 ! download_lbcs_script              = {{ long_baseline_pipeline_dir }}/bin/download_lbcs_catalogue.py
@@ -105,7 +104,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 # leave it at "None" to disable downloads, or set it to:
 #   ftp://ftp.unibe.ch/aiub/CODE/
 # to download from the "standard" server
-! ionex_server  = ftp://ftp.unibe.ch/aiub/CODE/
+! ionex_server  = ftp://ftp.aiub.unibe.ch/CODE/
 # the prefix of the IONEX files
 ! ionex_prefix  = CODG
 # path where the IONEX files can be stored or are already stored
