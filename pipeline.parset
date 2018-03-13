@@ -493,7 +493,7 @@ delay_cal_model_map.control.kind               =  plugin
 delay_cal_model_map.control.type               =  createMapfile
 delay_cal_model_map.control.method             =  add_suffix_to_file
 delay_cal_model_map.control.mapfile_in         =  find_delay_cal.output.mapfile
-delay_cal_model_map.control.add_suffix_to_file =  /skymodel
+delay_cal_model_map.control.add_suffix_to_file =  /sky
 delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
 
