@@ -703,7 +703,7 @@ def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601',
         return closure_scatter
     if mode == 1:     # this is the default of the self_calibration_pipeline_V2.
 	print 'mode 1: wsclean model'
-        os.system('python '+self_cal_script+' -m '+vis+' -p') # amplitudes?
+        os.system('python '+self_cal_script+' '+vis+' -p') # amplitudes?
     if mode == 2:   # use NDPPP to selfcal the long baselines to a small (0.1") Gaussian
 	print 'mode 2: point model'
 	point_model = np.array( [ [0.0,0.0,1.0,0.1,0.0,0.0] ] )
