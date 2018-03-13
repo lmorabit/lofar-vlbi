@@ -522,7 +522,7 @@ calib_cal.argument.gaincal.parmdb         = createmap_tables.output.mapfile
 calib_cal.argument.gaincal.applysolution  = True
 calib_cal.argument.gaincal.nchan          = 1
 calib_cal.argument.gaincal.usebeammodel   = False
-calib_cal.argument.gaincal.sourcedb       = delay_cal_model_map.output.FilePath
+calib_cal.argument.gaincal.sourcedb       = delay_cal_model_map.output.mapfile
 
 # import all instrument tables into one LoSoTo file
 h5imp_cal.control.type            =  pythonplugin
