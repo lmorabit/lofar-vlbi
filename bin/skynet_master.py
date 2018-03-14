@@ -690,6 +690,7 @@ def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601',
     ## make sure the parameters are the correct format
     mode = int( mode )
     cthr = float( cthr )
+    smodel = float( smodel )
     model_only = int( model_only )
 
     if not len(closure_tels) == 3:
