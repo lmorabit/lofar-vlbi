@@ -197,7 +197,7 @@ def closure (vis, tel, lastv=-1, plotfile='clplot.png'):
     if len(plotfile):
         plt.plot(clph,'b+')
         plt.savefig(plotfile)
-    return np.mean(np.gradient(np.unwrap(clph))**2)
+    return np.nanmean(np.gradient(np.unwrap(clph))**2)
 
 ################### correlate ##########################
 
