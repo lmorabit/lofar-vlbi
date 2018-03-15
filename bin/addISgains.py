@@ -88,12 +88,12 @@ def main(parmdbfile, targetms, phaseonly = True):
 	    if "CS" in name:
 		if "0:0:Real" in name:
 		    a00 = np.sqrt( parmdb.getValuesGrid(name)[name]['values']**2. + parmdb.getValuesGrid(name.replace('Real','Imag'))[name.replace('Real','Imag')]['values']**2.)
+	            if np.count_nonzero(a00) > 0:
+	                amps00 = np.append(amps00,a00)
 		if "1:1:Real" in name:	
 		    a11 = np.sqrt( parmdb.getValuesGrid(name)[name]['values']**2. + parmdb.getValuesGrid(name.replace('Real','Imag'))[name.replace('Real','Imag')]['values']**2.)
-	    if np.count_nonzero(a00) > 0:
-		amps00 = np.append(amps00,a00)
-	    if np.count_nonzero(a11) > 0:
-		amps11 = np.append(amps11,a11)
+	    	    if np.count_nonzero(a11) > 0:
+			amps11 = np.append(amps11,a11)
 
 	intl00 = np.median(amps00) * 3.75
 	intl11 = np.median(amps11) * 3.75
