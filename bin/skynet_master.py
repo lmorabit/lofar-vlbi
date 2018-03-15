@@ -347,7 +347,7 @@ def data_extract (vis):
     sra = np.asarray(sra.replace('h',' ').replace('m',' ').split(),dtype='f')
     sdec = np.asarray(sdec.replace('d',' ').replace('m',' ').split(),dtype='f')
     ra = 15.0*(sra[0]+sra[1]/60.0+sra[2]/3600.0)
-    dec = sdec[0]+sdec[1]/60.0+sdec[2]/3600.0
+    dec = np.sign(sdec[0]) * ( np.abs(sdec[0])+sdec[1]/60.0+sdec[2]/3600.0 )
     wlength = np.mean(LIGHT/(ch0 + chw*np.arange(nspw*nchan)))
     itel = np.array(get_idx_tels (vis,trname))
     # order of telescopes on baselines 0-1, 0-2, 1-2; -1 if in "wrong" order
