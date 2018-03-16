@@ -158,7 +158,7 @@ def main(parmdbfile, targetms, phaseonly = True):
                                                    stime=exampleRotA['times'],
                                                    etime=exampleRotA['timewidths'],
                                                    asStartEnd=False)
-		    parmdb.addValues("CommonRotationAngle:" + antenna, ValueHolder
+		    parmdb.addValues("CommonRotationAngle:" + antenna, ValueHolder )
 
 
         parmdb.flush()
