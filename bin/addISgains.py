@@ -130,6 +130,8 @@ def main(parmdbfile, targetms, phaseonly = True):
                     parmdb.addValues("Gain:0:0:Imag:" + antenna,ValueHolder)
                     parmdb.addValues("Gain:1:1:Real:" + antenna,ValueHolder_ones*intl11)
                     parmdb.addValues("Gain:1:1:Imag:" + antenna,ValueHolder)
+		if "Clock" in name:
+		    parmdb.addValues("Clock:" + antenna, ValueHolder)
 
         parmdb.flush()
         parmdb = 0
