@@ -47,7 +47,7 @@ class ReadMs:
 	else: return self.freqpara
     def GetMSNamepara(self): return self.msname
     
-def main(parmdbfile, targetms, phaseonly = True):
+def main(parmdbfile, targetms):
 
     if not os.path.exists(parmdbfile):
         print "Parmdb file %s doesn't exist!" % parmdbfile
@@ -61,16 +61,31 @@ def main(parmdbfile, targetms, phaseonly = True):
     parmdb = pdb.parmdb(parmdbfile)
     parnames = parmdb.getNames()
     parmdb_stations = [ s.split(':')[-1] for s in parnames ]
-    ## check if the international stations exist already
-    station_check = [ s for s in msinfo.stations if s in parmdb_stations ]
-    if len( station_check ) < len( msinfo.stations ):   
-	# if there are fewer stations in the parmdb than the measurement set
-        examplevalue = None
-        for name in parnames:
-            if "CS" in name:
-		csname = name
-		break
-	csname = csname.split(':')[-1]
+
+    ## get an example value for the first CS station
+    examplevalue = None
+    for name in parnames:
+        if "CS" in name:
+            csname = name
+            break
+    csname = csname.split(':')[-1]
+    ## get all parameters for the station
+    csnames = [ s for s in parnames if csname in s ]
+    nparams = len( csnames )
+
+    ## find the first DE station
+    for name in parnames:
+	if "DE" in name:
+	    dename = name
+	    break
+    dename = dename.split(':')[-1]
+    ## get all parameters for the station
+    denames = [ s for s in parnames if dename in s ]
+    de_nparams = len( denames )
+
+    ## check if the international stations already exist in the right format
+    if nparams != de_nparams:   
+	## the international stations need to be added
 	## get all parameters for the station
 	csnames = [ s for s in parnames if csname in s ]
 	gain_name = [ s for s in csnames if 'Gain:0:0:Real' in s ][0]
@@ -79,10 +94,14 @@ def main(parmdbfile, targetms, phaseonly = True):
 	if len( clock_name ) == 1:
   	    exampleclock = parmdb.getValuesGrid(clock_name[0])[clock_name[0]]
 	    exampleclock['values'] = np.zeros(exampleclock['values'].shape)
+	else:
+	    exampleclock = None
 	RotA_name = [ s for s in csnames if 'CommonRotationAngle:' in s ]
 	if len( RotA_name ) == 1:
-	    exampleRotA = parmdb.getValuesGrid(RotA_name)[RotA_name]
+	    exampleRotA = parmdb.getValuesGrid(RotA_name[0])[RotA_name[0]]
 	    exampleRotA['values'] = np.zeros(exampleRotA['values'].shape)
+	else:
+	    exampleRotA = None
 	
         # Zero the phases of the example entry
         if examplevalue == None:
@@ -90,9 +109,8 @@ def main(parmdbfile, targetms, phaseonly = True):
             return(1)
 
         examplevalue['values'] = np.zeros(examplevalue['values'].shape)
-        if not(phaseonly):
-            examplevalue_ones = copy.deepcopy(examplevalue)
-            examplevalue_ones['values'] = np.ones(examplevalue_ones['values'].shape)
+        examplevalue_ones = copy.deepcopy(examplevalue)
+        examplevalue_ones['values'] = np.ones(examplevalue_ones['values'].shape)
 
 	## find the median value of all core stations
 	amps00 = np.zeros(0)
@@ -120,29 +138,27 @@ def main(parmdbfile, targetms, phaseonly = True):
                                                stime=examplevalue['times'], 
                                                etime=examplevalue['timewidths'], 
                                                asStartEnd=False)
-
-                if phaseonly:
-    		    ## in case the values already exist (and may be NaN) they need to be deleted first
-                    parmdb.deleteValues("Gain:0:0:Phase:" + antenna)
-                    parmdb.deleteValues("Gain:1:1:Phase:" + antenna)	
-                    parmdb.addValues("Gain:0:0:Phase:" + antenna,ValueHolder)
-                    parmdb.addValues("Gain:1:1:Phase:" + antenna,ValueHolder)
-                else:
-                    ValueHolder_ones = parmdb.makeValue(values=examplevalue_ones['values'],
-                                               sfreq=examplevalue_ones['freqs'], 
-                                               efreq=examplevalue_ones['freqwidths'],
-                                               stime=examplevalue_ones['times'], 
-                                               etime=examplevalue_ones['timewidths'], 
-                                               asStartEnd=False)
-                    ## in case the values already exist (and may be NaN) they need to be deleted first
-                    parmdb.deleteValues("Gain:0:0:Real:" + antenna)
-                    parmdb.deleteValues("Gain:1:1:Real:" + antenna)
-                    parmdb.deleteValues("Gain:0:0:Imag:" + antenna)
-                    parmdb.deleteValues("Gain:1:1:Imag:" + antenna)
-                    parmdb.addValues("Gain:0:0:Real:" + antenna,ValueHolder_ones*intl00)
-                    parmdb.addValues("Gain:0:0:Imag:" + antenna,ValueHolder)
-                    parmdb.addValues("Gain:1:1:Real:" + antenna,ValueHolder_ones*intl11)
-                    parmdb.addValues("Gain:1:1:Imag:" + antenna,ValueHolder)
+                ValueHolder_ones_00 = parmdb.makeValue(values=examplevalue_ones['values']*intl00,
+                                                       sfreq=examplevalue_ones['freqs'], 
+                                                       efreq=examplevalue_ones['freqwidths'],
+                                                       stime=examplevalue_ones['times'], 
+                                                       etime=examplevalue_ones['timewidths'], 
+                                                       asStartEnd=False)
+                ValueHolder_ones_11 = parmdb.makeValue(values=examplevalue_ones['values']*intl11,
+                                                       sfreq=examplevalue_ones['freqs'],
+                                                       efreq=examplevalue_ones['freqwidths'],
+                                                       stime=examplevalue_ones['times'],
+                                                       etime=examplevalue_ones['timewidths'],
+                                                       asStartEnd=False)
+                ## in case the values already exist (and may be NaN) they need to be deleted first
+                parmdb.deleteValues("Gain:0:0:Real:" + antenna)
+                parmdb.deleteValues("Gain:1:1:Real:" + antenna)
+                parmdb.deleteValues("Gain:0:0:Imag:" + antenna)
+                parmdb.deleteValues("Gain:1:1:Imag:" + antenna)
+                parmdb.addValues("Gain:0:0:Real:" + antenna,ValueHolder_ones_00)
+                parmdb.addValues("Gain:0:0:Imag:" + antenna,ValueHolder)
+                parmdb.addValues("Gain:1:1:Real:" + antenna,ValueHolder_ones_11)
+                parmdb.addValues("Gain:1:1:Imag:" + antenna,ValueHolder)
 		if exampleclock != None:
 		    ValueHolder = parmdb.makeValue(values=exampleclock['values'],
                                                    sfreq=exampleclock['freqs'],
@@ -150,6 +166,7 @@ def main(parmdbfile, targetms, phaseonly = True):
                                                    stime=exampleclock['times'],
                                                    etime=exampleclock['timewidths'],
         	                                   asStartEnd=False)
+		    parmdb.deleteValues("Clock:" + antenna)
 		    parmdb.addValues("Clock:" + antenna, ValueHolder)
 		if exampleRotA != None:
 		    ValueHolder = parmdb.makeValue(values=exampleRotA['values'],
@@ -158,6 +175,7 @@ def main(parmdbfile, targetms, phaseonly = True):
                                                    stime=exampleRotA['times'],
                                                    etime=exampleRotA['timewidths'],
                                                    asStartEnd=False)
+		    parmdb.deleteValues("CommonRotationAngle:" + antenna)
 		    parmdb.addValues("CommonRotationAngle:" + antenna, ValueHolder )
 
 
@@ -172,21 +190,13 @@ def main(parmdbfile, targetms, phaseonly = True):
 
 if __name__ == "__main__":
     # Check invocation
-    print sys.argv[0] + ": modifies a phase-only or amp and phase parmdb **in-place** to add international stations with unity gain and zero phase"
+    print sys.argv[0] + ": modifies a parmdb **in-place** to add international stations with unity gain and zero phase"
     if not (len(sys.argv) == 3 or len(sys.argv) == 4):
-        print "Usage: %s <parmdbfile> <targetms> <optional:1 for phaseonly parmdb, 0 for amp and phase>" % sys.argv[0]
+        print "Usage: %s <parmdbfile> <targetms>" % sys.argv[0]
         sys.exit()
 
     # Check that the target files exist
     parmdbfile = sys.argv[1]
     targetms = sys.argv[2]
-    if(len(sys.argv) == 4):
-        do_phase = int(sys.argv[3])
-        if do_phase == 1:
-            do_phase = True
-        else:
-            do_phase = False
-    else:
-        do_phase = True
-    main(parmdbfile, targetms, do_phase)
+    main(parmdbfile, targetms)
  
