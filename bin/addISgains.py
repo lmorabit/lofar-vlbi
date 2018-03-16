@@ -68,9 +68,22 @@ def main(parmdbfile, targetms, phaseonly = True):
         examplevalue = None
         for name in parnames:
             if "CS" in name:
-                examplevalue = parmdb.getValuesGrid(name)[name]
-                break
-
+		csname = name
+		break
+	csname = csname.split(':')[-1]
+	## get all parameters for the station
+	csnames = [ s for s in parnames if csname in s ]
+	gain_name = [ s for s in csnames if 'Gain:0:0:Real' in s ][0]
+        examplevalue = parmdb.getValuesGrid(gain_name)[gain_name]
+	clock_name = [ s for s in csnames if 'Clock:' in s ]
+	if len( clock_name ) == 1:
+  	    exampleclock = parmdb.getValuesGrid(clock_name[0])[clock_name[0]]
+	    exampleclock['values'] = np.zeros(exampleclock['values'].shape)
+	RotA_name = [ s for s in csnames if 'CommonRotationAngle:' in s ]
+	if len( RotA_name ) == 1:
+	    exampleRotA = parmdb.getValuesGrid(RotA_name)[RotA_name]
+	    exampleRotA['values'] = np.zeros(exampleRotA['values'].shape)
+	
         # Zero the phases of the example entry
         if examplevalue == None:
             print "Couldn't find an example entry"
@@ -130,8 +143,23 @@ def main(parmdbfile, targetms, phaseonly = True):
                     parmdb.addValues("Gain:0:0:Imag:" + antenna,ValueHolder)
                     parmdb.addValues("Gain:1:1:Real:" + antenna,ValueHolder_ones*intl11)
                     parmdb.addValues("Gain:1:1:Imag:" + antenna,ValueHolder)
-		if "Clock" in name:
+		if exampleclock != None:
+		    ValueHolder = parmdb.makeValue(values=exampleclock['values'],
+                                                   sfreq=exampleclock['freqs'],
+                                                   efreq=exampleclock['freqwidths'],
+                                                   stime=exampleclock['times'],
+                                                   etime=exampleclock['timewidths'],
+        	                                   asStartEnd=False)
 		    parmdb.addValues("Clock:" + antenna, ValueHolder)
+		if exampleRotA != None:
+		    ValueHolder = parmdb.makeValue(values=exampleRotA['values'],
+                                                   sfreq=exampleRotA['freqs'],
+                                                   efreq=exampleRotA['freqwidths'],
+                                                   stime=exampleRotA['times'],
+                                                   etime=exampleRotA['timewidths'],
+                                                   asStartEnd=False)
+		    parmdb.addValues("CommonRotationAngle:" + antenna, ValueHolder
+
 
         parmdb.flush()
         parmdb = 0
