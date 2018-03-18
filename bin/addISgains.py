@@ -73,15 +73,15 @@ def main(parmdbfile, targetms):
     csnames = [ s for s in parnames if csname in s ]
     nparams = len( csnames )
 
+    de_nparams = 0
     ## find the first DE station
     for name in parnames:
 	if "DE" in name:
-	    dename = name
+	    dename = name.split(':')[-1]
+	    ## find the number of parameters
+	    denames = [ s for s in parnames if dename in s ]
+	    de_nparams = len( denames )
 	    break
-    dename = dename.split(':')[-1]
-    ## get all parameters for the station
-    denames = [ s for s in parnames if dename in s ]
-    de_nparams = len( denames )
 
     ## check if the international stations already exist in the right format
     if nparams != de_nparams:   
