@@ -27,7 +27,7 @@ def grab_coo_MS(MS):
 
     # reading the coordinates ("position") from the MS
     # NB: they are given in rad,rad (J2000) 
-    [[[ra,dec]]] = pt.table(MS+'::FIELD', readonly=True, ack=False).getcol('PHASE_DIR')
+    [[[ra,dec]]] = pt.table(MS+'/FIELD', readonly=True, ack=False).getcol('PHASE_DIR')
 
     # RA is stocked in the MS in [-pi;pi]
     # => shift for the negative angles before the conversion to deg (so that RA in [0;2pi])
@@ -59,7 +59,7 @@ def input2strlist_nomapfile(invar):
         raise TypeError('input2strlist: Type '+str(type(invar))+' unknown!')
     return str_list
 
-def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
+def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True", AllFile=None):
 
     """
     Download the LoTSS skymodel for the target field
@@ -110,15 +110,15 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
     # Reading a MS to find the coordinate (pyrap)
     #[RATar,DECTar]=grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
     #mypos = ( RATar, DECTar )
-    mypos = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+    RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
     ## this is the tier 1 database to query
     url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
 
     ## this works
     query = vo.dal.scs.SCSQuery( url )
-    query.ra = float( RATar )
-    query.dec = float( DECTar )
+    query['RA'] = float( RATar )
+    query['DEC'] = float( DECTar )
     query.radius = float( Radius )
     t = query.execute()   
     ## this does not
@@ -136,7 +136,9 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
     ## sort by flux
     flux_sort = utb.argsort('Total_flux')
     utb_sorted = utb[ flux_sort[::-1] ]
-
+    if AllFile is not None:
+        utb_sorted.write( AllFile, format='ascii.csv' )
+    
     ## keep only RA, DEC, Source_id and reorder the columns
     utb_sorted.keep_columns(['RA','DEC','Source_id'])
 
