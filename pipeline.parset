@@ -270,7 +270,6 @@ is_amp_gains.control.mapfile_in                      = transfer_amp_clock_sols.o
 is_amp_gains.control.inputkey                        = parmdbs
 is_amp_gains.argument.parmdbfile                     = parmdbs
 is_amp_gains.argument.targetms                       = ndppp_prep_target.output.mapfile
-is_amp_gains.argument.phaseonly                      = False
 
 # add international stations to phase solutions
 # only needs to to be done for the phase tables, which are 

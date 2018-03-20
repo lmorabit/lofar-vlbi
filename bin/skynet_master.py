@@ -711,7 +711,7 @@ def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601',
 	write_skymodel (ra,dec,point_model,vis+'/skymodel')
 	if model_only == 0:
             skynet_NDPPP (vis,vis+'_mod',solint=5)  # timesteps
-            os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
+            os.system('python '+self_cal_script+' -d CORRECTED_DATA '+vis+' -p')
 	else:
 	    # run makesourcedb to generate sky
 	    print 'MODEL ONLY'
@@ -726,7 +726,7 @@ def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601',
         model_engine (vis,closure_tels,firstnpy,PLOTTYPE=0,outname=vis+'_mod')
 	if model_only == 0:
             skynet_NDPPP (vis,vis+'_mod',solint=5)
-            os.system('python '+self_cal_script+' -d CORRECTED_DATA -m '+vis+' -p')
+            os.system('python '+self_cal_script+' -d CORRECTED_DATA '+vis+' -p')
     #else:
     #    return np.nan
     #return 0.0
