@@ -28,7 +28,7 @@ def grab_coo_MS(MS):
 
     # reading the coordinates ("position") from the MS
     # NB: they are given in rad,rad (J2000) 
-    [[[ra,dec]]] = pt.table(MS+'::FIELD', readonly=True, ack=False).getcol('PHASE_DIR')
+    [[[ra,dec]]] = pt.table(MS+'/FIELD', readonly=True, ack=False).getcol('PHASE_DIR')
 
     # RA is stocked in the MS in [-pi;pi]
     # => shift for the negative angles before the conversion to deg (so that RA in [0;2pi])
@@ -117,8 +117,8 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
 
     ## this works
     query = vo.dal.scs.SCSQuery( url )
-    query.ra = float( RATar )
-    query.dec = float( DECTar )
+    query['RA'] = float( RATar )
+    query['DEC'] = float( DECTar )
     query.radius = float( Radius )
     t = query.execute()   
     ## this does not
