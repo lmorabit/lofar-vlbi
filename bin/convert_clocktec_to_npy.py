@@ -81,9 +81,9 @@ print('... writing files ...')
 os.system('rm -f ' + 'fitted_data_dclock_' + calsource + '_1st.sm.npy')
 os.system('rm -f ' + 'fitted_data_dTEC_'   + calsource + '_1st.sm.npy')
 #numpy.save('fitted_data_dclock_' + calsource + '_1st.sm.npy', clockarray)
-numpy.save('fitted_data_dclock_' + calsource + '_1st.npy', clockarray)
+numpy.save('fitted_data_dclock_' + calsource + '_1st.sm.npy', clockarray)
 #numpy.save('fitted_data_dTEC_'   + calsource + '_1st.sm.npy', tecarray)
-numpy.save('fitted_data_dTEC_'   + calsource + '_1st.npy', tecarray)
+numpy.save('fitted_data_dTEC_'   + calsource + '_1st.sm.npy', tecarray)
 
 ## phase information
 os.system('rm -f freqs_for_phase_array.npy')
