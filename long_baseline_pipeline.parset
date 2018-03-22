@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/lmorabit/long_baseline_pipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, match_delay_file, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'process_losoto' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 #createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -650,19 +650,20 @@ copyST_gains.argument.flags		= [tables,ndppp_prep_target.output.mapfile]
 match_delay_file.control.kind                             = plugin
 match_delay_file.control.type                             = FindCorrespondingMSnew
 match_delay_file.control.mapfile_dir                      = input.output.mapfile_dir
-match_delay_file.control.filename                         = match_files.mapfile
+match_delay_file.control.filename                         = match_delay_file.mapfile
 match_delay_file.control.mapfile_grpd                     = createmap_tables.output.mapfile
 match_delay_file.control.mapfile_ms                       = ndppp_prep_target.output.mapfile
 
 # Apply the gain solutions directly to the data -- no need to remove time dependence
 ndppp_apply_delay.control.type                         = dppp
+ndppp_apply_delay.control.inplace		       = True
 ndppp_apply_delay.control.max_per_node                 = {{ num_proc_per_node }}
 ndppp_apply_delay.control.error_tolerance              = {{ error_tolerance }}
 ndppp_apply_delay.control.outputkey                    =
-ndppp_apply_delay.control.mapfiles_in                  = [match_files.output.parmdbs,match_delay_file.output.parmdbs]
-ndppp_apply_delay.control.inputkeys                    = [parmdbs,delparmdb]
+ndppp_apply_delay.control.mapfiles_in                  = [ndppp_prep_target.output.mapfile,match_files.output.parmdbs,match_delay_file.output.parmdbs,transfer_amp_clock_sols.output.transfer_parmDB.mapfile]
+ndppp_apply_delay.control.inputkeys                    = [inputms,parmdbs,delparmdb,ampclockparmdb]
 ndppp_apply_delay.argument.numthreads                  = {{ max_dppp_threads }}
-ndppp_apply_delay.argument.msin                        = ndppp_prep_target.output.mapfile
+ndppp_apply_delay.argument.msin                        = inputms
 ndppp_apply_delay.argument.msin.datacolumn             = DATA
 ndppp_apply_delay.argument.msin.baseline               = *&
 ndppp_apply_delay.argument.msout                       = .
@@ -670,17 +671,17 @@ ndppp_apply_delay.argument.msout.datacolumn            = CORRECTED_DATA
 ndppp_apply_delay.argument.msout.writefullresflag      = False
 ndppp_apply_delay.argument.steps                       = [applyclock,applygain,applybeam,applyrotate,applyphase,applydelay]
 ndppp_apply_delay.argument.applyclock.type             = applycal
-ndppp_apply_delay.argument.applyclock.parmdb           = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_delay.argument.applyclock.parmdb           = ampclockparmdb
 ndppp_apply_delay.argument.applyclock.correction       = clock
 ndppp_apply_delay.argument.applygain.type              = applycal
-ndppp_apply_delay.argument.applygain.parmdb            = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_delay.argument.applygain.parmdb            = ampclockparmdb
 ndppp_apply_delay.argument.applygain.correction        = gain
 ndppp_apply_delay.argument.applygain.updateweights     = True
 ndppp_apply_delay.argument.applybeam.type              = applybeam
 ndppp_apply_delay.argument.applybeam.usechannelfreq    = True
 ndppp_apply_delay.argument.applybeam.updateweights     = True
 ndppp_apply_delay.argument.applyrotate.type            = applycal
-ndppp_apply_delay.argument.applyrotate.parmdb          = map_transfer_amp_clock_sols.output.mapfile
+ndppp_apply_delay.argument.applyrotate.parmdb          = ampclockparmdb
 ndppp_apply_delay.argument.applyphase.type             = applycal
 ndppp_apply_delay.argument.applyphase.parmdb           = parmdbs
 ndppp_apply_delay.argument.applyphase.correction       = gain
