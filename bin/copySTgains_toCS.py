@@ -81,7 +81,7 @@ def main(parmdbfile, targetms):
                                            asStartEnd=False)
 	    csparname = ':'.join(name.split(':')[0:-1]) + ':' + antenna
             ## in case the values already exist (and may be NaN) they need to be deleted first
-	    parmdb.deleteValuesGrid(csparname)
+	    parmdb.deleteValues(csparname)
 	    parmdb.addValuesGrid(csparname,ValueHolder)
 
     parmdb.flush()
