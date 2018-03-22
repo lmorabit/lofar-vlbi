@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/lmorabit/long_baseline_pipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'process_losoto' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 #createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -99,6 +99,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
 ! convert_ct_script		    = {{ long_baseline_pipeline_dir }}/bin/convert_clocktec_to_npy.py
 ! losoto_parset			    = {{ long_baseline_pipeline_dir }}/parsets/losoto.parset
+! copyST_gains_script		    = {{ long_baseline_pipeline_dir }}/bin/copySTgains_toCS.py
 
 ## Configuration for prefactor scripts (update prefactor_dir at top)
 ! losoto_importer       = {{ long_baseline_pipeline_dir }}/bin/losotoImporter.py
