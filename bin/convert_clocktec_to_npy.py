@@ -10,7 +10,7 @@ import shutil
 #import progressbar
 import losoto._version
 import losoto._logging
-from losoto.h5parm import h5parm, solWriter, solFetcher
+from losoto.h5parm import h5parm
 #import lofar.expion.fitting as fitting
 
 args = sys.argv
@@ -29,20 +29,15 @@ calsource=args[2]
 pi = numpy.pi
 c  = 2.99792458e8
 ionmodel = h5parm(globaldbname ,readonly=True)
-solsetNames = ionmodel.getSolsets()
-for solsetName in solsetNames:
-    print solsetName
-solset = ionmodel.getSolset(solsetName)
-# solset name seems to always be sol000
-soltabs = ionmodel.getSoltabs('sol000')
+ionsolset = ionmodel.getSolset('sol000')
 
 ## get the individual tables
-amptab = ionmodel.getSoltab('sol000','amplitude000')
-phasetab = ionmodel.getSoltab('sol000','phase000')
-phaseOffsetTab = ionmodel.getSoltab('sol000','phase_offset000')
-clocktab = ionmodel.getSoltab('sol000','clock000')
-tectab = ionmodel.getSoltab('sol000','tec000')
-anttab = ionmodel.getAnt('sol000')
+amptab = ionsolset.getSoltab('amplitude000')
+phasetab = ionsolset.getSoltab('phase000')
+phaseOffsetTab = ionsolset.getSoltab('phase_offset000')
+clocktab = ionsolset.getSoltab('clock000')
+tectab = ionsolset.getSoltab('tec000')
+anttab = ionsolset.getAnt()
 print('tables read in ...')
 
 source_id     = 0  # source ID in global_db (usually 0)
