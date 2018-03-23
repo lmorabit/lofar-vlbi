@@ -16,8 +16,8 @@ calsource    = args[1] # name for writing outputfiles
 
 
 amparray   = np.load(calsource + '_amplitude_array.npy')
-clockarray = np.load('fitted_data_dclock_' + calsource + '_1st.npy')
-dtecarray  = np.load('fitted_data_dTEC_'   + calsource + '_1st.npy')
+clockarray = np.load('fitted_data_dclock_' + calsource + '_1st.sm.npy')
+dtecarray  = np.load('fitted_data_dTEC_'   + calsource + '_1st.sm.npy')
 numants = len(dtecarray[0,:])
 #numfreqs = 242
 #numtimes = 75
