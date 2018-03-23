@@ -102,7 +102,7 @@ def main(losotoname, store_basename, refstationID=2, sourceID=0):
     # I don't imagine someone would use a sourceID != 0
     inh5parm = h5parm(losotoname ,readonly=True)
     inh5solset = inh5parm.getSolset('sol000')
-    phasetab = inh5solset.getSolset('phase000')
+    phasetab = inh5solset.getSoltab('phase000')
     phases_tmp = np.copy(phasetab.val)
     freqs = np.copy(phasetab.freq)
     stationsnames = [ stat for stat in phasetab.ant]
