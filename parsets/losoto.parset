@@ -1,0 +1,27 @@
+soltab = [.*/.*]
+dir = [pointing]
+pol = [XX, YY]
+
+[clocktec]
+operation = CLOCKTEC
+soltab = [sol000/phase000]
+circular = False
+fit3rdOrder = False
+flagBadChannels = False
+combinePol = True
+
+[plotCLOCK]
+operation = PLOT
+axesInPlot = [time]
+axisInTable = ant
+plotFlag = False
+prefix = losoto_clock
+soltab = [sol000/clock000]
+
+[plotTEC]
+operation = PLOT
+axesInPlot = [time]
+axisInTable = ant
+plotFlag = False
+prefix = losoto_tec
+soltab = [sol000/tec000]
