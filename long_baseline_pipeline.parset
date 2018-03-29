@@ -309,6 +309,7 @@ ndppp_apply_cal.argument.applybeam.usechannelfreq = True
 ndppp_apply_cal.argument.applybeam.updateweights  = True
 ndppp_apply_cal.argument.applyrotate.type         = applycal
 ndppp_apply_cal.argument.applyrotate.parmdb       = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
+ndppp_apply_cal.argument.applyrotate.correction	  = commonrotationangle
 ndppp_apply_cal.argument.applyphase.type	  = applycal
 ndppp_apply_cal.argument.applyphase.parmdb	  = parmdbs
 ndppp_apply_cal.argument.applyphase.correction	  = gain
