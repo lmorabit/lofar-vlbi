@@ -683,6 +683,7 @@ ndppp_apply_delay.argument.applybeam.usechannelfreq    = True
 ndppp_apply_delay.argument.applybeam.updateweights     = True
 ndppp_apply_delay.argument.applyrotate.type            = applycal
 ndppp_apply_delay.argument.applyrotate.parmdb          = ampclockparmdb
+ndppp_apply_delay.argument.applyrotate.correction      = commonrotationangle
 ndppp_apply_delay.argument.applyphase.type             = applycal
 ndppp_apply_delay.argument.applyphase.parmdb           = parmdbs
 ndppp_apply_delay.argument.applyphase.correction       = gain
