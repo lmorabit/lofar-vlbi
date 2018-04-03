@@ -422,6 +422,7 @@ dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
 closure_phase.control.type                = pythonplugin
 closure_phase.control.executable          = {{ closure_phase_script }}
 closure_phase.argument.flags              = [dppp_concat.output.mapfile, {{ closure_phase_stations }}]
+closure_phase.argument.doplot		  = True
 
 # clean up the individual subband files -- keep only the concatenated calibrator data
 delete_intermediate_files.control.kind		  = recipe
