@@ -11,6 +11,15 @@ import argparse
 
 def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609;PL610;PL611;PL612;IE613', npix=128, fov_arcsec=6., zbl=0., prior_fwhm_arcsec=1., doplots=False, imfile='myim', remove_tels='', niter=300, cfloor=0.001, conv_criteria=0.0001, use_bs=False ):
 
+    ## for the generic pipeline, force the data types
+    npix = int(npix)
+    fov_arcsec  = float(fov_arcsec)
+    zbl = float(zbl)
+    prior_fwhm_arcsec = float(prior_fwhm_arcsec)
+    niter = int(niter)
+    cfloor = float(cfloor)
+    conv_criteria = float(conv_criteria)
+
     vis1 = vis + '.ms' ## so the next line will work if it doesn't end in ms
     fitsout = vis1.replace('.MS','.fits').replace('.ms','.fits')
 
@@ -23,9 +32,9 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
 
     ## starting from a measurement set, get a smaller ms with just the list of antennas
     ## use taql to get a list of telescopes
-    ss = 'taql \'select NAME from %s/ANTENNA\' >closure_txt'%(vis)
+    ss = 'taql \'select NAME from %s/ANTENNA\' > closure_txt'%(vis)
     os.system(ss)
-    os.system('grep -v select closure_txt >closure_which')
+    os.system('grep -v select closure_txt > closure_which')
     idxtel = np.loadtxt('closure_which',dtype='S')
     atel = np.unique(np.ravel(tel))
 
@@ -41,6 +50,8 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
             notfound.append (a)
     if len(notfound):
         print 'The following telescopes were not found:',notfound
+
+    os.system( 'rm closure_*' )
 
     aidx_s = np.sort(aidx)
 
@@ -58,6 +69,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     os.system (ss)
 
     ## check if weights are appropriate
+    print 'Checking if weights are sensible values, updating them if not'
     ss = "taql 'select WEIGHT_SPECTRUM from cl_temp.ms limit 1' > weight_check.txt"
     os.system(ss)
     with open( 'weight_check.txt', 'r' ) as f:
@@ -70,6 +82,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
 
     ## find the zero baseline amplitudes if it isn't set
     if zbl == 0:
+	print 'Calculating the zero baseline flux (mean of amplitudes on DE601 -- DE605'
 	## use baseline DE601 -- DE605 (shortest international to interational baseline)
 	de601_idx = aidx[[ i for i, val in enumerate(tel) if 'DE601' in val ]][0]
 	de605_idx = aidx[[ i for i, val in enumerate(tel) if 'DE605' in val ]][0]
@@ -81,15 +94,19 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         amps = np.asarray(lines[2].lstrip('[').rstrip(']\n').split(', '),dtype=float)
         zbl = np.max(amps)
 
+    os.system('rm *_check.txt')
+
     ## convert vis to uv-fits
     ss = 'ms2uvfits in=cl_temp.ms out=%s writesyscal=F'%(fitsout)
     os.system(ss)
 
     ## observe the uv-fits
+    print 'Reading in the observation to the EHT imager.'
     obs = eh.obsdata.load_uvfits(fitsout)
 
     if doplots:
         ## make plots
+        print 'Plotting u-v coverage and amplitude vs. uv-distance'
         obs.plotall('u','v', conj=True, show=False, export_pdf=fitsout.replace('fits','u-v.pdf') ) ## u-v coverage
         obs.plotall('uvdist','amp', show=False, export_pdf=fitsout.replace('fits','uvdist-amp.pdf') ) ## etc
 
@@ -97,22 +114,27 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     fov = fov_arcsec * 1e6 * RADPERUAS
 
     ## the dirty beam
+    print 'Calculating the dirty beam.'
     dbeam = obs.dirtybeam(npix,fov)
     dbeam.save_fits(fitsout.replace('fits','dirty_beam.fits'))
 
     ## the clean beam
+    print 'Calculating the clean beam.'
     cbeam = obs.cleanbeam(npix,fov)
     cbeam.save_fits(fitsout.replace('fits','clean_beam.fits'))
 
     # dirty image
+    print 'Calculating the dirty image.'
     dimage = obs.dirtyimage(npix,fov)
     dimage.save_fits(fitsout.replace('fits','dirty_image.fits'))
 
     ## beam parameters (in radians)
     beamparams = obs.fit_beam()
+    print 'The beam is ' + str(beamparams[0]*206265.) + ' by ' + str(beamparams[1]*206265.) + ' arcsec.'
 
     ## maximum resolution (in radians)
     res = obs.res()
+    print 'Maximum resolution is ' + str(res*206265.)
 
     ## set up the gaussian prior
     prior_fwhm = prior_fwhm_arcsec * 1e6 * RADPERUAS
@@ -122,7 +144,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     gaussprior.display()
 
     if use_bs:
-	print('Using bispectrum mode rather than cphase and camp separately.')
+	print 'Using bispectrum mode rather than cphase and camp separately.'
 
 	## try using bispectrum
         bs_out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='bs', s1='gs', alpha_d1=50, clipfloor=0.001, maxit=300, stop=0.0001 )
@@ -137,7 +159,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         bs_finalout.save_fits('./bs_' + imfile + 'im_blur.fits')
 
     else:
-
+        print 'Using closure phase and closure amplitude separately.'
         ## using d1 = closure phase and d2 = closure amplitude
         out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='cphase', d2='camp', s1='gs', s2='gs', alpha_d1=50, alpha_d2=50, clipfloor=cfloor, maxit=niter, stop=conv_criteria )
         outblur = out.blur_gauss(beamparams, 0.5)
@@ -150,10 +172,12 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         out1.save_fits('./' + imfile + 'im.fits')
         finalout.save_fits('./' + imfile + 'im_blur.fits')
 
+    print 'done.'
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Python wrapper for running the EHT closure phase/closure amplitude imager on LOFAR data')
-    parser.add_argument('vis', type=str, nargs='+', help='Measurement set name')
+    parser.add_argument('vis', type=str, help='Measurement set name')
     parser.add_argument('--ctels', type=str, help='list of closure telescopes, separated by ; eg. "DE601;DE602" [default all international stations]', default='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609;PL610;PL611;PL612;IE613')
     parser.add_argument('--npix', type=int, help='Number of pixels for output images', default=128)
     parser.add_argument('--fov', type=float, help='FoV in arcseconds', default=6. )
