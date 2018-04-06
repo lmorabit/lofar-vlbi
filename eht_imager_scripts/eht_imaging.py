@@ -2,21 +2,26 @@
 import numpy as np
 import ehtim as eh
 import os
-import sys
 
 from ehtim.const_def import *
 from ehtim.observing.obs_helpers import *
 from ehtim.imaging.imager_utils import *
 
+import argparse
 
-def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609', npix=128, fov_arcsec=6., zbl=350., prior_fwhm_arcsec=1., doplots=False, imfile='3C48' )
+def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609;PL610;PL611;PL612;IE613', npix=128, fov_arcsec=6., zbl=0., prior_fwhm_arcsec=1., doplots=False, imfile='myim', remove_tels='', niter=300, cfloor=0.001, conv_criteria=0.0001, use_bs=False ):
 
-    fitsout = vis.replace('MS','fits').replace('ms','fits')
+    vis1 = vis + '.ms' ## so the next line will work if it doesn't end in ms
+    fitsout = vis1.replace('.MS','.fits').replace('.ms','.fits')
+
+    ## remove any telescopes from the default list
+    r_tels = remove_tels.split(';')
+    for r_tel in r_tels:
+	closure_tels = closure_tels.replace(r_tel,'')
+    tmp_tel = closure_tels.split(';')
+    tel = [ t for t in tmp_tel if t != '' ]
 
     ## starting from a measurement set, get a smaller ms with just the list of antennas
-    closure_tels = 'DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609'
-    tel = closure_tels.split(';')
-
     ## use taql to get a list of telescopes
     ss = 'taql \'select NAME from %s/ANTENNA\' >closure_txt'%(vis)
     os.system(ss)
@@ -53,15 +58,28 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     os.system (ss)
 
     ## check if weights are appropriate
-        ss = "taql 'select WEIGHT_SPECTRUM from cl_temp.ms limit 1' > weight_check.txt"
-        os.system(ss)
-        with open( 'weight_check.txt', 'r' ) as f:
-            lines = f.readlines()
-        f.close()
-        first_weight = np.float(lines[3].lstrip('[').split(',')[0])
+    ss = "taql 'select WEIGHT_SPECTRUM from cl_temp.ms limit 1' > weight_check.txt"
+    os.system(ss)
+    with open( 'weight_check.txt', 'r' ) as f:
+        lines = f.readlines()
+    f.close()
+    first_weight = np.float(lines[3].lstrip('[').split(',')[0])
     if first_weight < 1e-9:
         ss = "taql 'update cl_temp.ms set WEIGHT_SPECTRUM=WEIGHT_SPECTRUM*1e11'"
         os.system(ss)
+
+    ## find the zero baseline amplitudes if it isn't set
+    if zbl == 0:
+	## use baseline DE601 -- DE605 (shortest international to interational baseline)
+	de601_idx = aidx[[ i for i, val in enumerate(tel) if 'DE601' in val ]][0]
+	de605_idx = aidx[[ i for i, val in enumerate(tel) if 'DE605' in val ]][0]
+	ss = "taql 'select means(gaggr(abs(DATA)),0,1) from cl_temp.ms' where ANTENNA1==%s and ANTENNA2=%s > amp_check.txt"%(de601_idx, de605_idx)
+	os.system(ss)
+	with open( 'amp_check.txt', 'r' ) as f:
+	    lines = f.readlines()
+        f.close()
+        amps = np.asarray(lines[2].lstrip('[').rstrip(']\n').split(', '),dtype=float)
+        zbl = np.max(amps)
 
     ## convert vis to uv-fits
     ss = 'ms2uvfits in=cl_temp.ms out=%s writesyscal=F'%(fitsout)
@@ -103,33 +121,51 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     gaussprior = emptyprior.add_gauss( zbl, gaussparams )
     gaussprior.display()
 
-    ## using d1 = closure phase and d2 = closure amplitude
-    out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='cphase', d2='camp', s1='gs', s2='gs', alpha_d1=50, alpha_d2=50, clipfloor=0.001, maxit=300, stop=0.0001 )
-    outblur = out.blur_gauss(beamparams, 0.5)
-    out1 = eh.imager_func( obs, outblur, outblur, zbl, d1='cphase', d2='camp', s1='gs', s2='gs', alpha_d1=50, alpha_d2=50, clipfloor=0.001, maxit=300, stop=0.0001 )
-    out1blur = out1.blur_gauss((res,res,0),0.5)
+    if use_bs:
+	print('Using bispectrum mode rather than cphase and camp separately.')
 
-    finalout = out1.blur_gauss(beamparams,0.5)
+	## try using bispectrum
+        bs_out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='bs', s1='gs', alpha_d1=50, clipfloor=0.001, maxit=300, stop=0.0001 )
+        bs_outblur = bs_out.blur_gauss(beamparams, 0.5)
+        bs_out1 = eh.imager_func( obs, bs_outblur, bs_outblur, zbl, d1='bs', s1='gs', alpha_d1=50, clipfloor=0.001, maxit=300, stop=0.0001 )
+        bs_outblur1 = bs_out1.blur_gauss((res,res,0),0.5)
 
-    ## save to fits
-    out1.save_fits('./' + imfile + 'im.fits')
-    finalout.save_fits('./' + imfile + 'im_blur.fits')
+        bs_finalout = bs_out1.blur_gauss(beamparams,0.5)
 
-    ## try using bispectrum
-    bs_out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='bs', s1='gs', alpha_d1=50, clipfloor=0.001, maxit=300, stop=0.0001 )
-    bs_outblur = bs_out.blur_gauss(beamparams, 0.5)
-    bs_out1 = eh.imager_func( obs, bs_outblur, bs_outblur, zbl, d1='bs', s1='gs', alpha_d1=50, clipfloor=0.001, maxit=300, stop=0.0001 )
-    bs_outblur1 = bs_out1.blur_gauss((res,res,0),0.5)
+        ## save to fits
+        bs_out1.save_fits('./bs_' + imfile + 'im.fits')
+        bs_finalout.save_fits('./bs_' + imfile + 'im_blur.fits')
 
-    bs_finalout = bs_out1.blur_gauss(beamparams,0.5)
+    else:
 
-    ## save to fits
-    bs_out1.save_fits('./bs_' + imfile + 'im.fits')
-    bs_finalout.save_fits('./bs_' + imfile + 'im_blur.fits')
+        ## using d1 = closure phase and d2 = closure amplitude
+        out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='cphase', d2='camp', s1='gs', s2='gs', alpha_d1=50, alpha_d2=50, clipfloor=cfloor, maxit=niter, stop=conv_criteria )
+        outblur = out.blur_gauss(beamparams, 0.5)
+        out1 = eh.imager_func( obs, outblur, outblur, zbl, d1='cphase', d2='camp', s1='gs', s2='gs', alpha_d1=50, alpha_d2=50, clipfloor=cfloor, maxit=niter, stop=conv_criteria )
+        out1blur = out1.blur_gauss((res,res,0),0.5)
 
+        finalout = out1.blur_gauss(beamparams,0.5)
+
+        ## save to fits
+        out1.save_fits('./' + imfile + 'im.fits')
+        finalout.save_fits('./' + imfile + 'im_blur.fits')
 
 if __name__ == "__main__":
 
-    myvis = sys.argv[1]
-    main(vis)
+    parser = argparse.ArgumentParser(description='Python wrapper for running the EHT closure phase/closure amplitude imager on LOFAR data')
+    parser.add_argument('vis', type=str, nargs='+', help='Measurement set name')
+    parser.add_argument('--ctels', type=str, help='list of closure telescopes, separated by ; eg. "DE601;DE602" [default all international stations]', default='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609;PL610;PL611;PL612;IE613')
+    parser.add_argument('--npix', type=int, help='Number of pixels for output images', default=128)
+    parser.add_argument('--fov', type=float, help='FoV in arcseconds', default=6. )
+    parser.add_argument('--zbl', type=float, help='Zero baseline flux, Jy [default=calculate from data]', default=0. )
+    parser.add_argument('--prior_fwhm', type=float, help='FWHM of Gaussian prior in arcsec', default=1. )
+    parser.add_argument('--doplots', action='store_true')
+    parser.add_argument('--imfile', type=str, help='filestem for output files', default='ehtim' )
+    parser.add_argument('--rtels', type=str, help='list of telescopes to remove from ctels (same format)', default='')
+    parser.add_argument('--maxiter', type=int, help='Maximum number of iterations', default=300)
+    parser.add_argument('--clipfloor', type=float, help='Clip floor for model [Jy/pixel]', default=0.001)
+    parser.add_argument('--convg', type=float, help='Convergence criteria', default=0.0001)
+    parser.add_argument('--use_bs', action='store_true', help='set to use bs rather than cphase and camp separately')
 
+    args = parser.parse_args()
+    main( args.vis, closure_tels = args.ctels, npix = args.npix, fov_arcsec = args.fov, zbl = args.zbl, prior_fwhm_arcsec = args.prior_fwhm, doplots = args.doplots, imfile = args.imfile, remove_tels = args.rtels, niter=args.maxiter, cfloor=args.clipfloor, conv_criteria=args.convg, use_bs=args.use_bs )
