@@ -169,6 +169,9 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         finalout = out1.blur_gauss(beamparams,0.5)
 
         ## save to fits
+	out.save_fits('./' + imfile + '_0_im.fits')
+	outblur.save_fits('./' + imfile + '_0_im_blur.fits')
+
         out1.save_fits('./' + imfile + 'im.fits')
         finalout.save_fits('./' + imfile + 'im_blur.fits')
 
