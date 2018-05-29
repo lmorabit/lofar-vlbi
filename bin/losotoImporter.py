@@ -15,7 +15,7 @@ import lofar.parmdb as pdb
 #from losoto.h5parm import h5parm, solWriter
 from losoto._importer import create_h5parm
 from losoto.h5parm import h5parm
-
+from losoto._version import __version__ as version
 import logging
 
 # mandatory arguments:
@@ -87,6 +87,13 @@ def plugin_main(args, **kwargs):
 
 # this is the code if you use it as a python-plugin step
 def main(msfileslist, hdf5fileName, hdf5_dir='.', instrument='/instrument', solsetName=None, compression=5):
+    # check that the correct version of Losoto is installed
+    if float(version) >= 2.0:
+        logging.info('Losoto ' + str(version) + ' found.')
+    else:
+        logging.critical('Losoto 2.0 or greater is required. Exiting...')
+        sys.exit(1) 
+    
     tmp_msfiles = msfileslist.lstrip('[').rstrip(']').split(',')
     msfiles = [ MS.strip("\' \"") for MS in tmp_msfiles]
     hdf5File = os.path.join(hdf5_dir,hdf5fileName)

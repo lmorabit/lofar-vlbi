@@ -6,6 +6,7 @@ import glob
 import pyrap.tables as pt
 import lofar.parmdb as pdb
 import copy
+import logging
 
 ###Reading in the the parameters of target data with PYRAP and putting them into directories for further use ###
 ###Shamelessly borrowed from prefactor pipeline code ###
@@ -82,7 +83,12 @@ def main(parmdbfile, targetms):
 	    csparname = ':'.join(name.split(':')[0:-1]) + ':' + antenna
             ## in case the values already exist (and may be NaN) they need to be deleted first
 	    parmdb.deleteValues(csparname)
-	    parmdb.addValuesGrid(csparname,ValueHolder)
+	    try:
+  	        parmdb.addValuesGrid(csparname,ValueHolder)
+	    except AttributeError:
+		# some versions of LOFAR software have the attribute named addValuesGrid and some have it named addValues but they are identical
+		logging.warning('addValuesGrid function not found, using addValues instead')
+		parmdb.addValues(csparname,ValueHolder)
 
     parmdb.flush()
     parmdb = 0

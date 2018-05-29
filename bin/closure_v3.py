@@ -74,7 +74,7 @@ def closure(vis,tel,lastv=-1,pol=0,use_spw=0,bchan=0,echan=-1,\
 
     if len(notfound):
         print 'The following telescopes were not found:',notfound
-
+        print 'If no telescopes were found, check that TaQL is installed.'
 
     aidx_s = np.sort(aidx)
 

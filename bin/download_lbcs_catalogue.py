@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import pyvo as vo
-import os
+import os, sys, logging
 import glob
 import numpy as np
 import argparse
@@ -135,7 +135,11 @@ def main(ms_input, ResultsFile, Radius=1.5, DoDownload="True"):
         counts.append(b)
         if b >=2:
             P_count = P_count + 1    #### To determine how many sources to take 
-    print 'Good sources - ' + str(P_count)   
+    print 'Good sources - ' + str(P_count)
+    if P_count == 0:
+        logging.critical('There are no good LBCS sources within the given radius. Check your source is within the LBCS footprint and increase the search radius. Exiting...')
+        sys.exit(1)
+
     inds = np.argsort(counts)
     tb_sorted =tb[inds[::-1]]
     len_array = len(tb_sorted)
