@@ -64,31 +64,34 @@ def main(parmdbfile, targetms):
     STvalue = None
     for name in parnames:
         if "ST" in name:
-            STvalue = parmdb.getValuesGrid(name)[name]
-            break
+	    try:
+                STvalue = parmdb.getValuesGrid(name)[name]
+	    except AttributeError:
+                logging.warning('addValuesGrid function not found, using addValues instead')
+	        STvalue = parmdb.getValues(name)[name]
+
+            # Add the necessary stations
+            for antenna_id, antenna in enumerate(msinfo.stations):
+                if "CS" in antenna:
+                    ValueHolder = parmdb.makeValue(values=STvalue['values'],
+                                                   sfreq=STvalue['freqs'], 
+                                                   efreq=STvalue['freqwidths'],
+                                                   stime=STvalue['times'], 
+                                                   etime=STvalue['timewidths'], 
+                                                   asStartEnd=False)
+                    csparname = ':'.join(name.split(':')[0:-1]) + ':' + antenna
+                    ## in case the values already exist (and may be NaN) they need to be deleted first
+                    parmdb.deleteValues(csparname)
+	            try:
+  	                parmdb.addValuesGrid(csparname,ValueHolder)
+                    except AttributeError:
+	                # some versions of LOFAR software have the attribute named addValuesGrid and some have it named addValues but they are identical
+                        logging.warning('addValuesGrid function not found, using addValues instead')
+                        parmdb.addValues(csparname,ValueHolder)
 
     if STvalue == None:
         print "Couldn't find station ST001 entry"
         return(1)
-
-    # Add the necessary stations
-    for antenna_id, antenna in enumerate(msinfo.stations):
-        if "CS" in antenna:
-            ValueHolder = parmdb.makeValue(values=STvalue['values'],
-                                           sfreq=STvalue['freqs'], 
-                                           efreq=STvalue['freqwidths'],
-                                           stime=STvalue['times'], 
-                                           etime=STvalue['timewidths'], 
-                                           asStartEnd=False)
-	    csparname = ':'.join(name.split(':')[0:-1]) + ':' + antenna
-            ## in case the values already exist (and may be NaN) they need to be deleted first
-	    parmdb.deleteValues(csparname)
-	    try:
-  	        parmdb.addValuesGrid(csparname,ValueHolder)
-	    except AttributeError:
-		# some versions of LOFAR software have the attribute named addValuesGrid and some have it named addValues but they are identical
-		logging.warning('addValuesGrid function not found, using addValues instead')
-		parmdb.addValues(csparname,ValueHolder)
 
     parmdb.flush()
     parmdb = 0
