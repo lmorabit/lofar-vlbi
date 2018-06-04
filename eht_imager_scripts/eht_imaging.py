@@ -7,7 +7,19 @@ from ehtim.const_def import *
 from ehtim.observing.obs_helpers import *
 from ehtim.imaging.imager_utils import *
 
+import pyfits
 import argparse
+
+def sepn(r1,d1,r2,d2):
+    """
+    Calculate the separation between 2 sources, RA and Dec must be
+    given in radians. Returns the separation in radians [TWS]
+    """
+    # NB slalib sla_dsep does this
+    # www.starlink.rl.ac.uk/star/docs/sun67.htx/node72.html
+    cos_sepn=np.sin(d1)*np.sin(d2) + np.cos(d1)*np.cos(d2)*np.cos(r1-r2)
+    sepn = np.arccos(cos_sepn)
+    return sepn    
 
 def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609;PL610;PL611;PL612;IE613', npix=128, fov_arcsec=6., zbl=0., prior_fwhm_arcsec=1., doplots=False, imfile='myim', remove_tels='', niter=300, cfloor=0.001, conv_criteria=0.0001, use_bs=False ):
 
@@ -71,6 +83,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     ## check if weights are appropriate
     print 'Checking if weights are sensible values, updating them if not'
     ss = "taql 'select WEIGHT_SPECTRUM from cl_temp.ms limit 1' > weight_check.txt"
+    print( ss )
     os.system(ss)
     with open( 'weight_check.txt', 'r' ) as f:
         lines = f.readlines()
@@ -84,19 +97,26 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     if zbl == 0:
 	print 'Calculating the zero baseline flux (mean of amplitudes on DE601 -- DE605'
 	## use baseline DE601 -- DE605 (shortest international to interational baseline)
-	de601_idx = aidx[[ i for i, val in enumerate(tel) if 'DE601' in val ]][0]
-	de605_idx = aidx[[ i for i, val in enumerate(tel) if 'DE605' in val ]][0]
-	ss = "taql 'select means(gaggr(abs(DATA)),0,1) from cl_temp.ms' where ANTENNA1==%s and ANTENNA2=%s > amp_check.txt"%(de601_idx, de605_idx)
+        ## njj - failing that, use the first two
+        try: 
+	    de601_idx = aidx[[ i for i, val in enumerate(tel) if 'DE601' in val ]][0]
+	    de605_idx = aidx[[ i for i, val in enumerate(tel) if 'DE605' in val ]][0]
+	except:
+            print '...Not present. Using %s %s instead'%(tel[0],tel[1])
+            de601_idx, de605_idx = aidx[0],aidx[1]
+	ss = "taql 'select medians(gaggr(abs(DATA)),0,1) from cl_temp.ms' where ANTENNA1==%s and ANTENNA2=%s > amp_check.txt"%(de601_idx, de605_idx)
 	os.system(ss)
 	with open( 'amp_check.txt', 'r' ) as f:
 	    lines = f.readlines()
         f.close()
         amps = np.asarray(lines[2].lstrip('[').rstrip(']\n').split(', '),dtype=float)
-        zbl = np.max(amps)
+        zbl = np.median(amps)
 
     os.system('rm *_check.txt')
 
     ## convert vis to uv-fits
+    if os.path.isfile(fitsout):
+	os.system('rm '+fitsout)
     ss = 'ms2uvfits in=cl_temp.ms out=%s writesyscal=F'%(fitsout)
     os.system(ss)
 
@@ -137,11 +157,54 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     print 'Maximum resolution is ' + str(res*206265.)
 
     ## set up the gaussian prior
-    prior_fwhm = prior_fwhm_arcsec * 1e6 * RADPERUAS
-    gaussparams = ( prior_fwhm, prior_fwhm, 0.0 )
-    emptyprior = eh.image.make_square( obs, npix, fov )
-    gaussprior = emptyprior.add_gauss( zbl, gaussparams )
+    if use_first:
+        if not os.path.isfile('./first_2008.simple.npy'):
+            os.system('wget http://www.jb.man.ac.uk/~njj/first_2008.simple.npy')
+        import math,pyrap; from pyrap import tables
+        table = pyrap.tables.table('cl_temp.ms/FIELD', readonly = True)
+        ra    = math.degrees(float(table.getcol('PHASE_DIR')[0][0][0] ) % (2 * math.pi))
+        dec   = math.degrees(float(table.getcol('PHASE_DIR')[0][0][-1]))
+        table.close()
+        first = np.load('first_2008.simple.npy')
+        MAXARCMIN,RADASEC = 2.0, 206265.0
+	## ra,dec must be in radians
+	degToRad = np.pi / 180.
+	spatial_separations = sepn( ra*degToRad, dec*degToRad, first[:,0]*degToRad, first[:,1]*degToRad )
+	corrfirst = np.where( spatial_separations <= MAXARCMIN/60.0/RADASEC )[0]
+        if not len(corrfirst):           # no FIRST, fall back to default
+            prior_fwhm = prior_fwhm_arcsec * 1e6 * RADPERUAS
+            gaussparams = ( prior_fwhm, prior_fwhm, 0.0 )
+            emptyprior = eh.image.make_square( obs, npix, fov )
+            gaussprior = emptyprior.add_gauss( zbl, gaussparams )
+            print 'Prior image: circular Gaussian %f arcsec' % prior_fwhm*RADASEC
+        else:
+            fov_arcsec = max(10.0,2.2*first[corrfirst,4].max())
+            fov = fov_arcsec * 1e6 * RADPERUAS
+            emptyprior = eh.image.make_square( obs, npix, fov )
+            for n,i in enumerate(corrfirst):
+                this = first[int(i)]
+                zbl = this[3]*4.0/1000.0  # multiply first flux by 4 - bit rough
+                gaussparams = (np.deg2rad((max(7.0,this[4]))/3600.),\
+                               np.deg2rad((max(5.0,this[5]))/3600.),\
+                               np.deg2rad(this[6]),\
+                               np.deg2rad(this[0]-ra),np.deg2rad(this[1]-dec))
+                print 'Prior: adding %.1fmJy Gaussian %.2f*%.2f asec, PA %.1f, at (%.3f,%.3f)asec' % \
+                  (zbl*1000.,gaussparams[0]*RADASEC,gaussparams[1]*RADASEC,\
+                             np.rad2deg(gaussparams[2]),\
+                             gaussparams[3]*RADASEC,gaussparams[4]*RADASEC)
+		if n == 0:
+                    gaussprior = emptyprior.add_gauss( zbl, gaussparams )
+		else:
+		    gaussprior = gaussprior.add_gauss( zbl, gaussparams )
+    else:
+        prior_fwhm = prior_fwhm_arcsec * 1e6 * RADPERUAS
+        gaussparams = ( prior_fwhm, prior_fwhm, 0.0 )
+        emptyprior = eh.image.make_square( obs, npix, fov )
+        gaussprior = emptyprior.add_gauss( zbl, gaussparams )
     gaussprior.display()
+
+    ## find the clipfloor
+    
 
     if use_bs:
 	print 'Using bispectrum mode rather than cphase and camp separately.'
