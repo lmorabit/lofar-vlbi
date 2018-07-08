@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys,os,time,numpy as np,pyrap,matplotlib
+matplotlib.use('Agg')
 from pyrap import tables as pt
 from matplotlib import pyplot as plt
 
