@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/lmorabit/long_baseline_pipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, copy_h5imp_cal, process_losoto, convert_ct, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, match_delay_file, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, find_h5, copy_h5imp_cal, process_losoto, convert_ct, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, match_delay_file, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'process_losoto' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 #createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -529,19 +529,27 @@ calib_cal.argument.gaincal.usebeammodel   = False
 calib_cal.argument.gaincal.sourcedb       = delay_cal_model_map.output.mapfile
 
 # import all instrument tables into one LoSoTo file
-h5imp_cal.control.type            =  pythonplugin
-h5imp_cal.control.executable      =  {{ losoto_importer }}
-h5imp_cal.control.error_tolerance =  {{ error_tolerance }}
-h5imp_cal.argument.flags          =  [find_delay_cal.output.mapfile,h5imp_cal_losoto.h5] 
-h5imp_cal.argument.instrument     =  /instrument
-h5imp_cal.argument.solsetName     =  sol000
-h5imp_cal.argument.compression    =  7
+h5imp_cal.control.kind                          = recipe
+h5imp_cal.control.type                          = executable_args
+h5imp_cal.control.executable                    = {{ losoto_importer }}
+h5imp_cal.control.mapfile_in                    = find_delay_cal.output.mapfile
+h5imp_cal.control.inputkey                      = source
+h5imp_cal.control.arguments                     = [h5imp_cal_losoto.h5,source]
+
+# make a mapfile of the h5parm
+find_h5.control.kind            = plugin
+find_h5.control.type            = createMapfile
+find_h5.control.method          = mapfile_from_folder
+find_h5.control.mapfile_dir     = input.output.mapfile_dir
+find_h5.control.filename        = createmap_plots.mapfile
+find_h5.control.folder          = {{ job_directory }}
+find_h5.control.pattern         = h5imp_cal_losoto.h5
 
 # copy the LoSoTo file to the inspection_directory
 copy_h5imp_cal.control.kind               =  recipe
 copy_h5imp_cal.control.type               =  executable_args
 copy_h5imp_cal.control.executable         =  /bin/cp
-copy_h5imp_cal.control.mapfile_in         =  h5imp_cal.output.h5parm.mapfile
+copy_h5imp_cal.control.mapfile_in         =  find_h5.output.mapfile
 copy_h5imp_cal.control.inputkey           =  source
 copy_h5imp_cal.control.arguments          =  [source,{{ inspection_directory }}]
 
@@ -550,7 +558,7 @@ process_losoto.control.kind                                    =  recipe
 process_losoto.control.type                                    =  executable_args
 process_losoto.control.executable                              =  {{ losoto_executable }}
 process_losoto.control.parsetasfile                            =  False
-process_losoto.control.mapfile_in                              =  h5imp_cal.output.h5parm.mapfile
+process_losoto.control.mapfile_in                              =  find_h5.output.mapfile
 process_losoto.control.inputkey                                =  h5gvds
 process_losoto.argument.flags                                  =  [h5gvds,{{ losoto_parset }}]
 
@@ -558,7 +566,7 @@ process_losoto.argument.flags                                  =  [h5gvds,{{ los
 ## convert the clock-tec values to numpy arrays
 convert_ct.control.kind          = recipe
 convert_ct.control.type          = executable_args
-convert_ct.control.mapfile_in    = h5imp_cal.output.h5parm.mapfile
+convert_ct.control.mapfile_in    = find_h5.output.mapfile
 convert_ct.control.executable    = {{ convert_ct_script }}
 convert_ct.control.arguments     = [h5gvds,caldata_transfer]
 convert_ct.control.inputkey      = h5gvds
@@ -566,7 +574,7 @@ convert_ct.control.inputkey      = h5gvds
 # run the script that filters the amplitudes
 ampl.control.kind             = recipe
 ampl.control.type             = executable_args
-ampl.control.mapfile_in       = h5imp_cal.output.h5parm.mapfile
+ampl.control.mapfile_in       = find_h5.output.mapfile
 ampl.control.executable       = {{ fitamps_script }}
 # order for arguments is: [<input-filename>,<output-filename-base>,<num-ch/SB>,<subbans-to-flag>]
 # subbans-to-flag = semicolon-sperated list of integers in double-quotes
@@ -577,7 +585,7 @@ ampl.control.inputkey         = h5gvds
 # generate output plots
 plots.control.kind             = recipe
 plots.control.type             = executable_args
-plots.control.mapfile_in       = h5imp_cal.output.h5parm.mapfile
+plots.control.mapfile_in       = find_h5.output.mapfile
 plots.control.executable       = {{ plotsols_script }}
 plots.control.skip_infile      = True
 plots.control.arguments        = [caldata_transfer] # Needs "<output-filename-base>" from the process_losoto and ampl steps
@@ -706,3 +714,4 @@ ndppp_apply_delay.argument.applydelay.updateweights    = false
 #                   END OF PIPELINE	                        ##
 # 		                                                ##
 ##################################################################
+
