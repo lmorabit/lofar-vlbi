@@ -21,7 +21,12 @@ def sepn(r1,d1,r2,d2):
     sepn = np.arccos(cos_sepn)
     return sepn    
 
-def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609;PL610;PL611;PL612;IE613', npix=128, fov_arcsec=6., zbl=0., prior_fwhm_arcsec=1., doplots=False, imfile='myim', remove_tels='', niter=300, cfloor=0.001, conv_criteria=0.0001, use_bs=False, use_first=True ):
+def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609;PL610;PL611;PL612;IE613', npix=128, fov_arcsec=6., zbl=0., prior_fwhm_arcsec=1., doplots=False, imfile='myim', remove_tels='', niter=300, cfloor=0.001, conv_criteria=0.0001, use_bs=False, scratch_model=False ):
+
+    if not scratch_model:
+	use_first = True
+    else:
+	use_first = False
 
     ## for the generic pipeline, force the data types
     npix = int(npix)
@@ -112,6 +117,8 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         amps = np.asarray(lines[2].lstrip('[').rstrip(']\n').split(', '),dtype=float)
         zbl = np.median(amps)
 
+    print( 'Zero baseline flux:', zbl )
+
     os.system('rm *_check.txt')
 
     ## convert vis to uv-fits
@@ -123,6 +130,8 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     ## observe the uv-fits
     print 'Reading in the observation to the EHT imager.'
     obs = eh.obsdata.load_uvfits(fitsout)
+
+    ## flag the data?
 
     if doplots:
         ## make plots
@@ -158,6 +167,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
 
     ## set up the gaussian prior
     if use_first:
+	print( 'Using FIRST.' )
         if not os.path.isfile('./first_2008.simple.npy'):
             os.system('wget http://www.jb.man.ac.uk/~njj/first_2008.simple.npy')
         import math,pyrap; from pyrap import tables
@@ -169,14 +179,14 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         MAXARCMIN,RADASEC = 2.0, 206265.0
 	## ra,dec must be in radians
 	degToRad = np.pi / 180.
-	spatial_separations = sepn( ra*degToRad, dec*degToRad, first[:,0]*degToRad, first[:,1]*degToRad )
-	corrfirst = np.where( spatial_separations <= MAXARCMIN/60.0/RADASEC )[0]
+	spatial_separations = sepn( ra*degToRad, dec*degToRad, first[:,0]*degToRad, first[:,1]*degToRad )  ## this is in radians
+	corrfirst = np.where( spatial_separations <= MAXARCMIN*60.0/RADASEC )[0]
         if not len(corrfirst):           # no FIRST, fall back to default
             prior_fwhm = prior_fwhm_arcsec * 1e6 * RADPERUAS
             gaussparams = ( prior_fwhm, prior_fwhm, 0.0 )
             emptyprior = eh.image.make_square( obs, npix, fov )
             gaussprior = emptyprior.add_gauss( zbl, gaussparams )
-            print 'Prior image: circular Gaussian %f arcsec' % prior_fwhm*RADASEC
+            print 'Prior image: circular Gaussian %f arcsec' % prior_fwhm_arcsec
         else:
             fov_arcsec = max(10.0,2.2*first[corrfirst,4].max())
             fov = fov_arcsec * 1e6 * RADPERUAS
@@ -203,8 +213,6 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         gaussprior = emptyprior.add_gauss( zbl, gaussparams )
     gaussprior.display()
 
-    ## find the clipfloor
-    
 
     if use_bs:
 	print 'Using bispectrum mode rather than cphase and camp separately.'
@@ -225,6 +233,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         print 'Using closure phase and closure amplitude separately.'
         ## using d1 = closure phase and d2 = closure amplitude
         out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='cphase', d2='camp', s1='gs', s2='gs', alpha_d1=50, alpha_d2=50, clipfloor=cfloor, maxit=niter, stop=conv_criteria )
+        #out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='cphase', d2='camp', s1='gs', s2='gs', alpha_d1=50, alpha_d2=50 ) #, clipfloor=cfloor, maxit=niter, stop=conv_criteria )
         outblur = out.blur_gauss(beamparams, 0.5)
         out1 = eh.imager_func( obs, outblur, outblur, zbl, d1='cphase', d2='camp', s1='gs', s2='gs', alpha_d1=50, alpha_d2=50, clipfloor=cfloor, maxit=niter, stop=conv_criteria )
         out1blur = out1.blur_gauss((res,res,0),0.5)
@@ -256,6 +265,7 @@ if __name__ == "__main__":
     parser.add_argument('--clipfloor', type=float, help='Clip floor for model [Jy/pixel]', default=0.001)
     parser.add_argument('--convg', type=float, help='Convergence criteria', default=0.0001)
     parser.add_argument('--use_bs', action='store_true', help='set to use bs rather than cphase and camp separately')
+    parser.add_argument('--scratch_model', action='store_true', help='set to use a self-generated model rather than FIRST information')
 
     args = parser.parse_args()
-    main( args.vis, closure_tels = args.ctels, npix = args.npix, fov_arcsec = args.fov, zbl = args.zbl, prior_fwhm_arcsec = args.prior_fwhm, doplots = args.doplots, imfile = args.imfile, remove_tels = args.rtels, niter=args.maxiter, cfloor=args.clipfloor, conv_criteria=args.convg, use_bs=args.use_bs )
+    main( args.vis, closure_tels = args.ctels, npix = args.npix, fov_arcsec = args.fov, zbl = args.zbl, prior_fwhm_arcsec = args.prior_fwhm, doplots = args.doplots, imfile = args.imfile, remove_tels = args.rtels, niter=args.maxiter, cfloor=args.clipfloor, conv_criteria=args.convg, use_bs=args.use_bs, scratch_model=args.scratch_model )
