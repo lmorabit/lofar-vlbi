@@ -252,7 +252,7 @@ def main( MSname, lotss_radius=5., lbcs_radius=5., bright_limit_Jy=5., lotss_res
         perc_unres = len( unresolved_index ) / nsrcs * 100.
         print 'Percentage of sources which are unresolved: '+str( perc_unres )
 
-    sources_to_image = lotss_catalogue.iloc(unresolved_index)
+    sources_to_image = lotss_catalogue.iloc[unresolved_index]
     sources_to_image.to_csv( lotss_result_file, index=False )
 
 
