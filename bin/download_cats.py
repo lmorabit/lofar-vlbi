@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from scipy import stats  
 import os, sys, logging
 import numpy as np
@@ -214,46 +215,48 @@ def find_close_objs(lo, lb, tolerance=5.):
     ## convert result to numpy array
     return result
 
-def main( MSname, lotss_radius=5., lbcs_radius=5., bright_limit_Jy=5., lotss_result_file='lotss_catalogue.csv', delay_cals_file='delay_calibrators.csv', subtract_file='subtract_sources.csv', match_tolerance=5., subtract_limit=0.5 ):
+def main( MSname, lotss_radius=5., lbcs_radius=5., bright_limit_Jy=5., lotss_result_file='lotss_catalogue.csv', delay_cals_file='delay_calibrators.csv', subtract_file='subtract_sources.csv', match_tolerance=5., subtract_limit=0.5, doDownload=True ):
 
-    lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy )
-    lotss_catalogue = lotss_catalogue.to_pandas()
-    lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius )
-    lbcs_catalogue = lbcs_catalogue.to_pandas()
-    result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance )
+    if doDownload:
+        lotss_catalogue = my_lotss_catalogue( MSname[0], Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy )
+        lotss_catalogue = lotss_catalogue.to_pandas()
+        lbcs_catalogue = my_lbcs_catalogue( MSname[0], Radius=lbcs_radius )
+        lbcs_catalogue = lbcs_catalogue.to_pandas()
+        result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance )
 
-    ## Need to write the following catalogues:
-    ## 1 - delay calibrators -- from lbcs_catalogue
-    result.to_csv( delay_cals_file, index=False )
+        ## Need to write the following catalogues:
+        ## 1 - delay calibrators -- from lbcs_catalogue
+        result.to_csv( delay_cals_file, index=False )
 
-    ####### sources to subtract
-    ## convert Jy to milliJy
-    subtract_index = np.where( result['Total_flux'] > subtract_limit*1e3 )[0]
-    subtract_cals = result[['Source_ID','LOTSS_RA','LOTSS_DEC']].iloc[subtract_index]
-    subtract_cals.columns = ['Source_id','RA','DEC']
+        ####### sources to subtract
+        ## convert Jy to milliJy
+        subtract_index = np.where( result['Total_flux'] > subtract_limit*1e3 )[0]
+        subtract_cals = result[['Source_ID','LOTSS_RA','LOTSS_DEC']].iloc[subtract_index]
+        subtract_cals.columns = ['Source_id','RA','DEC']
     
-    
-    ## also include bright sources from the lotss catalogue
-    ## convert Jy to milliJy
-    bright_index = np.where( lotss_catalogue['Total_flux'] >= bright_limit_Jy*1e3 )[0]
-    subtract_bright = lotss_catalogue[['Source_id','RA','DEC']].iloc[bright_index]
+        ## also include bright sources from the lotss catalogue
+        ## convert Jy to milliJy
+        bright_index = np.where( lotss_catalogue['Total_flux'] >= bright_limit_Jy*1e3 )[0]
+        subtract_bright = lotss_catalogue[['Source_id','RA','DEC']].iloc[bright_index]
 
-    subtract_sources = pandas.concat( [subtract_cals, subtract_bright] )
-    subtract_sources = subtract_sources.drop_duplicates()
-    subtract_sources.to_csv( subtract_file, index=False )
+        subtract_sources = pandas.concat( [subtract_cals, subtract_bright] )
+        subtract_sources = subtract_sources.drop_duplicates()
+        subtract_sources.to_csv( subtract_file, index=False )
 
-    ## sources to image -- let's start with everything that's unresolved
-    ## find unresolved
-    nsrcs = float( len( lotss_catalogue['Resolved'] ) )
-    unresolved_index = np.where( lotss_catalogue['Resolved'] == 'U' )[0]
-    if nsrcs==0:
-        print "Did not find any unresolved objects."
+        ## sources to image -- let's start with everything that's unresolved
+        ## find unresolved
+        nsrcs = float( len( lotss_catalogue['Resolved'] ) )
+        unresolved_index = np.where( lotss_catalogue['Resolved'] == 'U' )[0]
+        if nsrcs==0:
+            print "Did not find any unresolved objects."
+        else:
+            perc_unres = len( unresolved_index ) / nsrcs * 100.
+            print 'Percentage of sources which are unresolved: '+str( perc_unres )
+
+        sources_to_image = lotss_catalogue.iloc[unresolved_index]
+        sources_to_image.to_csv( lotss_result_file, index=False )
     else:
-        perc_unres = len( unresolved_index ) / nsrcs * 100.
-        print 'Percentage of sources which are unresolved: '+str( perc_unres )
-
-    sources_to_image = lotss_catalogue.iloc[unresolved_index]
-    sources_to_image.to_csv( lotss_result_file, index=False )
+	print "doDownload == False, not downloading catalogues!"
 
 
     return
@@ -269,7 +272,7 @@ if __name__ == "__main__":
     parser.add_argument( '--match_tolerance', dest='match_tolerance', type=float, help='radius for matching LBCS to LoTSS [arcsec]', default=5. )
     parser.add_argument( '--subtract_limit', dest='subtract_limit', type=float, help='Flux limit for sources to subtract [Jy]', default=0.5 )
     parser.add_argument( '--bright_limit', dest='bright_limit_Jy', type=float, help='Flux limit for bright sources [Jy]', default=5.0 )
-    parser.add_argument( '--MSname', dest='MSname', type=str, help='Measurement set name (to get pointing center)' )
+    parser.add_argument( 'MSname', dest='MSname', type=str, nargs='+', help='Measurement set name (to get pointing center)' )
 
     args = parser.parse_args()
 

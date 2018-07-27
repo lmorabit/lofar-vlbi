@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/lmorabit/long_baseline_pipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, get_lbcs_catalogue, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, find_h5, copy_h5imp_cal, process_losoto, convert_ct, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, match_delay_file, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, download_cats, calibrator_loop1, createmap_plots, destmap_plots, cp_closure_phase_png, closure_phase_file, find_delay_cal, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, find_h5, copy_h5imp_cal, process_losoto, convert_ct, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, match_delay_file, ndppp_apply_delay ]
 ## the step 'ampl' needs to be inserted after 'process_losoto' -- it won't work with less than 20 subbands, so i've removed it for testing purposes.
 #createmap_plots, cp_closure_phase_png, get_imaging_catalogue, imaging_loop ]
 
@@ -27,7 +27,11 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ## Prefactor solution information
 ! transfer_amp_clock_sols_store = /data/lofar/morabito/xmm_lss/L424607/results/ ## directory with amplitude and clock solutions of prefactor (*.npy files)
 ! amp_sols_basename             = caldata_transfer
-! phase_sol_input_path          = /data/lofar/morabito/xmm_lss/L424611/prefactor/phase_solutions ## directory with measurement sets containing direction-independent phase solutions of the target field
+! phase_sol_input_path          = /data/lofar/morabito/xmm_lss/L424611/prefactor/phase_solutions ## directory with measurement sets containing direction-independent phase solutions of the target fielda
+
+! image_cat  = {{ job_directory }}/lotss_catalogue.csv
+! delay_cat  = {{ job_directory }}/delay_calibrators.csv
+! subtract_cat  = {{ job_directory }}/subtract_sources.csv
 
 ## Calibrator catalogue
 ! calibrator_catalogue 		= /data/lofar/morabito/xmm_lss/L424611/lbcs_catalogue.csv
@@ -86,13 +90,12 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ! transfer_amp_clock_sols_script    = {{ prefactor_dir }}/scripts/transfer_gains_RMextract.py
 ! update_ISgains_script             = {{ long_baseline_pipeline_dir }}/bin/addISgains.py
 ! add_IS_script                     = {{ long_baseline_pipeline_dir }}/bin/addInternationalStations.py
-! download_lbcs_script              = {{ long_baseline_pipeline_dir }}/bin/download_lbcs_catalogue.py
+! download_cats_script		    = {{ long_baseline_pipeline_dir }}/bin/download_cats.py
 ! closure_phase_script              = {{ long_baseline_pipeline_dir }}/bin/closure_v4.py
 ! skynet_script                     = {{ long_baseline_pipeline_dir }}/bin/skynet_master.py
 ! model_engine_script               = {{ long_baseline_pipeline_dir }}/bin/model_engine.py
 ! execute_circ_conv_script          = {{ long_baseline_pipeline_dir }}/bin/execute_circ_pol_conv.py
 ! lin2circ_script                   = {{ long_baseline_pipeline_dir }}/bin/lin2circ.py
-! download_lotss_script             = {{ long_baseline_pipeline_dir }}/bin/download_lotss_catalogue.py
 ! self_cal_and_imaging_script       = {{ long_baseline_pipeline_dir }}/bin/self_calibration_and_imaging.py
 #! transfer_delay_sols_script        = {{ long_baseline_pipeline_dir }}/bin/transfer_clock+tec_toMS.py
 ! delay_cal_parset                  = {{ long_baseline_pipeline_dir }}/parsets/delaycalib.parset
@@ -314,21 +317,26 @@ ndppp_apply_cal.argument.applyphase.type	  = applycal
 ndppp_apply_cal.argument.applyphase.parmdb	  = parmdbs
 ndppp_apply_cal.argument.applyphase.correction	  = gain
 
+# download the relevant catalogues
+download_cats.control.type			= pythonplugin
+download_cats.control.executable		= {{ download_cats_script }}
+download_cats.argument.flags			= [ndppp_prep_target.output.mapfile]
+download_cats.argument.lotss_radius		= 2.
+download_cats.argument.lbcs_radius		= 2.
+download_cats.argument.bright_limit_Jy		= 5.
+download_cats.argument.lotss_result_file	= {{ image_cat }}
+download_cats.argument.delay_cals_file		= {{ delay_cat }}
+download_cats.argument.subtract_file 		= {{ subtract_cat }}
+download_cats.argument.match_tolerance		= 5.
+download_cats.argument.subtract_limit		= 0.5
+download_cats.argument.doDownload		= {{ do_download }}
+
 
 ##################################################################
 #								##
-#	CALIBRATOR LOOP 1: FIND THE BEST CALIBRATOR		##
+#	CALIBRATOR LOOP 1: FIND THE DELAY CALIBRATOR		##
 #								##
 ##################################################################
-
-
-# use LBCS to get a catalogue of potential calibrators, or use existing catalogue
-get_lbcs_catalogue.control.type         	= pythonplugin
-get_lbcs_catalogue.control.executable           = {{ download_lbcs_script }}
-get_lbcs_catalogue.argument.flags               = [ndppp_prep_target.output.mapfile]
-get_lbcs_catalogue.argument.ResultsFile         = {{ calibrator_catalogue }}
-get_lbcs_catalogue.argument.DoDownload          = {{ use_calibrator_catalogue }}
-get_lbcs_catalogue.argument.Radius              = 1.5
 
 # Loop through the target phase calibrator canditates
 calibrator_loop1.control.kind                    = loop
@@ -338,15 +346,13 @@ calibrator_loop1.control.loopsteps               = [ prep_dirs, dppp_phaseup, ma
 
 # Initialise file with all directions
 prep_dirs.control.kind                    = plugin
-prep_dirs.control.type                    = TargetListToMapfileX
+prep_dirs.control.type                    = TargetListToMapfile
 prep_dirs.control.mapfile_dir             = input.output.mapfile_dir
 prep_dirs.control.infile                  = ndppp_prep_target.output.mapfile
 prep_dirs.control.filename                = prep_dirs.mapfile
 prep_dirs.control.wd                      = {{ job_directory }}
-prep_dirs.control.nP                      = 3	# this is the default setting
 prep_dirs.control.counter                 = calibrator_loop1.output.counter
-prep_dirs.control.manual		  = True ## use the catalogue specified in get_lbcs_catalogue step
-prep_dirs.control.target_file             = {{ calibrator_catalogue }}
+prep_dirs.control.target_file             = {{ delay_cat }}
 
 # shift, average and add up stations for tied array
 dppp_phaseup.control.type                 = dppp
