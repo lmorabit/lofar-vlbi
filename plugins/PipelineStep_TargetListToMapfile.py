@@ -3,8 +3,8 @@ from lofarpipe.support.data_map import DataMap
 from lofarpipe.support.data_map import DataProduct
 import numpy as np
 import pyrap.tables, math
-from correlate import *
 from astropy import units as u
+from astropy.io import ascii
 from astropy.coordinates import SkyCoord
 
 
@@ -48,20 +48,22 @@ def plugin_main(args, **kwargs):
     target_file = kwargs['target_file']
 
     fileid    = os.path.join(mapfile_dir, filename)	           # this file holds all the output measurement sets
+    infileid    = os.path.join(mapfile_dir, 'input_' + filename )  # this file holds all the input measurement sets
     bigfileid = os.path.join(mapfile_dir, filename + '_bigfield')  # this big file holds all the directions
     
     ## if tick = 0, need to do the work to make directions files etc., otherwise just update the ticker
     if tick == 0:
         map_out_big = DataMap([])
 
-	## use pandas to load the file
-	target_data = pandas.read_csv(target_file)
+	## use astropy.io.ascii to load the file
+	target_data = ascii.read(target_file, format='csv')
 	## get the coordinates
-	source_id = np.array(target_data['Source_ID'])
+	source_id = np.array(target_data['Source_id'])
 	RA_vals = np.array(target_data['LOTSS_RA'])
 	DEC_vals = np.array(target_data['LOTSS_DEC'])
 	for x, src_id in enumerate(source_id):
-	    map_out_big.data.append(DataProduct( '[\"'+RA_vals[x]+'deg\",\"'+DEC_vals[x]+'deg\"]', src_id, False ))
+	    ss = '[\"'+str(RA_vals[x])+'deg\",\"'+str(DEC_vals[x])+'deg\"]'
+	    map_out_big.data.append(DataProduct( ss, src_id, False ))
 
         map_out_big.save(bigfileid)	        # save all directions
         current_coords = map_out_big[0].host	# save current direction
@@ -75,16 +77,19 @@ def plugin_main(args, **kwargs):
 	n = len(data_big) 			# current progress
 
     map_out = DataMap([])
+    map_out2 = DataMap([])
     
     for msID, ms_file in enumerate(datalist): 
 	map_out.data.append(DataProduct( data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip)) 
+        map_out2.data.append(DataProduct( data[msID].host, data[msID].file, data[msID].skip))
 	pass
       
     map_out.save(fileid)			# save all output measurement sets
+    map_out2.save(infileid)			# save all input measurement sets
     
     if (tick + 1) == n:     			# check how far the progress is
         do_break = True
     else:
         do_break = False
-    result = {'targetlist':bigfileid,'cords':current_coords,'ndir':int(n),'break':do_break,'mapfile':fileid}
+    result = {'targetlist':bigfileid,'coords':current_coords,'ndir':int(n),'break':do_break,'mapfile':fileid,'inmapfile':infileid}
     return result
