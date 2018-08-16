@@ -16,30 +16,23 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ! base_directory 		        = input.output.working_directory  ## this is taken from the config file -- DO NOT CHANGE
 ! job_directory		 	        = input.output.job_directory	  ## this is taken from the config file -- DO NOT CHANGE
 
-! long_baseline_pipeline_dir 		= /home/morabito/software/long_baseline_pipeline
-! prefactor_dir			        = /home/morabito/software/prefactor
-! losoto_executable			= /home/morabito/software/losoto/bin/losoto
+! long_baseline_pipeline_dir 		= /home/lmorabit/long_baseline_pipeline_new
+! prefactor_dir			        = /home/lmorabit/prefactor
+! losoto_executable			= /home/lmorabit/losoto/bin/losoto
 
 ## target data information
-! target_input_path             = /car-data/wwilliams/lofar_xmmlss/datastore/L424611/
-! target_input_pattern          = L424611_SB*.MS
+! target_input_path             = /data/scratch/lb_bw/targetdata
+! target_input_pattern          = L*.MS
 
 ## Prefactor solution information
-! transfer_amp_clock_sols_store = /data/lofar/morabito/xmm_lss/L424607/results/ ## directory with amplitude and clock solutions of prefactor (*.npy files)
+! transfer_amp_clock_sols_store = /data/scratch/lb_bw/prefactor_solutions/cal_results/  ## directory with amplitude and clock solutions of prefactor (*.npy files)
 ! amp_sols_basename             = caldata_transfer
-! phase_sol_input_path          = /data/lofar/morabito/xmm_lss/L424611/prefactor/phase_solutions ## directory with measurement sets containing direction-independent phase solutions of the target fielda
+! phase_sol_input_path          = /data/scratch/lb_bw/prefactor_solutions/prefactor/results ## directory with measurement sets containing direction-independent phase solutions of the target fielda
 
 ! image_cat  = {{ job_directory }}/lotss_catalogue.csv
 ! delay_cat  = {{ job_directory }}/delay_calibrators.csv
 ! subtract_cat  = {{ job_directory }}/subtract_sources.csv
-
-## Calibrator catalogue
-! calibrator_catalogue 		= /data/lofar/morabito/xmm_lss/L424611/lbcs_catalogue.csv
-! use_calibrator_catalogue      = False ## True = download from LBCS if it doesn't exist, else use existing. False = do not download, stop if file doesn't exist. Force = delete existing and download
-
-## Target catalogue
-! target_catalogue              = /data/lofar/morabito/xmm_lss/L424611/lotss_catalogue.csv
-! use_target_catalogue          = False ## same behaviour as use_calibrator_catalogue, but uses LoTSS catalogue instead, picking only unresolved sources
+! do_download = True
 
 ## Averaging parameters
 ! cal_shift_avg_timestep        = 8    ## Calibrator time averaging: output should be 8 seconds
@@ -48,7 +41,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ! tgt_shift_avg_freqstep        = 16   ## Target freq averaging: output should be 1 channel per subband
 
 ## Stations to flag
-! flag_baselines 		= [] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
+! flag_baselines 		= [ RS310* ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
 
 ###########################################################################
 ## PARAMETER SETUP
@@ -90,7 +83,6 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ! transfer_amp_clock_sols_script    = {{ prefactor_dir }}/scripts/transfer_gains_RMextract.py
 ! update_ISgains_script             = {{ long_baseline_pipeline_dir }}/bin/addISgains.py
 ! add_IS_script                     = {{ long_baseline_pipeline_dir }}/bin/addInternationalStations.py
-! download_cats_script		    = {{ long_baseline_pipeline_dir }}/bin/download_cats.py
 ! closure_phase_script              = {{ long_baseline_pipeline_dir }}/bin/closure_v4.py
 ! skynet_script                     = {{ long_baseline_pipeline_dir }}/bin/skynet_master.py
 ! model_engine_script               = {{ long_baseline_pipeline_dir }}/bin/model_engine.py
@@ -219,7 +211,7 @@ match_files.control.mapfile_ms                       = createmap_target.output.m
 
 # run NDPPP on the target data
 ndppp_prep_target.control.type                    = dppp
-ndppp_prep_target.control.max_per_node            = {{ num_proc_per_node_limit }}
+ndppp_prep_target.control.max_per_node            = {{ num_proc_per_node }}
 ndppp_prep_target.control.error_tolerance         = {{ error_tolerance }}
 ndppp_prep_target.argument.numthreads             = {{ max_dppp_threads }}
 ndppp_prep_target.argument.msin                   = match_files.output.mapfile  
@@ -318,19 +310,19 @@ ndppp_apply_cal.argument.applyphase.parmdb	  = parmdbs
 ndppp_apply_cal.argument.applyphase.correction	  = gain
 
 # download the relevant catalogues
-download_cats.control.type			= pythonplugin
-download_cats.control.executable		= {{ download_cats_script }}
-download_cats.argument.flags			= [ndppp_prep_target.output.mapfile]
-download_cats.argument.lotss_radius		= 2.
-download_cats.argument.lbcs_radius		= 2.
-download_cats.argument.bright_limit_Jy		= 5.
-download_cats.argument.lotss_result_file	= {{ image_cat }}
-download_cats.argument.delay_cals_file		= {{ delay_cat }}
-download_cats.argument.subtract_file 		= {{ subtract_cat }}
-download_cats.argument.match_tolerance		= 5.
-download_cats.argument.subtract_limit		= 0.5
-download_cats.argument.doDownload		= {{ do_download }}
-
+download_cats.control.kind			= plugin
+download_cats.control.type			= DownloadCats
+download_cats.control.mapfile_in			= ndppp_prep_target.output.mapfile
+download_cats.control.lotss_radius		= 2.
+download_cats.control.lbcs_radius		= 2.
+download_cats.control.bright_limit_Jy		= 5.
+download_cats.control.lotss_result_file	= {{ image_cat }}
+download_cats.control.delay_cals_file		= {{ delay_cat }}
+download_cats.control.subtract_file 		= {{ subtract_cat }}
+download_cats.control.match_tolerance		= 5.
+download_cats.control.subtract_limit		= 0.5
+download_cats.control.image_limit_Jy		= 0.05
+download_cats.control.doDownload		= {{ do_download }}
 
 ##################################################################
 #								##
