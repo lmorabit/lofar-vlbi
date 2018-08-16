@@ -83,6 +83,7 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 ! transfer_amp_clock_sols_script    = {{ prefactor_dir }}/scripts/transfer_gains_RMextract.py
 ! update_ISgains_script             = {{ long_baseline_pipeline_dir }}/bin/addISgains.py
 ! add_IS_script                     = {{ long_baseline_pipeline_dir }}/bin/addInternationalStations.py
+! download_cats_script		    = {{ long_baseline_pipeline_dir }}/bin/download_cats.py
 ! closure_phase_script              = {{ long_baseline_pipeline_dir }}/bin/closure_v4.py
 ! skynet_script                     = {{ long_baseline_pipeline_dir }}/bin/skynet_master.py
 ! model_engine_script               = {{ long_baseline_pipeline_dir }}/bin/model_engine.py
@@ -324,6 +325,21 @@ download_cats.control.subtract_limit		= 0.5
 download_cats.control.image_limit_Jy		= 0.05
 download_cats.control.doDownload		= {{ do_download }}
 
+#download_cats.control.type			= pythonplugin
+#download_cats.control.executable		= {{ download_cats_script }}
+#download_cats.argument.flags			= [ndppp_prep_target.output.mapfile]
+#download_cats.argument.lotss_radius		= 2.
+#download_cats.argument.lbcs_radius		= 2.
+#download_cats.argument.bright_limit_Jy		= 5.
+#download_cats.argument.lotss_result_file	= {{ image_cat }}
+#download_cats.argument.delay_cals_file		= {{ delay_cat }}
+#download_cats.argument.subtract_file 		= {{ subtract_cat }}
+#download_cats.argument.match_tolerance		= 5.
+#download_cats.argument.subtract_limit		= 0.5
+#download_cats.argument.doDownload		= {{ do_download }}
+
+
+
 ##################################################################
 #								##
 #	CALIBRATOR LOOP 1: FIND THE DELAY CALIBRATOR		##
@@ -350,13 +366,13 @@ prep_dirs.control.target_file             = {{ delay_cat }}
 dppp_phaseup.control.type                 = dppp
 dppp_phaseup.control.max_per_node         = {{ num_proc_per_node }}
 dppp_phaseup.control.mapfile_out          = prep_dirs.output.mapfile 
-dppp_phaseup.argument.msin                = ndppp_prep_target.output.mapfile
+dppp_phaseup.argument.msin                = prep_dirs.output.inmapfile
 dppp_phaseup.argument.msin.datacolumn     = CORRECTED_DATA
 dppp_phaseup.argument.msout.datacolumn    = DATA
 dppp_phaseup.argument.msout.overwrite     = True
 dppp_phaseup.argument.steps               = [shift, avg, adder, filter]
 dppp_phaseup.argument.shift.type          = phaseshift
-dppp_phaseup.argument.shift.phasecenter   = prep_dirs.output.cords
+dppp_phaseup.argument.shift.phasecenter   = prep_dirs.output.coords
 dppp_phaseup.argument.avg.type            = squash
 dppp_phaseup.argument.avg.freqstep        = {{ cal_shift_avg_freqstep }}
 dppp_phaseup.argument.avg.timestep        = {{ cal_shift_avg_timestep }}
