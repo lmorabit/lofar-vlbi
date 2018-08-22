@@ -28,17 +28,17 @@ def plugin_main(args, **kwargs):
     """
     mapfile_dir 	= kwargs['mapfile_dir']
     mapfile_out 	= kwargs['mapfile_out']
-    closurePhaseMap     = kwargs['closurePhaseMap']
+#    closurePhaseMap     = kwargs['closurePhaseMap']
 
     fileid    = os.path.join(mapfile_dir, mapfile_out)	           # this file holds all the output measurement sets
 
-    with open( closurePhaseMap, 'r' ) as f:
-	lines = f.readlines()
-    f.close()
-    closurePhaseFile = lines[0].split(',')[1].split(':')[1].strip().strip("'")
+#    with open( closurePhaseMap, 'r' ) as f:
+#	lines = f.readlines()
+#    f.close()
+#    closurePhaseFile = lines[0].split(',')[1].split(':')[1].strip().strip("'")
 
     # read the file
-    with open( closurePhaseFile, 'r' ) as f:
+    with open( 'closure_phases.txt', 'r' ) as f:
 	lines = f.readlines()
     f.close()
 
@@ -70,7 +70,7 @@ def plugin_main(args, **kwargs):
     map_out.append( DataProduct('localhost', delay_ms, False) )
     
     map_out.save(fileid)
-    result = {'mapfile': fileid}
+    result = {'mapfile': fileid}  ## add coordinates here
 
     return result
     
