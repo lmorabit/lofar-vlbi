@@ -26,16 +26,7 @@ def plugin_main(args, **kwargs):
         Output datamap closurePhaseFile
 
     """
-    mapfile_dir 	= kwargs['mapfile_dir']
-    mapfile_out 	= kwargs['mapfile_out']
-#    closurePhaseMap     = kwargs['closurePhaseMap']
-
-    fileid    = os.path.join(mapfile_dir, mapfile_out)	           # this file holds all the output measurement sets
-
-#    with open( closurePhaseMap, 'r' ) as f:
-#	lines = f.readlines()
-#    f.close()
-#    closurePhaseFile = lines[0].split(',')[1].split(':')[1].strip().strip("'")
+    delaycal_list	= kwargs['delaycals']
 
     # read the file
     with open( 'closure_phases.txt', 'r' ) as f:
@@ -60,17 +51,24 @@ def plugin_main(args, **kwargs):
     else:
         best_calibrator = direction[0][0]
 
-    job_dir = closurePhaseFile.replace('closure_phases.txt','')
+    with open( delaycal_list, 'r' ) as f:
+	lines = f.readlines()
+    f.close()
 
-    delayCal = job_dir + best_calibrator + '*' + 'concat'
+    for l in lines:
+	tmp = l.split(',')
+	if tmp[0] == best_calibrator:
+	    cal_ra = tmp[4]
+	    cal_dec = tmp[5]
 
-    delay_ms = glob.glob( delayCal )[0]
+    ss = ','.join([cal_ra, cal_dec, best_calibrator])
 
-    map_out = DataMap([])
-    map_out.append( DataProduct('localhost', delay_ms, False) )
-    
-    map_out.save(fileid)
-    result = {'mapfile': fileid}  ## add coordinates here
+    outfile = 'primary_delay_calibrator.csv'
+    with open( outfile, 'w' ) as f:
+	f.write(ss)
+    f.close()
+
+    result = {'calfile': outfile}  ## add coordinates here
 
     return result
     
