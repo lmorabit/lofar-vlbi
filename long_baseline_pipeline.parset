@@ -339,16 +339,94 @@ do_parallel.argument.ncpu                 = {{ num_proc_per_node }}
 # automatically find the best calibrator 
 find_delay_cal.control.kind		  = plugin
 find_delay_cal.control.type		  = DelayCalToMapfile
-find_delay_cal.control.mapfile_dir	  = input.output.mapfile_dir
-find_delay_cal.control.mapfile_out	  = find_delay_cal.mapfile
-find_delay_cal.control.closurePhaseMap    = closure_phase_file.output.mapfile
+find_delay_cal.control.delaycals	  = {{ calibrator_catalogue }}
 
-# do another phaseup step
+# Initialise file with all directions
+prep_dirs.control.kind                    = plugin
+prep_dirs.control.type                    = TargetListToMapfile
+prep_dirs.control.mapfile_dir             = input.output.mapfile_dir
+prep_dirs.control.infile                  = ndppp_prep_target.output.mapfile
+prep_dirs.control.filename                = prep_dirs.mapfile
+prep_dirs.control.wd                      = {{ job_directory }}
+prep_dirs.control.nP                      = 3   # this is the default setting
+prep_dirs.control.counter                 = 0
+prep_dirs.control.manual                  = True ## 
+prep_dirs.control.target_file             = find_delay_cal.output.calfile
+
+# shift, average and add up stations for tied array
+dppp_phaseup.control.type                 = dppp
+dppp_phaseup.control.max_per_node         = {{ num_proc_per_node }}
+dppp_phaseup.control.mapfile_out          = prep_dirs.output.mapfile
+dppp_phaseup.argument.msin                = ndppp_prep_target.output.mapfile
+dppp_phaseup.argument.msin.datacolumn     = CORRECTED_DATA
+dppp_phaseup.argument.msout.datacolumn    = DATA
+dppp_phaseup.argument.msout.overwrite     = True
+dppp_phaseup.argument.steps               = [shift, avg, adder, filter]
+dppp_phaseup.argument.shift.type          = phaseshift
+dppp_phaseup.argument.shift.phasecenter   = prep_dirs.output.cords
+dppp_phaseup.argument.avg.type            = squash
+dppp_phaseup.argument.avg.freqstep        = {{ cal_shift_avg_freqstep }}
+dppp_phaseup.argument.avg.timestep        = {{ cal_shift_avg_timestep }}
+dppp_phaseup.argument.adder.type          = stationadder
+dppp_phaseup.argument.adder.stations      = {{ phaseup_command }}
+dppp_phaseup.argument.filter.type         = filter
+dppp_phaseup.argument.filter.baseline     = {{ filter_command }}
+dppp_phaseup.argument.filter.remove       = True
+dppp_phaseup.argument.numthreads          = {{ max_dppp_threads }}
+
+# Convert to circular polarisation (in place)
+make_circ.control.type                    = pythonplugin
+make_circ.control.executable              = {{ execute_circ_conv_script }}
+make_circ.argument.flags                  = [ dppp_phaseup.output.mapfile ]
+make_circ.argument.cpath                  = {{ lin2circ_script }}
+make_circ.argument.mode                   = lin2circ
+
+# get a list of all subbands
+make_concatmap.control.kind               =  plugin
+make_concatmap.control.type               =  createMapfile
+make_concatmap.control.method             =  mapfile_all_to_one
+make_concatmap.control.mapfile_in         =  dppp_phaseup.output.mapfile
+make_concatmap.control.mapfile_dir        =  input.output.mapfile_dir
+make_concatmap.control.filename           =  make_concatmap.mapfile
+
+# sort them by frequency and fill in missing subband information
+sort_concatmap.control.type               = pythonplugin
+sort_concatmap.control.executable         = {{ sort_concat_script }}
+sort_concatmap.argument.flags             = [make_concatmap.output.mapfile]
+sort_concatmap.argument.filename          = sort_concatmap
+sort_concatmap.argument.mapfile_dir       = input.output.mapfile_dir
+sort_concatmap.argument.target_path       = {{ job_directory }}
+sort_concatmap.argument.NDPPPfill         = True
+sort_concatmap.argument.stepname          = dpppconcat
+sort_concatmap.argument.firstSB           = None
+sort_concatmap.argument.truncateLastSBs   = False
+
+# convert the output of sort_concatmap into usable mapfile
+do_sortmap_maps.control.kind              =  plugin
+do_sortmap_maps.control.type              =  mapfilenamesFromMapfiles
+do_sortmap_maps.control.mapfile_groupmap  =  sort_concatmap.output.groupmapfile.mapfile
+do_sortmap_maps.control.mapfile_datamap   =  sort_concatmap.output.mapfile.mapfile
+
+# concatenate all measurement sets into one
+dppp_concat.control.type                  = dppp
+dppp_concat.control.max_per_node          = {{ num_proc_per_node }}
+dppp_concat.control.error_tolerance       = {{ error_tolerance }}
+dppp_concat.control.mapfile_out           = do_sortmap_maps.output.groupmap
+dppp_concat.control.mapfiles_in           = [do_sortmap_maps.output.datamap]
+dppp_concat.control.inputkey              = msin
+dppp_concat.argument.msin.datacolumn      = DATA
+dppp_concat.argument.msin.missingdata     = True
+dppp_concat.argument.msin.orderms         = False
+dppp_concat.argument.msout.datacolumn     = DATA
+dppp_concat.argument.msout.writefullresflag = False
+dppp_concat.argument.msout.overwrite      = True
+dppp_concat.argument.steps                = []
+dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
 
 # generate the calibrator model with skynet
 delay_cal_model.control.type		  = pythonplugin
 delay_cal_model.control.executable	  = {{ skynet_script }}
-delay_cal_model.argument.flags		  = [find_delay_cal.output.mapfile]
+delay_cal_model.argument.flags		  = [do_sortmap_maps.output.groupmap]
 delay_cal_model.argument.self_cal_script  = {{ self_cal_and_imaging_script }}
 delay_cal_model.argument.mode		  = 2
 delay_cal_model.argument.closure_tels	  = {{ closure_phase_stations }}
@@ -364,7 +442,7 @@ delay_cal_model_map.control.method             =  add_suffix_to_file
 delay_cal_model_map.control.mapfile_in         =  find_delay_cal.output.mapfile
 delay_cal_model_map.control.add_suffix_to_file =  /sky
 delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
-delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
+delay_cal_model_map.control.filename           =  do_sortmap_maps.output.groupmap
 
 # delay calibration instrument tables
 createmap_tables.control.kind                     =   plugin
