@@ -60,8 +60,9 @@ def plugin_main(args, **kwargs):
 	if tmp[0] == best_calibrator:
 	    cal_ra = tmp[4]
 	    cal_dec = tmp[5]
+	    cal_total_flux = tmp[7]
 
-    ss = ','.join([cal_ra, cal_dec, best_calibrator])
+    ss = ','.join([cal_ra, cal_dec, best_calibrator, cal_total_flux])
 
     outfile = 'primary_delay_calibrator.csv'
     with open( outfile, 'w' ) as f:

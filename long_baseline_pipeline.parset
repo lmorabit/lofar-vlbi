@@ -430,9 +430,8 @@ delay_cal_model.argument.flags		  = [do_sortmap_maps.output.groupmap]
 delay_cal_model.argument.self_cal_script  = {{ self_cal_and_imaging_script }}
 delay_cal_model.argument.mode		  = 2
 delay_cal_model.argument.closure_tels	  = {{ closure_phase_stations }}
-delay_cal_model.argument.cthr		  = 2.0 ## until using data that isn't test data
+delay_cal_model.argument.cthr		  = 1.6
 delay_cal_model.argument.model_only	  = 1
-delay_cal_model.argument.smodel		  = 1.0
 delay_cal_model.argument.firstnpy	  = {{ firstnpy_file }}
 
 # generate mapfile with the sourceDB names to be used in the gsmcal steps
@@ -466,7 +465,7 @@ calib_cal.argument.steps                  = [gaincal]
 calib_cal.argument.gaincal.type           = gaincal
 calib_cal.argument.gaincal.caltype        = diagonal
 calib_cal.argument.gaincal.parmdb         = createmap_tables.output.mapfile
-calib_cal.argument.gaincal.applysolution  = True
+calib_cal.argument.gaincal.applysolution  = False
 calib_cal.argument.gaincal.nchan          = 0
 calib_cal.argument.gaincal.solint	  = 2
 calib_cal.argument.gaincal.usebeammodel   = False
@@ -505,7 +504,6 @@ process_losoto.control.parsetasfile                            =  False
 process_losoto.control.mapfile_in                              =  find_h5.output.mapfile
 process_losoto.control.inputkey                                =  h5gvds
 process_losoto.argument.flags                                  =  [h5gvds,{{ losoto_parset }}]
-
 
 ## convert the clock-tec values to numpy arrays
 convert_ct.control.kind          = recipe
