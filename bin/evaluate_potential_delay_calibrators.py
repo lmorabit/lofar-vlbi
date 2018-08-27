@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import argparse
+from astropy.io import ascii
 
 def closure(vis,tel,lastv=-1,pol=0,use_spw=0,bchan=0,echan=-1,\
             doplot=False,doret=False):
@@ -220,12 +221,17 @@ def combine_subbands (in1array, nameout, phasecenter, fstep, tstep):
     
 
 def lotss2coords (lotssfile):
-    a=np.loadtxt(lotssfile,dtype='S')
-    if a.ndim==1:
-        a=np.array([a])
+    #a=np.loadtxt(lotssfile,dtype='S')
+    a = ascii.read(lotssfile)
+    #if a.ndim==1:
+    if len(a) == 1:
+        #a=np.array([a])
+	a = ','.join([str(a['LOTSS_RA']),str(a['LOTSS_DEC']),a['Source_id']])
     coords=np.array([],dtype='S')
     for xx in range(len(a)):
-        coords=np.append(coords,a[0])
+	tmp = a[xx]
+	tmp_1 = ','.join([str(tmp['LOTSS_RA']),str(tmp['LOTSS_DEC']),tmp['Source_id']])
+        coords=np.append(coords,tmp_1)
     return coords
 
 
