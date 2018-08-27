@@ -27,9 +27,10 @@ def plugin_main(args, **kwargs):
 
     """
     delaycal_list	= kwargs['delaycals']
+    clphase_file 	= kwargs['clphase_file']
 
     # read the file
-    with open( 'closure_phases.txt', 'r' ) as f:
+    with open( clphase_file, 'r' ) as f:
 	lines = f.readlines()
     f.close()
 
