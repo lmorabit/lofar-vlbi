@@ -334,12 +334,13 @@ do_parallel.control.type                  = pythonplugin
 do_parallel.control.max_per_node          = {{ num_proc_per_node }}
 do_parallel.control.executable            = {{ find_best_delay_cal_script }}
 do_parallel.argument.flags                = [ndppp_prep_target.output.mapfile,{{ delay_cat }}]
-do_parallel.argument.ncpu                 = {{ num_proc_per_node }}
+do_parallel.argument.ncpu                 = {{ num_proc_per_node_limit }}
 
 # automatically find the best calibrator 
 find_delay_cal.control.kind		  = plugin
 find_delay_cal.control.type		  = DelayCalToMapfile
 find_delay_cal.control.delaycals	  = {{ delay_cat }}
+find_delay_cal.control.clphase_file	  = {{ job_directory }}/closure_phases.txt
 
 # Initialise file with all directions
 prep_dirs.control.kind                    = plugin
@@ -363,7 +364,7 @@ dppp_phaseup.argument.msout.datacolumn    = DATA
 dppp_phaseup.argument.msout.overwrite     = True
 dppp_phaseup.argument.steps               = [shift, avg, adder, filter]
 dppp_phaseup.argument.shift.type          = phaseshift
-dppp_phaseup.argument.shift.phasecenter   = prep_dirs.output.cords
+dppp_phaseup.argument.shift.phasecenter   = prep_dirs.output.coords
 dppp_phaseup.argument.avg.type            = squash
 dppp_phaseup.argument.avg.freqstep        = {{ cal_shift_avg_freqstep }}
 dppp_phaseup.argument.avg.timestep        = {{ cal_shift_avg_timestep }}
