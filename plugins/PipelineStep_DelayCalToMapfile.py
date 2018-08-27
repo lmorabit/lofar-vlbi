@@ -65,7 +65,7 @@ def plugin_main(args, **kwargs):
 
     ss = ','.join([cal_ra, cal_dec, best_calibrator, cal_total_flux])
 
-    outfile = 'primary_delay_calibrator.csv'
+    outfile = clphase_file.replace('closure_phases.txt','primary_delay_calibrator.csv')
     with open( outfile, 'w' ) as f:
 	f.write(ss)
     f.close()
