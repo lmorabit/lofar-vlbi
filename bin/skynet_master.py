@@ -684,7 +684,7 @@ def skynet_NDPPP (vis,model,solint=1.0):
     f.close()
     os.system('NDPPP NDPPP.parset')
 
-def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0 ):
+def main (vis, self_cal_script, firstnpy, delayCalFile='', mode=3, closure_tels=['ST001','DE601','DE605'],cthr=1.6, model_only=0 ):
 
     ## make sure the parameters are the correct format
     mode = int( mode )
@@ -692,7 +692,7 @@ def main (vis, self_cal_script, firstnpy, mode=3, closure_tels=['ST001','DE601',
     model_only = int( model_only )
 
     ## get flux from primary_delay_calibrator.csv
-    with open( 'primary_delay_calibrator.csv', 'r' ) as f:
+    with open( delayCalFile, 'r' ) as f:
         lines = f.readlines()
     f.close()
     tmp = lines[0].split(',')
