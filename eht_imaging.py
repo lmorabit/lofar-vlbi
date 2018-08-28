@@ -71,7 +71,7 @@ def first_download (ra,dec,outfile='first_out.fits',gif=0,fits=1,imsize=2.0,imse
         wcsreduce(outfile) # aplpy can't cope with FREQ,STOKES axes
         return pyfits.getdata(outfile)
     except(OSError):
-        print('Can not download FIRST data. Likely outside survey region or server error. Defaulting to no first image.')
+        print 'Can not download FIRST data. Likely outside survey region or server error. Defaulting to no first image.'
         return None
 
 # Altered to use astropy.SkyCoord.separation
