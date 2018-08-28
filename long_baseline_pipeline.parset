@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/lmorabit/long_baseline_pipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, download_cats, do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, find_h5, copy_h5imp_cal, process_losoto, convert_ct, ampl, plots, createmap_cal_pngs, copy_cal_pngs, createmap_cal_txts, copy_cal_txts, mk_cal_values_dir, createmap_cal_npys, copy_cal_npys, copyST_gains, match_delay_file, ndppp_apply_delay ]
+pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, download_cats, do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, find_h5, make_losoto, process_losoto, copyST_gains, match_delay_file, ndppp_apply_delay, copy_cal_pngs ]
 
 ###########################################################################
 ## PARAMETER SETUP
@@ -47,9 +47,8 @@ pipeline.steps = [mk_results_dir, mk_calresults_dir, mk_inspect_dir, mk_ionex_di
 
 ## Output directories
 ! results_directory             = {{ job_directory }}/results
-! calibrator_results_directory  = {{ results_directory }}/calibrators/
 ! inspection_directory          = {{ results_directory }}/inspection/
-! cal_values_directory          = {{ results_directory }}/delay_cal_results/
+! cal_values_directory          = {{ results_directory }}/calibrator_results/
 
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
@@ -125,15 +124,15 @@ mk_results_dir.control.kind               = plugin
 mk_results_dir.control.type               = makeDirectory
 mk_results_dir.control.directory          = {{ results_directory }}
 
-# create the calibrator results directory
-mk_calresults_dir.control.kind		  = plugin
-mk_calresults_dir.control.type		  = makeDirectory
-mk_calresults_dir.control.directory	  = {{ calibrator_results_directory }}
-
 # create the inspection_directory if needed
 mk_inspect_dir.control.kind               = plugin
 mk_inspect_dir.control.type               = makeDirectory
-mk_inspect_dir.control.directory          = {{ inspection_directory }}
+mk_inspect_dir.control.directory          = {{ inspection_directory }}a
+
+# create the cal_values_directory if needed
+mk_cal_values_dir.control.kind               =  plugin
+mk_cal_values_dir.control.type               =  makeDirectory
+mk_cal_values_dir.control.directory          =  {{ cal_values_directory }}
 
 # create a directory for the ionex files
 mk_ionex_dir.control.kind		  = plugin
@@ -478,7 +477,7 @@ h5imp_cal.control.type                          = executable_args
 h5imp_cal.control.executable                    = {{ losoto_importer }}
 h5imp_cal.control.mapfile_in                    = find_delay_cal.output.mapfile
 h5imp_cal.control.inputkey                      = source
-h5imp_cal.control.arguments                     = [h5imp_cal_losoto.h5,source]
+h5imp_cal.control.arguments                     = [delay_cal.h5,source]
 
 # make a mapfile of the h5parm
 find_h5.control.kind            = plugin
@@ -487,117 +486,142 @@ find_h5.control.method          = mapfile_from_folder
 find_h5.control.mapfile_dir     = input.output.mapfile_dir
 find_h5.control.filename        = createmap_plots.mapfile
 find_h5.control.folder          = {{ job_directory }}
-find_h5.control.pattern         = h5imp_cal_losoto.h5
+find_h5.control.pattern         = delay_cal.h5
 
-# copy the LoSoTo file to the inspection_directory
-copy_h5imp_cal.control.kind               =  recipe
-copy_h5imp_cal.control.type               =  executable_args
-copy_h5imp_cal.control.executable         =  /bin/cp
-copy_h5imp_cal.control.mapfile_in         =  find_h5.output.mapfile
-copy_h5imp_cal.control.inputkey           =  source
-copy_h5imp_cal.control.arguments          =  [source,{{ inspection_directory }}]
+# make a losoto parset
+make_losoto.control.kind                              =   plugin
+make_losoto.control.type                              =   makeLosotoParset
+make_losoto.control.steps                             =   [plotA1,flag,flagextend,plotA2,merge,plotP3,plotPd,plotAi3,duplicatePbkp,ct3,plotClock,plotTEC,plotTEC3,residuals,plotPr,plotPr3]
+make_losoto.control.filename                          =   input.output.job_directory/losoto.parset
+make_losoto.control.global.ncpu                       =   {{ num_proc_per_node }}
+make_losoto.control.plotA1.operation                 =   PLOT
+make_losoto.control.plotA1.soltab                    =   sol000/amplitude000
+make_losoto.control.plotA1.axesInPlot                =   [time,freq]
+make_losoto.control.plotA1.axisInTable               =   ant
+make_losoto.control.plotA1.plotFlag                  =   True
+make_losoto.control.plotA1.prefix                    =   {{ inspection_directory }}/delay_cal_ampBFlag_
+make_losoto.control.flag.operation                   =   FLAG
+make_losoto.control.flag.soltab                      =   sol000/amplitude000
+make_losoto.control.flag.axesToFlag                  =   [time]
+make_losoto.control.flag.order                       =   [100]
+make_losoto.control.flag.maxCycles                   =   1
+make_losoto.control.flag.maxRms                      =   5
+make_losoto.control.flag.replce                      =   False
+make_losoto.control.flag.preFlagZeros                =   False
+make_losoto.control.flag.mode                        =   smooth
+make_losoto.control.flagextend.operation             =   FLAGEXTEND
+make_losoto.control.flagextend.soltab                =   sol000/amplitude000
+make_losoto.control.flagextend.axesToExt             =   [freq,time]
+make_losoto.control.flagextend.size                  =   [50,100]
+make_losoto.control.flagextend.percent               =   50
+make_losoto.control.flagextend.maxCycles             =   3
+make_losoto.control.plotA2.operation                 =   PLOT
+make_losoto.control.plotA2.soltab                    =   sol000/amplitude000
+make_losoto.control.plotA2.axesInPlot                =   [time,freq]
+make_losoto.control.plotA2.axisInTable               =   ant
+make_losoto.control.plotA2.plotFlag                  =   True
+make_losoto.control.plotA2.prefix                    =   {{ inspection_directory }}/delay_cal_ampAFlag_
+make_losoto.control.merge.operation                  =   REWEIGHT
+make_losoto.control.merge.mode                       =   copy
+make_losoto.control.merge.soltab                     =   sol000/phase000
+make_losoto.control.merge.soltabImport               =   amplitude000
+make_losoto.control.plotP3.operation                 =   PLOT
+make_losoto.control.plotP3.soltab                    =   sol000/phase000
+make_losoto.control.plotP3.axesInPlot                =   [time,freq]
+make_losoto.control.plotP3.axisInTable               =   ant
+make_losoto.control.plotP3.plotFlag                  =   True
+make_losoto.control.plotP3.prefix                    =   {{ inspection_directory }}/delay_cal_ph_
+make_losoto.control.plotP3.refAnt                    =   ST001
+make_losoto.control.plotP3.minmax                    =   [-3.14,3.14]
+make_losoto.control.plotPd.operation                 =   PLOT
+make_losoto.control.plotPd.soltab                    =   sol000/phase000
+make_losoto.control.plotPd.axesInPlot                =   [time,freq]
+make_losoto.control.plotPd.axisInTable               =   ant
+make_losoto.control.plotPd.axisDiff                  =   pol
+make_losoto.control.plotPd.plotFlag                  =   True
+make_losoto.control.plotPd.prefix                    =   {{ inspection_directory }}/delay_cal_ph_poldif
+make_losoto.control.plotPd.refAnt                    =   ST001
+make_losoto.control.plotPd.minmax                    =   [-3.14,3.14]
+make_losoto.control.plotAi3.operation                =   PLOT
+make_losoto.control.plotAi3.soltab                   =   sol000/amplitude000
+make_losoto.control.plotAi3.axesInPlot               =   [time,freq]
+make_losoto.control.plotAi3.axisInTable              =   ant
+make_losoto.control.plotAi3.plotFlag                 =   True
+make_losoto.control.plotAi3.prefix                   =   {{ inspection_directory }}/delay_cal_amp_
+make_losoto.control.duplicatePbkp.operation          =   DUPLICATE
+make_losoto.control.duplicatePbkp.soltab             =   sol000/phase000
+make_losoto.control.duplicatePbkp.soltabOut          =   phaseOrig000
+make_losoto.control.ct.operation                     =   CLOCKTEC
+make_losoto.control.ct.soltab                        =   sol000/phase000
+make_losoto.control.ct.CombinePol                    =   True
+make_losoto.control.ct.FlagBadChannels               =   False
+make_losoto.control.ct.Fit3rdOrder                   =   False
+make_losoto.control.ct.Circular                      =   True
+make_losoto.control.ct3.operation                    =   CLOCKTEC
+make_losoto.control.ct3.soltab                       =   sol000/phase000
+make_losoto.control.ct3.CombinePol                   =   True
+make_losoto.control.ct3.FlagBadChannels              =   False
+make_losoto.control.ct3.Fit3rdOrder                  =   True
+make_losoto.control.ct3.Circular                     =   True
+make_losoto.control.plotClock.operation              =   PLOT
+make_losoto.control.plotClock.soltab                 =   sol000/clock000
+make_losoto.control.plotClock.axesInPlot             =   [time]
+make_losoto.control.plotClock.axisInTable            =   ant
+make_losoto.control.plotClock.prefix                 =   {{ inspection_directory }}/delay_cal_clock
+make_losoto.control.plotClock.plotFlag               =   False
+make_losoto.control.plotClock.refAnt                 =   ST001
+make_losoto.control.plotTEC.operation                =   PLOT
+make_losoto.control.plotTEC.soltab                   =   sol000/tec000
+make_losoto.control.plotTEC.axesInPlot               =   [time]
+make_losoto.control.plotTEC.axisInTable              =   ant
+make_losoto.control.plotTEC.prefix                   =   {{ inspection_directory }}/delay_cal_tec
+make_losoto.control.plotTEC.plotFlag                 =   False
+make_losoto.control.plotTEC.refAnt                   =   ST001
+make_losoto.control.plotTEC3.operation               =   PLOT
+make_losoto.control.plotTEC3.soltab                  =   sol000/tec3rd000
+make_losoto.control.plotTEC3.axesInPlot              =   [time]
+make_losoto.control.plotTEC3.axisInTable             =   ant
+make_losoto.control.plotTEC3.prefix                  =   {{ inspection_directory }}/delay_cal_tec3rd
+make_losoto.control.plotTEC3.plotFlag                =   False
+make_losoto.control.plotTEC3.refAnt                  =   ST001
+make_losoto.control.residuals.operation              =   RESIDUALS
+make_losoto.control.residuals.soltab                 =   sol000/phase000
+make_losoto.control.residuals.soltabsToSub           =   [tec000,clock000]
+make_losoto.control.residuals3.operation             =   RESIDUALS
+make_losoto.control.residuals3.soltab                =   sol000/phase000
+make_losoto.control.residuals3.soltabsToSub          =   [tec000,clock000,tec3rd000] 
+make_losoto.control.plotPr.operation                 =   PLOT
+make_losoto.control.plotPr.soltab                    =   sol000/phase000
+make_losoto.control.plotPr.axesInPlot                =   [time,freq]
+make_losoto.control.plotPr.axisInTable               =   ant
+make_losoto.control.plotPr.axisDiff                  =   pol
+make_losoto.control.plotPr.plotFlag                  =   True
+make_losoto.control.plotPr.prefix                    =   {{ inspection_directory }}/delay_cal_ph_poldiff-res_
+make_losoto.control.plotPr.refAnt                    =   ST001
+make_losoto.control.plotPr.minmax                    =   [-3.14,3.14]
+make_losoto.control.plotPr3.operation                =   PLOT
+make_losoto.control.plotPr3.soltab                   =   sol000/phase000
+make_losoto.control.plotPr3.axesInPlot               =   [time,freq]
+make_losoto.control.plotPr3.axisInTable              =   ant
+make_losoto.control.plotPr3.plotFlag                 =   True
+make_losoto.control.plotPr3.prefix                   =   {{ inspection_directory }}/delay_cal_ph3-res_
+make_losoto.control.plotPr3.refAnt                   =   ST001
+make_losoto.control.plotPr3.minmax                   =   [-3.14,3.14]
 
 # do losoto clock/tec fitting to get the nice plots
 process_losoto.control.kind                                    =  recipe
 process_losoto.control.type                                    =  executable_args
 process_losoto.control.executable                              =  {{ losoto_executable }}
-process_losoto.control.parsetasfile                            =  False
 process_losoto.control.mapfile_in                              =  find_h5.output.mapfile
 process_losoto.control.inputkey                                =  h5gvds
-process_losoto.argument.flags                                  =  [h5gvds,{{ losoto_parset }}]
-
-## convert the clock-tec values to numpy arrays
-convert_ct.control.kind          = recipe
-convert_ct.control.type          = executable_args
-convert_ct.control.mapfile_in    = find_h5.output.mapfile
-convert_ct.control.executable    = {{ convert_ct_script }}
-convert_ct.control.arguments     = [h5gvds,caldata_transfer]
-convert_ct.control.inputkey      = h5gvds
-
-# run the script that filters the amplitudes
-ampl.control.kind             = recipe
-ampl.control.type             = executable_args
-ampl.control.mapfile_in       = find_h5.output.mapfile
-ampl.control.executable       = {{ fitamps_script }}
-# order for arguments is: [<input-filename>,<output-filename-base>,<num-ch/SB>,<subbans-to-flag>]
-# subbans-to-flag = semicolon-sperated list of integers in double-quotes
-# e.g.: ampl.control.arguments   = [h5gvds,caldata_transfer,4,"205;206;207"]
-ampl.control.arguments        = [h5gvds,caldata_transfer,1,""]
-ampl.control.inputkey         = h5gvds
-
-# generate output plots
-plots.control.kind             = recipe
-plots.control.type             = executable_args
-plots.control.mapfile_in       = find_h5.output.mapfile
-plots.control.executable       = {{ plotsols_script }}
-plots.control.skip_infile      = True
-plots.control.arguments        = [caldata_transfer] # Needs "<output-filename-base>" from the process_losoto and ampl steps
-
-# generate a mapfile of all the diagnostic pngs
-createmap_cal_pngs.control.kind            = plugin
-createmap_cal_pngs.control.type            = createMapfile
-createmap_cal_pngs.control.method          = mapfile_from_folder
-createmap_cal_pngs.control.mapfile_dir     = input.output.mapfile_dir
-createmap_cal_pngs.control.filename        = diagnostic_pngs.mapfile
-createmap_cal_pngs.control.folder          = {{ job_directory }}
-createmap_cal_pngs.control.pattern         = *.png
-
-# copy the diagnostic pngs to the inspection directory
-copy_cal_pngs.control.kind               =  recipe
-copy_cal_pngs.control.type               =  executable_args
-copy_cal_pngs.control.executable         =  /bin/cp
-copy_cal_pngs.control.max_per_node       =  {{ num_proc_per_node_limit }}
-copy_cal_pngs.control.mapfile_in         =  createmap_cal_pngs.output.mapfile
-copy_cal_pngs.control.inputkey           =  source
-copy_cal_pngs.control.arguments          =  [source,{{ inspection_directory }}]
-
-# generate a mapfile of all the diagnostic txts
-createmap_cal_txts.control.kind            = plugin
-createmap_cal_txts.control.type            = createMapfile
-createmap_cal_txts.control.method          = mapfile_from_folder
-createmap_cal_txts.control.mapfile_dir     = input.output.mapfile_dir
-createmap_cal_txts.control.filename        = diagnostic_txts.mapfile
-createmap_cal_txts.control.folder          = {{ job_directory }}
-createmap_cal_txts.control.pattern         = *.txt
-
-# copy the diagnostic txts to the inspection directory
-copy_cal_txts.control.kind               =  recipe
-copy_cal_txts.control.type               =  executable_args
-copy_cal_txts.control.executable         =  /bin/cp
-copy_cal_txts.control.max_per_node       =  {{ num_proc_per_node_limit }}
-copy_cal_txts.control.mapfile_in         =  createmap_cal_txts.output.mapfile
-copy_cal_txts.control.inputkey           =  source
-copy_cal_txts.control.arguments          = [source,{{ inspection_directory }}]
-
-# create the cal_values_directory if needed
-mk_cal_values_dir.control.kind               =  plugin
-mk_cal_values_dir.control.type               =  makeDirectory
-mk_cal_values_dir.control.directory          =  {{ cal_values_directory }}
-
-# generate a mapfile of all the cal-value npys
-createmap_cal_npys.control.kind            = plugin
-createmap_cal_npys.control.type            = createMapfile
-createmap_cal_npys.control.method          = mapfile_from_folder
-createmap_cal_npys.control.mapfile_dir     = input.output.mapfile_dir
-createmap_cal_npys.control.filename        = cal_value_npys.mapfile
-createmap_cal_npys.control.folder          = {{ job_directory }} 
-createmap_cal_npys.control.pattern         = *.npy
-
-# copy the cal-value npys to the cal-values directory
-copy_cal_npys.control.kind               =  recipe
-copy_cal_npys.control.type               =  executable_args
-copy_cal_npys.control.executable         =  /bin/cp
-copy_cal_npys.control.max_per_node       =  {{ num_proc_per_node_limit }}
-copy_cal_npys.control.mapfile_in         =  createmap_cal_npys.output.mapfile
-copy_cal_npys.control.inputkey           =  source
-copy_cal_npys.control.arguments          =  [source,{{ cal_values_directory }}]
+process_losoto.argument.flags                                  =  [h5gvds,input.output.job_directory/losoto.parset]
 
 # in delay cal parmdb, copy ST values to CS values
-copyST_gains.control.type		= pythonplugin
-copyST_gains.control.executable		= {{ copyST_gains_script }}
-copyST_gains.control.mapfile_in		= createmap_tables.output.mapfile
-copyST_gains.control.inputkey		= tables
-copyST_gains.argument.flags		= [tables,ndppp_prep_target.output.mapfile]
+copyST_gains.control.type               = pythonplugin
+copyST_gains.control.executable         = {{ copyST_gains_script }}
+copyST_gains.control.mapfile_in         = createmap_tables.output.mapfile
+copyST_gains.control.inputkey           = tables
+copyST_gains.argument.flags             = [tables,ndppp_prep_target.output.mapfile]
 
 # make an appropriate mapfile for the parmdbs
 match_delay_file.control.kind                             = plugin
@@ -609,7 +633,7 @@ match_delay_file.control.mapfile_ms                       = ndppp_prep_target.ou
 
 # Apply the gain solutions directly to the data -- no need to remove time dependence
 ndppp_apply_delay.control.type                         = dppp
-ndppp_apply_delay.control.inplace		       = True
+ndppp_apply_delay.control.inplace                      = True
 ndppp_apply_delay.control.max_per_node                 = {{ num_proc_per_node }}
 ndppp_apply_delay.control.error_tolerance              = {{ error_tolerance }}
 ndppp_apply_delay.control.outputkey                    =
@@ -644,6 +668,18 @@ ndppp_apply_delay.argument.applydelay.parmdb           = delparmdb
 ndppp_apply_delay.argument.applydelay.correction       = gain
 ndppp_apply_delay.argument.applydelay.updateweights    = false
 
+# copy the LoSoTo file to the inspection_directory
+copy_h5imp_cal.control.kind               =  recipe
+copy_h5imp_cal.control.type               =  executable_args
+copy_h5imp_cal.control.executable         =  /bin/cp
+copy_h5imp_cal.control.arguments          =  [input.output.job_directory/delay_cal.h5,{{ cal_values_directory }}]
+
+# copy the diagnostic pngs to the inspection directory
+copy_cal_pngs.control.kind               =  recipe
+copy_cal_pngs.control.type               =  executable_args
+copy_cal_pngs.control.executable         =  /bin/cp
+copy_cal_pngs.control.max_per_node       =  {{ num_proc_per_node_limit }}
+copy_cal_pngs.control.arguments          =  [input.output.job_directory/*.png,{{ inspection_directory }}]
 
 ## AT THIS POINT, PHASE ONLY SOLUTIONS NEED TO BE FOUND FOR TIER 1 CALIBRATORS.
 ## THEN THOSE CALIBRATORS SHOULD BE SUBTRACTED.
