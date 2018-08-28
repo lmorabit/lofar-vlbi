@@ -4,7 +4,7 @@
 # Please read the instructions and report bugs on: https://github.com/lmorabit/long_baseline_pipeline
 
 ## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, download_cats, do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, h5imp_cal, find_h5, make_losoto, process_losoto, make_dppp_prep_map, copyST_gains, ndppp_apply_delay, copy_cal_pngs ]
+pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, download_cats, do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, createmap_tables, calib_cal, make_losoto, process_losoto, make_dppp_prep_map, copyST_gains, ndppp_apply_delay, copy_h5imp_cal, copy_cal_pngs ]
 
 ###########################################################################
 ## PARAMETER SETUP
@@ -127,7 +127,7 @@ mk_results_dir.control.directory          = {{ results_directory }}
 # create the inspection_directory if needed
 mk_inspect_dir.control.kind               = plugin
 mk_inspect_dir.control.type               = makeDirectory
-mk_inspect_dir.control.directory          = {{ inspection_directory }}a
+mk_inspect_dir.control.directory          = {{ inspection_directory }}
 
 # create the cal_values_directory if needed
 mk_cal_values_dir.control.kind               =  plugin
@@ -438,7 +438,7 @@ delay_cal_model.argument.firstnpy	  = {{ firstnpy_file }}
 delay_cal_model_map.control.kind               =  plugin
 delay_cal_model_map.control.type               =  createMapfile
 delay_cal_model_map.control.method             =  add_suffix_to_file
-delay_cal_model_map.control.mapfile_in         =  find_delay_cal.output.mapfile
+delay_cal_model_map.control.mapfile_in         =  dppp_concat.output.mapfile
 delay_cal_model_map.control.add_suffix_to_file =  /sky
 delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_model_map.control.filename           =  do_sortmap_maps.output.groupmap
@@ -447,8 +447,8 @@ delay_cal_model_map.control.filename           =  do_sortmap_maps.output.groupma
 createmap_tables.control.kind                     =   plugin
 createmap_tables.control.type                     =   createMapfile
 createmap_tables.control.method                   =   add_suffix_to_file
-createmap_tables.control.mapfile_in               =   find_delay_cal.output.mapfile
-createmap_tables.control.add_suffix_to_file       =   /instrument
+createmap_tables.control.mapfile_in               =   dppp_concat.output.mapfile
+createmap_tables.control.add_suffix_to_file       =   /instrument.h5
 createmap_tables.control.mapfile_dir              =   input.output.mapfile_dir
 createmap_tables.control.filename                 =   createmap_tables.mapfile
 
@@ -457,7 +457,7 @@ calib_cal.control.type                    = dppp
 calib_cal.control.max_per_node            = {{ num_proc_per_node_limit }}
 calib_cal.control.error_tolerance         = {{ error_tolerance }}
 calib_cal.argument.numthreads             = {{ max_dppp_threads }}
-calib_cal.argument.msin                   = find_delay_cal.output.mapfile
+calib_cal.argument.msin                   = dppp_concat.output.mapfile
 calib_cal.argument.msin.datacolumn        = DATA
 calib_cal.argument.msin.baseline          = *&
 calib_cal.argument.msout.datacolumn       = DATA
@@ -471,22 +471,6 @@ calib_cal.argument.gaincal.solint	  = 2
 calib_cal.argument.gaincal.usebeammodel   = False
 calib_cal.argument.gaincal.sourcedb       = delay_cal_model_map.output.mapfile
 
-# import all instrument tables into one LoSoTo file
-h5imp_cal.control.kind                          = recipe
-h5imp_cal.control.type                          = executable_args
-h5imp_cal.control.executable                    = {{ losoto_importer }}
-h5imp_cal.control.mapfile_in                    = find_delay_cal.output.mapfile
-h5imp_cal.control.inputkey                      = source
-h5imp_cal.control.arguments                     = [delay_cal.h5,source]
-
-# make a mapfile of the h5parm
-find_h5.control.kind            = plugin
-find_h5.control.type            = createMapfile
-find_h5.control.method          = mapfile_from_folder
-find_h5.control.mapfile_dir     = input.output.mapfile_dir
-find_h5.control.filename        = createmap_plots.mapfile
-find_h5.control.folder          = {{ job_directory }}
-find_h5.control.pattern         = delay_cal.h5
 
 # make a losoto parset
 make_losoto.control.kind                              =   plugin
@@ -612,7 +596,7 @@ make_losoto.control.plotPr3.minmax                   =   [-3.14,3.14]
 process_losoto.control.kind                          =  recipe
 process_losoto.control.type                          =  executable_args
 process_losoto.control.executable                    =  {{ losoto_executable }}
-process_losoto.control.mapfile_in                    =  find_h5.output.mapfile
+process_losoto.control.mapfile_in                    =  createmap_tables.output.mapfile
 process_losoto.control.inputkey                      =  h5gvds
 process_losoto.argument.flags                        =  [h5gvds,input.output.job_directory/losoto.parset]
 
@@ -627,7 +611,7 @@ make_dppp_prep_map.control.filename                  =  make_dppp_prep_map.mapfi
 # in delay cal parmdb, copy ST values to CS values
 copyST_gains.control.type                            =   pythonplugin
 copyST_gains.control.executable                      =   {{ copyST_gains_script }}
-copyST_gains.control.mapfile_in                      =   find_h5.output.mapfile
+copyST_gains.control.mapfile_in                      =   createmap_tables.output.mapfile
 copyST_gains.control.inputkey                        =   h5parm
 copyST_gains.argument.flags                          =   [h5parm,make_dppp_prep_map.output.mapfile]
 copyST_gains.argument.restrictToCS                   =   True
@@ -638,7 +622,7 @@ ndppp_apply_delay.control.inplace                        =   True
 ndppp_apply_delay.control.max_per_node                   =   {{ num_proc_per_node }}
 ndppp_apply_delay.control.error_tolerance                =   {{ error_tolerance }}
 ndppp_apply_delay.control.outputkey                      =
-ndppp_apply_delay.control.mapfiles_in                    =   [ndppp_prep_target.output.mapfile,match_files.output.parmdbs,find_h5.output.mapfile,transfer_amp_clock_sols.output.transfer_parmDB.mapfile]
+ndppp_apply_delay.control.mapfiles_in                    =   [ndppp_prep_target.output.mapfile,match_files.output.parmdbs,createmap_tables.output.mapfile,transfer_amp_clock_sols.output.transfer_parmDB.mapfile]
 ndppp_apply_delay.control.inputkeys                      =   [inputms,parmdbs,delh5parm,ampclockparmdb]
 ndppp_apply_delay.argument.numthreads                    =   {{ max_dppp_threads }}
 ndppp_apply_delay.argument.msin                          =   inputms
@@ -684,7 +668,9 @@ ndppp_apply_delay.argument.applydelayTEC.updateweights   =   false
 copy_h5imp_cal.control.kind               =  recipe
 copy_h5imp_cal.control.type               =  executable_args
 copy_h5imp_cal.control.executable         =  /bin/cp
-copy_h5imp_cal.control.arguments          =  [input.output.job_directory/delay_cal.h5,{{ cal_values_directory }}]
+copy_h5imp_cal.control.mapfile_in	  =  createmap_tables.output.mapfile
+copy_h5imp_cal.control.inputkey		  =  h5parm
+copy_h5imp_cal.control.arguments          =  [h5parm,{{ cal_values_directory }}]
 
 # copy the diagnostic pngs to the inspection directory
 copy_cal_pngs.control.kind               =  recipe
