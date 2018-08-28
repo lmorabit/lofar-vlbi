@@ -56,11 +56,18 @@ def plugin_main(args, **kwargs):
         map_out_big = DataMap([])
 
 	## use astropy.io.ascii to load the file
-	target_data = ascii.read(target_file, format='csv')
+	with open( target_file, 'r' ) as f:
+	    lines = f.readlines()
+	f.close()
+	RA_vals = []
+	DEC_vals = []
+	source_id = []
+	for l in lines:
+	    tmp = l.split(',')
+	    RA_vals.append(tmp[0])
+	    DEC_vals.append(tmp[1])
+	    source_id.append(tmp[2])
 	## get the coordinates
-	source_id = np.array(target_data['Source_id'])
-	RA_vals = np.array(target_data['LOTSS_RA'])
-	DEC_vals = np.array(target_data['LOTSS_DEC'])
 	for x, src_id in enumerate(source_id):
 	    ss = '[\"'+str(RA_vals[x])+'deg\",\"'+str(DEC_vals[x])+'deg\"]'
 	    map_out_big.data.append(DataProduct( ss, src_id, False ))
