@@ -58,26 +58,28 @@ def wcsreduce(fits):
     h.remove('CTYPE4');h.remove('CRVAL4');h.remove('CRPIX4');h.remove('CDELT4');h.remove('CROTA4')
     os.system('rm '+fits)   # do not use 'clobber' - non-backwards compatible change in pyfits
     pyfits.writeto(fits,a,h)
-    
 
 def first_download (ra,dec,outfile='first_out.fits',gif=0,fits=1,imsize=2.0,imserver='third.ucllnl.org'):
     os.system('rm '+outfile)
     coord = SkyCoord(ra,dec,unit='deg')
     scoord = str(coord.to_string(style='hmsdms'))
     s = scoord.replace('h',' ').replace('d',' ').replace('m',' ').replace('s',' ').split()
-    command = ('wget -O %s "https://%s/cgi-bin/firstimage?RA=%s %s %s %s %s %s&Dec=&Equinox=J2000&ImageSize=%.1f&MaxInt=10&GIF=%d&FITS=%d&Download=1"'%(outfile,imserver,s[0],s[1],s[2],s[3],s[4],s[5],imsize,gif,fits))
+    command = ('wget -O --no-check-certificate %s "https://%s/cgi-bin/firstimage?RA=%s %s %s %s %s %s&Dec=&Equinox=J2000&ImageSize=%.1f&MaxInt=10&GIF=%d&FITS=%d&Download=1"'%(outfile,imserver,s[0],s[1],s[2],s[3],s[4],s[5],imsize,gif,fits))
     os.system(command)
     wcsreduce(outfile) # aplpy can't cope with FREQ,STOKES axes
-    return pyfits.getdata(outfile)
+    try: 
+        return pyfits.getdata(outfile)
+    except(OSError):
+        print 'Can not download FIRST data. Likely outside survey region or server error. Defaulting to no first image.'
+        return None
 
 # Altered to use astropy.SkyCoord.separation
 
 def sepn(r1,d1,r2,d2):
     return SkyCoord(r1,d1,unit='rad').separation(SkyCoord(r2,d2,unit='rad')).rad
 
-
 def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE609;PL610;PL611;PL612;IE613', npix=128, fov_arcsec=6., maxarcmin=2.0, zbl=0., prior_fwhm_arcsec=1., doplots=False, imfile='myim', remove_tels='', niter=300, cfloor=0.001, conv_criteria=0.0001, use_bs=False, scratch_model=False, do_diagnostic_plots=False, lotss_file=''):
-
+    
     use_first = not(scratch_model)
 
     ## for the generic pipeline, force the data types
@@ -102,7 +104,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
 
     r_tels = remove_tels.split(';')
     for r_tel in r_tels:
-	closure_tels = closure_tels.replace(r_tel,'')
+    closure_tels = closure_tels.replace(r_tel,'')
     tmp_tel = closure_tels.split(';')
     tel = [ t for t in tmp_tel if t != '' ]
 
@@ -145,11 +147,18 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     os.system (ss)
 
     ## get the coordinates for the phase center
-    field_tb = os.path.join( tmp_name, 'FIELD' )
-    table = pt.table(field_tb, readonly = True)
-    ra    = math.degrees(float(table.getcol('PHASE_DIR')[0][0][0] ) % (2 * math.pi))
-    dec   = math.degrees(float(table.getcol('PHASE_DIR')[0][0][-1]))
-    table.close()
+    ss = "taql 'select PHASE_DIR from %s/FIELD' > phase_dir.txt"%tmp_name
+    os.system( ss )
+    with open( 'phase_dir.txt', 'r' ) as f:
+        lines = f.readlines()
+    f.close()
+
+    phase_dir = lines[-1].lstrip('[').rstrip(']\n')
+    ra_sexg = phase_dir.split(',')[0]
+    dec_sexg = phase_dir.split(',')[1]
+    c = SkyCoord( ra_sexg, dec_sexg, frame='icrs' )
+    ra = float(c.ra.degree)
+    dec = float(c.dec.degree)
 
     ## check if weights are appropriate
 
@@ -166,39 +175,39 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         os.system(ss)
 
     if lotss_file != '':
-	print 'LoTSS file is specified, using zero baseline flux from catalogue.'
-	lotss_cat = ascii.read( lotss_file )
-	src_index = np.where( lotss_cat['Source_id'] == src_name )
-	flux_mJy = float( lotss_cat['Total_flux'][src_index[0]] )
-	zbl = flux_mJy * 1e-3
-	
+    print 'LoTSS file is specified, using zero baseline flux from catalogue.'
+    lotss_cat = ascii.read( lotss_file )
+    src_index = np.where( lotss_cat['Source_id'] == src_name )
+    flux_mJy = float( lotss_cat['Total_flux'][src_index[0]] )
+    zbl = flux_mJy * 1e-3
+    
     else:
-	print 'LoTSS file is not specified.'
-	if zbl == 0:
+    print 'LoTSS file is not specified.'
+    if zbl == 0:
             ## find the zero baseline amplitudes if it isn't set
-  	    print 'Calculating the zero baseline flux (mean of amplitudes on DE601 -- DE605)'
-	    ## use baseline DE601 -- DE605, failing that the first two in list
+        print 'Calculating the zero baseline flux (mean of amplitudes on DE601 -- DE605)'
+        ## use baseline DE601 -- DE605, failing that the first two in list
             try: 
-	        de601_idx = aidx[[ i for i, val in enumerate(tel) if 'DE601' in val ]][0]
-	        de605_idx = aidx[[ i for i, val in enumerate(tel) if 'DE605' in val ]][0]
-	    except:
+            de601_idx = aidx[[ i for i, val in enumerate(tel) if 'DE601' in val ]][0]
+            de605_idx = aidx[[ i for i, val in enumerate(tel) if 'DE605' in val ]][0]
+        except:
                 print '...Not present. Using %s %s instead'%(tel[0],tel[1])
                 de601_idx, de605_idx = aidx[0],aidx[1]
-	    ss = "taql 'select medians(gaggr(abs(DATA)),0,1) from %s' where ANTENNA1==%s and ANTENNA2=%s > amp_check.txt"%(tmp_name, de601_idx, de605_idx)
-	    os.system(ss)
-	    with open( 'amp_check.txt', 'r' ) as f:
-	        lines = f.readlines()
+        ss = "taql 'select medians(gaggr(abs(DATA)),0,1) from %s' where ANTENNA1==%s and ANTENNA2=%s > amp_check.txt"%(tmp_name, de601_idx, de605_idx)
+        os.system(ss)
+        with open( 'amp_check.txt', 'r' ) as f:
+            lines = f.readlines()
             f.close()
             amps = np.asarray(lines[2].lstrip('[').rstrip(']\n').split(', '),dtype=float)
             zbl = np.median(amps)
-    	    os.system('rm *_check.txt')
+            os.system('rm *_check.txt')
 
     print( 'Zero baseline flux:', zbl )
 
     ## convert vis to uv-fits
 
     if os.path.isfile(fitsout):
-	os.system('rm '+fitsout)
+    os.system('rm '+fitsout)
     ss = 'ms2uvfits in=%s out=%s writesyscal=F'%(tmp_name, fitsout)
     os.system(ss)
     ## observe the uv-fits
@@ -215,7 +224,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
         obs.plotall('uvdist','amp', show=False, export_pdf=fitsout.replace('fits','uvdist-amp.pdf') ) ## etc
 
         ## the dirty beam
-	print 'Calculating the dirty beam.'
+    print 'Calculating the dirty beam.'
         dbeam = obs.dirtybeam(npix,fov)
         dbeam.save_fits(fitsout.replace('fits','dirty_beam.fits'))
 
@@ -239,14 +248,14 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     print use_first
     ## set up the gaussian prior
     if use_first:
-	print( 'Using FIRST.' )
+    print( 'Using FIRST.' )
         if not os.path.isfile('./first_2008.simple.npy'):
             os.system('wget http://www.jb.man.ac.uk/~njj/first_2008.simple.npy')
         first = np.load('first_2008.simple.npy')
-        #firstdata = first_download(ra,dec,imsize=maxarcmin)
-	# lkm - this is the else statement, it may not work 
-	spatial_separations = sepn(np.deg2rad(ra),np.deg2rad(dec),np.deg2rad(first[:,0]),np.deg2rad(first[:,1]))
-	corrfirst = np.where( spatial_separations <= as2rad(maxarcmin*60.0) )[0]
+        # firstdata = first_download(ra,dec,imsize=maxarcmin)
+    # lkm - this is the else statement, it may not work 
+    spatial_separations = sepn(np.deg2rad(ra),np.deg2rad(dec),np.deg2rad(first[:,0]),np.deg2rad(first[:,1]))
+    corrfirst = np.where( spatial_separations <= as2rad(maxarcmin*60.0) )[0]
         if not len(corrfirst):           # no FIRST, fall back to default
             print 'No FIRST sources, using default'
             prior_fwhm = as2rad(prior_fwhm_arcsec)
@@ -291,7 +300,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
 
 
     if use_bs:
-	print 'Using bispectrum mode rather than cphase and camp separately.'
+    print 'Using bispectrum mode rather than cphase and camp separately.'
         out = eh.imager_func( obs, gaussprior, gaussprior, zbl, d1='bs', \
                               clipfloor=cfloor, maxit=300)
         outblur = out.blur_gauss(beamparams, 0.5)
@@ -322,13 +331,13 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     insert_radec ('./' + imfile + 'prior.fits', ra, dec)
     insert_radec ('./' + imfile + 'im_blur.fits', ra, dec)
 
-    if doplots and use_first:
+    if doplots and use_first and firstdata != None:
         a1,a2 = gcmake ('first_out.fits','./%s_p1.png'%imfile)
         a1,a2 = gcmake ('./%sprior.fits'%imfile,'./%s_p2.png'%imfile)
         a1,a2 = gcmake ('./%sim_blur.fits'%imfile,'./%s_p3.png'%imfile,vmax=a2)
         os.system('montage -geometry 600x600 -tile 3x1 %s_p1.png %s_p2.png %s_p3.png %s_plots.png'%\
                                 (imfile,imfile,imfile,imfile))
-    if doplots and not use_first:
+    elif doplots:
             plt.subplot(121);plt.imshow(pyfits.getdata('./'+imfile+'im_blur.fits'))
             plt.subplot(122);plt.imshow(pyfits.getdata('./'+imfile+'prior.fits'))
             plt.savefig('./'+imfile+'_plots.png',bbox_inches='tight')
@@ -357,4 +366,3 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main( args.vis, closure_tels = args.ctels, npix = args.npix, fov_arcsec = args.fov, maxarcmin = args.maxarcmin, zbl = args.zbl, prior_fwhm_arcsec = args.prior_fwhm, doplots = args.doplots, imfile = args.imfile, remove_tels = args.rtels, niter=args.maxiter, cfloor=args.clipfloor, conv_criteria=args.convg, use_bs=args.use_bs, scratch_model=args.scratch_model, do_diagnostic_plots=args.diagplots, lotss_file=args.lotss_file )
-
