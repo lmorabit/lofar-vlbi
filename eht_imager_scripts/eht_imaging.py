@@ -1,14 +1,14 @@
 #!/bin/python
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np
 import ehtim as eh
 import os
 import math 
-import pyrap.tables as pt
+import casacore.tables as casatb
 import pyfits 
 import argparse 
 import aplpy
-import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from ehtim.const_def import *
 from ehtim.observing.obs_helpers import *
@@ -145,11 +145,18 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     os.system (ss)
 
     ## get the coordinates for the phase center
-    field_tb = os.path.join( tmp_name, 'FIELD' )
-    table = pt.table(field_tb, readonly = True)
-    ra    = math.degrees(float(table.getcol('PHASE_DIR')[0][0][0] ) % (2 * math.pi))
-    dec   = math.degrees(float(table.getcol('PHASE_DIR')[0][0][-1]))
-    table.close()
+    ss = "taql 'select PHASE_DIR from %s/FIELD' > phase_dir.txt"%tmp_name
+    os.system( ss )
+    with open( 'phase_dir.txt', 'r' ) as f:
+	lines = f.readlines()
+    f.close()
+
+    phase_dir = lines[-1].lstrip('[').rstrip(']\n')
+    ra_sexg = phase_dir.split(',')[0]
+    dec_sexg = phase_dir.split(',')[1]
+    c = SkyCoord( ra_sexg, dec_sexg, frame='icrs' )
+    ra = float(c.ra.degree)
+    dec = float(c.dec.degree)
 
     ## check if weights are appropriate
 
@@ -278,7 +285,7 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
                 print 'Prior: adding %.1fmJy Gaussian %.2f*%.2f asec, PA %.1f, at (%.3f,%.3f)asec' % \
                   (gflux[i],rad2as(g[0]),rad2as(g[1]),np.rad2deg(g[2]),rad2as(g[3]),rad2as(g[4]))
                 gaussprior = gaussprior.add_gauss( gflux[i], g )
-            firstdata = first_download(ra,dec,imsize=fov_arcsec/60.0)
+#            firstdata = first_download(ra,dec,imsize=fov_arcsec/60.0)
     else:
         print 'Not using FIRST'
 #        obs=eh.obsdata.load_uvfits('../data/L1327+5504_vvsmall.fits') ##
@@ -323,11 +330,10 @@ def main(vis, closure_tels='DE601;DE602;DE603;DE604;DE605;FR606;SE607;UK608;DE60
     insert_radec ('./' + imfile + 'im_blur.fits', ra, dec)
 
     if doplots and use_first:
-        a1,a2 = gcmake ('first_out.fits','./%s_p1.png'%imfile)
+    #    a1,a2 = gcmake ('first_out.fits','./%s_p1.png'%imfile)
         a1,a2 = gcmake ('./%sprior.fits'%imfile,'./%s_p2.png'%imfile)
         a1,a2 = gcmake ('./%sim_blur.fits'%imfile,'./%s_p3.png'%imfile,vmax=a2)
-        os.system('montage -geometry 600x600 -tile 3x1 %s_p1.png %s_p2.png %s_p3.png %s_plots.png'%\
-                                (imfile,imfile,imfile,imfile))
+    #    os.system('montage -geometry 600x600 -tile 3x1 %s_p1.png %s_p2.png %s_p3.png %s_plots.png'%(imfile,imfile,imfile,imfile))
     if doplots and not use_first:
             plt.subplot(121);plt.imshow(pyfits.getdata('./'+imfile+'im_blur.fits'))
             plt.subplot(122);plt.imshow(pyfits.getdata('./'+imfile+'prior.fits'))
