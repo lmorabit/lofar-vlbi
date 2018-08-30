@@ -44,7 +44,7 @@ def plugin_main(args, **kwargs):
     outdir      = kwargs['wd']
     tick        = int(kwargs['counter'])
     data        = DataMap.load(infile_map)	# these are actual MS files
-    datalist    = [data[i].file for i in xrange(20)] ## use only 20 subbands
+    datalist    = [data[i].file for i in xrange(len(data))] ## use only 20 subbands
     target_file = kwargs['target_file']
 
     fileid    = os.path.join(mapfile_dir, filename)	           # this file holds all the output measurement sets
