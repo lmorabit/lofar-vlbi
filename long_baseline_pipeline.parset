@@ -91,7 +91,7 @@ pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_di
 ! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
 ! convert_ct_script		    = {{ long_baseline_pipeline_dir }}/bin/convert_clocktec_to_npy.py
 ! losoto_parset			    = {{ long_baseline_pipeline_dir }}/parsets/losoto.parset
-! copyST_gains_script		    = {{ long_baseline_pipeline_dir }}/bin/copySTgains_toCS_h5parm.py
+! copyST_gains_script		    = {{ long_baseline_pipeline_dir }}/bin/gains_toCS_h5parm.py
 
 ## Configuration for prefactor scripts (update prefactor_dir at top)
 ! losoto_importer       = {{ long_baseline_pipeline_dir }}/bin/losotoImporter.py
