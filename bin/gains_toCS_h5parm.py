@@ -42,7 +42,7 @@ def makesolset(MS, data, solset_name):
 
     return antennaNames
 
-def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', soltab_list = ['clock000', 'tec000', 'amplitude000'], superstation = 'ST001', restrictToCS = False):
+def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', soltab_list = ['clock000', 'tec000', 'amplitude000'], superstation = 'ST001', restrictToCS = True):
 
     mslist = MSfiles.lstrip('[').rstrip(']').replace(' ','').replace("'","").split(',')
     

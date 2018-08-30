@@ -91,7 +91,7 @@ pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_di
 ! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
 ! convert_ct_script		    = {{ long_baseline_pipeline_dir }}/bin/convert_clocktec_to_npy.py
 ! losoto_parset			    = {{ long_baseline_pipeline_dir }}/parsets/losoto.parset
-! copyST_gains_script		    = {{ long_baseline_pipeline_dir }}/bin/copySTgains_toCS_h5parm.py
+! copyST_gains_script		    = {{ long_baseline_pipeline_dir }}/bin/gains_toCS_h5parm.py
 
 ## Configuration for prefactor scripts (update prefactor_dir at top)
 ! losoto_importer       = {{ long_baseline_pipeline_dir }}/bin/losotoImporter.py
@@ -444,14 +444,15 @@ delay_cal_model_map.control.method             =  add_suffix_to_file
 delay_cal_model_map.control.mapfile_in         =  dppp_concat.output.mapfile
 delay_cal_model_map.control.add_suffix_to_file =  /sky
 delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
-delay_cal_model_map.control.filename           =  do_sortmap_maps.output.groupmap
+delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
 
 # generate gain solutions for clock/tec separation -- need also to apply amplitude corrections
 calib_cal.control.type                    = dppp
 calib_cal.control.max_per_node            = {{ num_proc_per_node_limit }}
 calib_cal.control.error_tolerance         = {{ error_tolerance }}
+calib_cal.control.mapfiles_in             = [dppp_concat.output.mapfile, delay_cal_model_map.output.mapfile]
+calib_cal.control.inputkeys               = [msin, gaincal.sourcedb]
 calib_cal.argument.numthreads             = {{ max_dppp_threads }}
-calib_cal.argument.msin                   = dppp_concat.output.mapfile
 calib_cal.argument.msin.datacolumn        = DATA
 calib_cal.argument.msin.baseline          = *&
 calib_cal.argument.msout.datacolumn       = DATA
@@ -463,7 +464,6 @@ calib_cal.argument.gaincal.applysolution  = False
 calib_cal.argument.gaincal.nchan          = 2
 calib_cal.argument.gaincal.solint	  = 2
 calib_cal.argument.gaincal.usebeammodel   = False
-calib_cal.argument.gaincal.sourcedb       = delay_cal_model_map.output.mapfile
 
 
 # make a losoto parset
@@ -590,7 +590,9 @@ make_losoto.control.plotPr3.minmax                   =   [-3.14,3.14]
 process_losoto.control.kind                          =  recipe
 process_losoto.control.type                          =  executable_args
 process_losoto.control.executable                    =  {{ losoto_executable }}
-process_losoto.control.max_per_node		     =  {{ num_proc_per_node }}
+process_losoto.control.max_per_node		               =  {{ num_proc_per_node }}
+process_losoto.control.mapfile_in                    =  do_sortmap_maps.output.groupmap
+process_losoto.control.skip_infile                   =  True
 process_losoto.argument.flags                        =  [{{ job_directory }}/delay_cal.h5, {{ job_directory }}/losoto.parset]
 
 # get a list of all subbands
@@ -602,11 +604,10 @@ make_dppp_prep_map.control.mapfile_dir               =  input.output.mapfile_dir
 make_dppp_prep_map.control.filename                  =  make_dppp_prep_map.mapfile
 
 # in delay cal parmdb, copy ST values to CS values
-copyST_gains.control.kind			     =   recipe
+copyST_gains.control.kind			                       =   recipe
 copyST_gains.control.type                            =   executable_args
 copyST_gains.control.executable                      =   {{ copyST_gains_script }}
 copyST_gains.argument.flags                          =   [{{ job_directory }}/delay_cal.h5,make_dppp_prep_map.output.mapfile]
-copyST_gains.argument.restrictToCS                   =   True
 
 # Apply the gain solutions directly to the data -- no need to remove time dependence
 ndppp_apply_delay.control.type                           =   dppp
