@@ -332,7 +332,7 @@ download_cats.control.doDownload		= {{ do_download }}
 do_parallel.control.type                  = pythonplugin
 do_parallel.control.max_per_node          = {{ num_proc_per_node }}
 do_parallel.control.executable            = {{ find_best_delay_cal_script }}
-do_parallel.argument.flags                = [ndppp_prep_target.output.mapfile,{{ delay_cat }}]
+do_parallel.argument.flags                = [combine_data_target_map.output.mapfile,{{ delay_cat }}]
 do_parallel.argument.ncpu                 = {{ num_proc_per_node_limit }}
 
 # automatically find the best calibrator 
