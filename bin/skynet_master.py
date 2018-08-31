@@ -747,10 +747,10 @@ if __name__ == "__main__":
     parser.add_argument('--mode',type=int, help='Mode to use', default=3)
     parser.add_argument('--closure_tels',type=str,help='Stations to use for calculating closure phase.', default='ST001;DE601;DE605' )
     parser.add_argument('--cthr',type=float,help='Threshold for closure phase scatter.', default=1.6)
-    parser.add_argument('--smodel',type=float,help='Flux density in Jy of point source.', default=1.0)
     parser.add_argument('--model_only',type=int,help='set to 1 to get model only',default=0)
+    parser.add_argument('--delay_cal_file',type=str,help='delay calibrator information')
 
     args = parser.parse_args()
 
-    main( args.vis, args.self_cal_script, args.firstnpy, mode=args.mode, closure_tels=args.closure_tels, cthr=args.cthr, smodel=args.smodel, model_only=args.model_only )
+    main( args.vis, args.self_cal_script, args.firstnpy, mode=args.mode, closure_tels=args.closure_tels, cthr=args.cthr, model_only=args.model_only, delayCalFile=args.delay_cal_file )
 
