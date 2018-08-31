@@ -660,6 +660,8 @@ ndppp_apply_delay.argument.applydelayTEC.updateweights   =   false
 # copy the LoSoTo file to the inspection_directory
 copy_h5imp_cal.control.kind               =  recipe
 copy_h5imp_cal.control.type               =  executable_args
+copy_h5imp_cal.control.mapfile_in         =  do_sortmap_maps.output.groupmap
+copy_h5imp_cal.control.skip_infile        =  True
 copy_h5imp_cal.control.executable         =  /bin/cp
 copy_h5imp_cal.control.arguments          =  [{{ job_directory }}/delay_cal.h5, {{ cal_values_directory }}]
 
