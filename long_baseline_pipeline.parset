@@ -1,36 +1,69 @@
-#########################################################
-## LOFAR long baseline calibration pipeline parset     ##
-#########################################################
-# Please read the instructions and report bugs on: https://github.com/lmorabit/long_baseline_pipeline
+##################################################################
+## LOFAR long baseline calibration pipeline parset     		##
+##  - This pipeline requires prefactor V3 	       		##
+##    to have already been run on both calibrator      		##
+##    and target. 				       		##
+##  - The working and runtime directory are expected   		##
+##    to be the same.			               		##
+##  - Please report any issues at 				##
+##    https://github.com/lmorabit/long_baseline_pipeline	##
+##################################################################
 
-## STEPS TO RUN#
-pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_apply_cal, download_cats, do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, calib_cal, make_losoto, process_losoto, make_dppp_prep_map, copyST_gains, ndppp_apply_delay, copy_h5imp_cal ]
 
-###########################################################################
-## PARAMETER SETUP
-## SECTION 1: things that absolutely need to be configured
+##########################################################
+## Please update these parameters. 			##
+##########################################################
 
-## global information
-! base_directory 		        = input.output.working_directory  ## this is taken from the config file -- DO NOT CHANGE
-! job_directory		 	        = input.output.job_directory	  ## this is taken from the config file -- DO NOT CHANGE
+# software paths
+! long_baseline_pipeline_dir            = /home/lmorabit/long_baseline_pipeline_new
+! prefactor_dir                         = /home/lmorabit/prefactor
+! losoto_executable                     = /home/lmorabit/losoto/bin/losoto
 
-! long_baseline_pipeline_dir 		= /home/lmorabit/long_baseline_pipeline_new
-! prefactor_dir			        = /home/lmorabit/prefactor
-! losoto_executable			= /home/lmorabit/losoto/bin/losoto
-
-## target data information
+# ## target data information
 ! target_input_path             = /data/scratch/lb_bw/targetdata
 ! target_input_pattern          = L*.MS
 
 ## Prefactor solution information
-! transfer_amp_clock_sols_store = /data/scratch/lb_bw/prefactor_solutions/cal_results/  ## directory with amplitude and clock solutions of prefactor (*.npy files)
-! amp_sols_basename             = caldata_transfer
-! phase_sol_input_path          = /data/scratch/lb_bw/prefactor_solutions/prefactor/results ## directory with measurement sets containing direction-independent phase solutions of the target fielda
 
+## calibrator solutions
+! cal_solutions = {{ cal_values_directory }}/cal_solutions.h5
+
+! phase_sol_input_path          = /data/scratch/lb_bw/prefactor_solutions/prefactor/results ## location of h5parm from target prefactor
+
+## Stations to flag
+! flag_baselines                = [ RS310* ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
+
+
+##########################################################
+## These parameters may need to be updated.		##
+##########################################################
+
+## catalogue information
 ! image_cat  = {{ job_directory }}/lotss_catalogue.csv
 ! delay_cat  = {{ job_directory }}/delay_calibrators.csv
 ! subtract_cat  = {{ job_directory }}/subtract_sources.csv
 ! do_download = True
+
+## Output directories
+! results_directory             = {{ job_directory }}/results
+! inspection_directory          = {{ results_directory }}/inspection/
+! cal_values_directory          = {{ results_directory }}/calibrator_results/
+
+## Runtime setup -- will depend on your computing cluster
+! num_proc_per_node             = input.output.max_per_node    ## number of processes to use per step per node
+! num_proc_per_node_limit       = 4     ## number of processes to use per step per node for tasks with high i/o (dppp or cp) or memory (eg calibration)
+! max_dppp_threads              = 2     ## number of threads per process for NDPPP
+! error_tolerance               = False ## False = stop if any subband fails, True = keep going
+
+##########################################################
+## Changing these will probably break something.	##
+##########################################################
+
+## global information
+! base_directory                        = input.output.working_directory  
+! job_directory                         = input.output.job_directory      
+! scripts			 	= {{ long_baseline_pipeline_dir }}/bin
+! prefactor_scripts			= {{ prefactor_dir }}/scripts
 
 ## Averaging parameters
 ! cal_shift_avg_timestep        = 8    ## Calibrator time averaging: output should be 8 seconds
@@ -38,17 +71,10 @@ pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_di
 ! tgt_shift_avg_timestep        = 16   ## Target time averaging: output should be 16 seconds
 ! tgt_shift_avg_freqstep        = 16   ## Target freq averaging: output should be 1 channel per subband
 
-## Stations to flag
-! flag_baselines 		= [ RS310* ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
-
-###########################################################################
-## PARAMETER SETUP
-## SECTION 2: things that are probably fine as is, but should be checked
-
-## Output directories
-! results_directory             = {{ job_directory }}/results
-! inspection_directory          = {{ results_directory }}/inspection/
-! cal_values_directory          = {{ results_directory }}/calibrator_results/
+## RMextract settings
+! ionex_server             =  "ftp://ftp.aiub.unibe.ch/CODE/"        ## to download from the "standard" server
+! ionex_prefix             =  CODG                                   ## the prefix of the IONEX files
+! ionex_path = {{ job_directory }}/IONEX/ ## path where the IONEX files can be stored or are already stored
 
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
@@ -58,22 +84,17 @@ pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_di
 ! closure_phase_stations        = 'DE601;DE605;ST001' ## list of three stations separated by ;
 ! closure_phase_file            = {{ job_directory }}/closure_phases.txt ## pipeline expects this location - do not change
 
-## Runtime setup -- will depend on your computing cluster
-! num_proc_per_node        	= input.output.max_per_node    ## number of processes to use per step per node
-! num_proc_per_node_limit  	= 4	## number of processes to use per step per node for tasks with high i/o (dppp or cp) or memory (eg calibration)
-! max_dppp_threads          	= 2	## number of threads per process for NDPPP
-! error_tolerance               = False ## False = stop if any subband fails, True = keep going
 
-## IONEX server information
-# the URL of the server where  the IONEX files can be downloaded
-# leave it at "None" to disable downloads, or set it to:
-#   ftp://ftp.unibe.ch/aiub/CODE/
-# to download from the "standard" server
-! ionex_server  = ftp://ftp.aiub.unibe.ch/CODE/
+##########################################################
+## Steps to run.					##
+##########################################################
 
-###########################################################################
-## PARAMETER SETUP
-## SECTION 3: Do not update
+pipeline.steps = [ setup, prep, delaycal ]
+
+pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
+pipeline.steps.prep = [ createmap_target, createmap_ps, createmap_ps_tables, make_ps_out_mapfile, copy_sols, createmap_pstwo, match_files, ndppp_prep_target, combine_data_target_map, get_ion_files, transfer_amp_clock_sols, is_amp_gains, is_add_phase, ndppp_prep_target, download_cats ]
+pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, calib_cal, make_losoto, process_losoto, make_dppp_prep_map, copyST_gains, ndppp_apply_delay, copy_h5imp_cal ]
+
 
 ## Configuration for long baseline pipeline (update long_baseline_pipeline_dir at top)
 # ! transfer_amp_clock_sols_script    = {{ long_baseline_pipeline_dir }}/bin/transfer_amplitudes+clock+offset_toMS.py
@@ -99,12 +120,6 @@ pipeline.steps = [mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_di
 # ! plotsols_script       = {{ prefactor_dir }}/scripts/examine_npys.py
 ! plotsols_script       = {{ long_baseline_pipeline_dir }}/bin/examine_npys_losoto.py
 ! sort_concat_script    = {{ prefactor_dir }}/scripts/sort_times_into_freqGroups.py
-# script to download ionex files
-! get_ion_script  = {{ prefactor_dir }}/bin/download_IONEX.py
-# the prefix of the IONEX files
-! ionex_prefix  = CODG
-# path where the IONEX files can be stored or are already stored
-! ionex_path    = {{ job_directory }}/IONEX/
 
 
 ##
@@ -206,7 +221,58 @@ match_files.control.filename                         = match_files.mapfile
 match_files.control.mapfile_grpd                     = createmap_pstwo.output.mapfile
 match_files.control.mapfile_ms                       = createmap_target.output.mapfile
 
-# run NDPPP on the target data
+# prepare the solutions so prep and apply can be done in the same step
+
+## ionex -- combine mapfile into one for ionex script
+combine_data_target_map.control.kind            =   plugin
+combine_data_target_map.control.type            =   createMapfile
+combine_data_target_map.control.method          =   mapfile_all_to_one
+combine_data_target_map.control.mapfile_dir     =   input.output.mapfile_dir
+combine_data_target_map.control.filename        =   combine_data_tar_map.mapfile
+combine_data_target_map.control.mapfile_in      =   match_files.output.mapfile
+
+## run ionex
+h5imp_RMextract.control.type                                   =   pythonplugin
+h5imp_RMextract.control.executable                             =   {{ prefactor_scripts }}/createRMh5parm.py
+h5imp_RMextract.control.error_tolerance                        =   {{ error_tolerance }}
+h5imp_RMextract.argument.flags                                 =   [combine_data_target_map.output.mapfile, {{ cal_solutions }}]
+h5imp_RMextract.argument.ionex_server                          =   {{ ionex_server }}
+h5imp_RMextract.argument.ionex_prefix                          =   {{ ionex_prefix }}
+h5imp_RMextract.argument.ionexPath                             =   {{ ionex_path }}
+h5imp_RMextract.argument.solset_name                           =   target
+h5imp_RMextract.argument.all_stations = True
+
+## create losoto v2 parset file to plot RM
+prepare_losoto_RMextract.control.kind                          =   plugin
+prepare_losoto_RMextract.control.type                          =   makeLosotoParset
+prepare_losoto_RMextract.control.steps                         =   [plotRM]
+prepare_losoto_RMextract.control.filename                      =   input.output.job_directory/losoto.parset
+prepare_losoto_RMextract.control.global.ncpu                   =   {{ num_proc_per_node }}
+prepare_losoto_RMextract.control.plotRM.operation              =   PLOT
+prepare_losoto_RMextract.control.plotRM.soltab                 =   target/RMextract
+prepare_losoto_RMextract.control.plotRM.axesInPlot             =   time
+prepare_losoto_RMextract.control.plotRM.axisInTable            =   ant
+prepare_losoto_RMextract.control.plotRM.prefix                 =   {{ inspection_directory }}/RMextract
+
+## run losoto to plot the RM
+process_losoto_RMextract.control.kind                          =   recipe
+process_losoto_RMextract.control.type                          =   executable_args
+process_losoto_RMextract.control.executable                    =   {{ losoto_directory }}/bin/losoto
+process_losoto_RMextract.control.max_per_node                  =   {{ num_proc_per_node }}
+process_losoto_RMextract.control.mapfile_in                    =   combine_data_target_map.output.mapfile
+process_losoto_RMextract.control.inputkey                      =   input
+process_losoto_RMextract.argument.flags = [{{ cal_solutions }}, input.output.job_directory/losoto.parset]
+
+## international stations already exist in calibrator solutions
+
+## add international stations to phase solutions to target h5parm
+is_add_phase.control.type                            = pythonplugin
+is_add_phase.control.executable                      = {{ add_IS_script }}
+is_add_phase.control.mapfile_in                      = match_files.output.ISparmdbs
+is_add_phase.control.inputkey                        = tables
+is_add_phase.argument.flags                          = [tables,match_files.output.mapfile]
+
+# run NDPPP on the target data to flag and apply solutions
 ndppp_prep_target.control.type                    = dppp
 ndppp_prep_target.control.max_per_node            = {{ num_proc_per_node }}
 ndppp_prep_target.control.error_tolerance         = {{ error_tolerance }}
@@ -214,102 +280,44 @@ ndppp_prep_target.argument.numthreads             = {{ max_dppp_threads }}
 ndppp_prep_target.argument.msin                   = match_files.output.mapfile  
 ndppp_prep_target.argument.msin.datacolumn        = DATA
 ndppp_prep_target.argument.msin.baseline          = *&
-ndppp_prep_target.argument.msout.datacolumn       = DATA
+ndppp_prep_target.argument.msout.datacolumn       = CORRECTED_DATA
 ndppp_prep_target.argument.msout.writefullresflag = False
-ndppp_prep_target.argument.steps                  = [flag,flagamp]
-ndppp_prep_target.argument.flag.type              = preflagger
-ndppp_prep_target.argument.flag.baseline          = {{ flag_baselines }}
-ndppp_prep_target.argument.flagamp.type           = preflagger
-ndppp_prep_target.argument.flagamp.amplmin        = 1e-30
-#ndppp_prep_target.argument.doflagging.type        = aoflagger
-#ndppp_prep_target.argument.doflagging.strategy    = {{ lofar_directory }}/share/rfistrategies/HBAdefault
-
-# combine all entries into one mapfile, for the download ionex script
-combine_data_target_map.control.kind            =   plugin
-combine_data_target_map.control.type            =   createMapfile
-combine_data_target_map.control.method          =   mapfile_all_to_one
-combine_data_target_map.control.mapfile_dir     =   input.output.mapfile_dir
-combine_data_target_map.control.filename        =   combine_data_tar_map.mapfile
-combine_data_target_map.control.mapfile_in      =   ndppp_prep_target.output.mapfile
-
-# get ionex files once for every day that is covered by one of the input MSs
-get_ion_files.control.type            = pythonplugin
-get_ion_files.control.executable      = {{ get_ion_script }}
-get_ion_files.control.max_per_node    =  1
-get_ion_files.control.error_tolerance = {{ error_tolerance }}
-get_ion_files.argument.flags          = [combine_data_target_map.output.mapfile]
-get_ion_files.argument.ionex_server   = {{ ionex_server }}
-get_ion_files.argument.ionex_prefix   = {{ ionex_prefix }}
-get_ion_files.argument.ionexPath      = {{ ionex_path }}
-
-# generate parmDB with the interpolated calibrator data to apply to the traget
-transfer_amp_clock_sols.control.type              =  pythonplugin
-transfer_amp_clock_sols.control.executable        =  {{ transfer_amp_clock_sols_script }}
-transfer_amp_clock_sols.control.max_per_node      =  {{ num_proc_per_node }}
-transfer_amp_clock_sols.control.error_tolerance   =  {{ error_tolerance }}
-transfer_amp_clock_sols.control.mapfile_in        =  ndppp_prep_target.output.mapfile
-transfer_amp_clock_sols.control.inputkey          =  indata
-transfer_amp_clock_sols.argument.flags            =  [indata]
-transfer_amp_clock_sols.argument.store_basename   =  {{ amp_sols_basename }}
-transfer_amp_clock_sols.argument.store_directory  =  {{ transfer_amp_clock_sols_store }}
-transfer_amp_clock_sols.argument.newparmdbext     =  /instrument_amp_clock_offset
-transfer_amp_clock_sols.argument.ionex_server     =  {{ ionex_server }}
-transfer_amp_clock_sols.argument.ionex_prefix     =  {{ ionex_prefix }}
-transfer_amp_clock_sols.argument.ionexPath        =  {{ ionex_path }}
-
-# scale international amplitudes in solutions
-is_amp_gains.control.type                            = pythonplugin  
-is_amp_gains.control.executable                      = {{ update_ISgains_script }}
-is_amp_gains.control.mapfile_in                      = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
-is_amp_gains.control.inputkey                        = parmdbs
-is_amp_gains.argument.parmdbfile                     = parmdbs
-is_amp_gains.argument.targetms                       = ndppp_prep_target.output.mapfile
-
-# add international stations to phase solutions
-# only needs to to be done for the phase tables, which are 
-# by band from prefactor
-is_add_phase.control.type                            = pythonplugin  
-is_add_phase.control.executable                      = {{ add_IS_script }}
-is_add_phase.control.mapfile_in                      = match_files.output.ISparmdbs
-is_add_phase.control.inputkey                        = tables
-is_add_phase.argument.flags                          = [tables,match_files.output.mapfile]
-
-# run NDPPP to apply the solutions to the target data
-ndppp_apply_cal.control.type                         = dppp
-ndppp_apply_cal.control.max_per_node                 = {{ num_proc_per_node }}
-ndppp_apply_cal.control.error_tolerance              = {{ error_tolerance }}
-ndppp_apply_cal.control.outputkey           	     =  
-ndppp_apply_cal.control.mapfile_in                   = match_files.output.parmdbs
-ndppp_apply_cal.control.inputkey                     = parmdbs
-ndppp_apply_cal.argument.numthreads       	     = {{ max_dppp_threads }}
-ndppp_apply_cal.argument.msin	                     = ndppp_prep_target.output.mapfile
-ndppp_apply_cal.argument.msin.datacolumn             = DATA
-ndppp_apply_cal.argument.msin.baseline               = *&
-ndppp_apply_cal.argument.msout                       = .
-ndppp_apply_cal.argument.msout.datacolumn            = CORRECTED_DATA
-ndppp_apply_cal.argument.msout.writefullresflag      = False
-ndppp_apply_cal.argument.steps                    = [applyclock,applygain,applybeam,applyrotate,applyphase]
-ndppp_apply_cal.argument.applyclock.type          = applycal
-ndppp_apply_cal.argument.applyclock.parmdb        = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
-ndppp_apply_cal.argument.applyclock.correction    = clock
-ndppp_apply_cal.argument.applygain.type           = applycal
-ndppp_apply_cal.argument.applygain.parmdb         = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
-ndppp_apply_cal.argument.applygain.correction     = gain
-ndppp_apply_cal.argument.applygain.updateweights  = True
-ndppp_apply_cal.argument.applybeam.type           = applybeam
-ndppp_apply_cal.argument.applybeam.usechannelfreq = True
-ndppp_apply_cal.argument.applybeam.updateweights  = True
-ndppp_apply_cal.argument.applyrotate.type         = applycal
-ndppp_apply_cal.argument.applyrotate.parmdb       = transfer_amp_clock_sols.output.transfer_parmDB.mapfile
-ndppp_apply_cal.argument.applyrotate.correction	  = commonrotationangle
-ndppp_apply_cal.argument.applyphase.type	  = applycal
-ndppp_apply_cal.argument.applyphase.parmdb	  = parmdbs
-ndppp_apply_cal.argument.applyphase.correction	  = gain
+ndppp_prep_target.argument.msout		  = .
+ndppp_prep_target.argument.steps                  = [flag,elev,flagamp,applyclock,applyPA,applybandpass,applybeam,applyRM,applyphase,count]
+ndppp_prep_target.argument.flag.type              	= preflagger
+ndppp_prep_target.argument.flag.baseline          	= {{ flag_baselines }}
+ndppp_prep_target.argument.elev.type		  	= preflagger
+ndppp_prep_target.argument.elev.elevation	  	= 0deg..20deg
+ndppp_prep_target.argument.flagamp.type           	= preflagger
+ndppp_prep_target.argument.flagamp.amplmin        	= 1e-30
+ndppp_prep_target.argument.applyclock.type          	= applycal
+ndppp_prep_target.argument.applyclock.parmdb        	= {{ cal_solutions }}
+ndppp_prep_target.argument.applyclock.correction    	= clock000
+ndppp_prep_target.argument.applyclock.solset	   	= calibrator
+ndppp_prep_target.argument.applyPA.type                 =   applycal
+ndppp_prep_target.argument.applyPA.parmdb               =   {{ cal_solutions }}
+ndppp_prep_target.argument.applyPA.correction           =   polalign
+ndppp_prep_target.argument.applyPA.solset 		= calibrator
+ndppp_prep_target.argument.applybandpass.type           =   applycal
+ndppp_prep_target.argument.applybandpass.parmdb         =   {{ cal_solutions }}
+ndppp_prep_target.argument.applybandpass.correction     =   bandpass
+ndppp_prep_target.argument.applybandpass.updateweights  =   True
+ndppp_prep_target.argument.applybandpass.solset 	= calibrator
+ndppp_prep_target.argument.applybeam.type           = applybeam
+ndppp_prep_target.argument.applybeam.usechannelfreq = True
+ndppp_prep_target.argument.applybeam.updateweights  = True
+ndppp_prep_target.argument.applyRM.type                        =   applycal
+ndppp_prep_target.argument.applyRM.parmdb                      =   {{ cal_solutions }}
+ndppp_prep_target.argument.applyRM.correction                  =   RMextract
+ndppp_prep_target.argument.applyRM.solset = target
+ndppp_prep_target.argument.applyphase.type	  = applycal
+ndppp_prep_target.argument.applyphase.parmdb	  = parmdbs
+ndppp_prep_target.argument.applyphase.correction	  = gain
 
 # download the relevant catalogues
 download_cats.control.kind			= plugin
 download_cats.control.type			= DownloadCats
-download_cats.control.mapfile_in			= ndppp_prep_target.output.mapfile
+download_cats.control.mapfile_in			= combine_data_target_map.output.mapfile
 download_cats.control.lotss_radius		= 2.
 download_cats.control.lbcs_radius		= 2.
 download_cats.control.bright_limit_Jy		= 5.
@@ -341,7 +349,7 @@ find_delay_cal.control.type		  = DelayCalToMapfile
 find_delay_cal.control.delaycals	  = {{ delay_cat }}
 find_delay_cal.control.clphase_file	  = {{ job_directory }}/closure_phases.txt
 
-# Initialise file with all directions
+# Initialise file with direction of delay calibrator
 prep_dirs.control.kind                    = plugin
 prep_dirs.control.type                    = TargetListToMapfile
 prep_dirs.control.mapfile_dir             = input.output.mapfile_dir
@@ -381,7 +389,7 @@ make_circ.argument.flags                  = [ dppp_phaseup.output.mapfile ]
 make_circ.argument.cpath                  = {{ lin2circ_script }}
 make_circ.argument.mode                   = lin2circ
 
-# get a list of all subbands
+# collect all subbands in one list
 make_concatmap.control.kind               =  plugin
 make_concatmap.control.type               =  createMapfile
 make_concatmap.control.method             =  mapfile_all_to_one
@@ -619,10 +627,10 @@ ndppp_apply_delay.control.mapfiles_in                    =   [ndppp_prep_target.
 ndppp_apply_delay.control.inputkeys                      =   [inputms,parmdbs,ampclockparmdb]
 ndppp_apply_delay.argument.numthreads                    =   {{ max_dppp_threads }}
 ndppp_apply_delay.argument.msin                          =   inputms
-ndppp_apply_delay.argument.msin.datacolumn               =   DATA
+ndppp_apply_delay.argument.msin.datacolumn               =   CORRECTED_DATA
 ndppp_apply_delay.argument.msin.baseline                 =   *&
 ndppp_apply_delay.argument.msout                         =   .
-ndppp_apply_delay.argument.msout.datacolumn              =   CORRECTED_DATA
+ndppp_apply_delay.argument.msout.datacolumn              =   DELAY_CAL_DATA
 ndppp_apply_delay.argument.msout.writefullresflag        =   False
 ndppp_apply_delay.argument.steps                         =   [applyclock,applygain,applybeam,applyrotate,applyphase,applydelayamp,applydelayclock,applydelayTEC]
 ndppp_apply_delay.argument.applyclock.type               =   applycal
