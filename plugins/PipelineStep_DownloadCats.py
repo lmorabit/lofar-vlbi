@@ -79,7 +79,9 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5. ):
     RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
     ## this is the tier 1 database to query
-    url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
+    #url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
+    # HETDEX database.
+    url = 'https://vo.astron.nl/hetdex/hetdex/cone/scs.xml'
 
     ## query the database
     query = vo.dal.scs.SCSQuery( url )
@@ -93,14 +95,17 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5. ):
     flux_sort = tb.argsort('Total_flux')
     tb_sorted = tb[flux_sort[::-1]]
     ## and keep only some of the columns
-    tb_final = tb_sorted['Source_id', 'RA', 'DEC','Total_flux','Peak_flux','Isl_rms','Resolved']
+    tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'Isl_rms']
+    resolved = np.where(is_resolved(tb_final['Total_flux'], tb_final['Peak_flux'], tb_final['Isl_rms']), 'R', 'U')
+    tb_final['Resolved'] = resolved
+    tb_final.rename_column('Source_Name', 'Source_id')
 
     return tb_final
 
 def my_lbcs_catalogue( ms_input, Radius=1.5 ):
 
     """
-    Download the LoTSS skymodel for the target field
+    Download the LBCS skymodel for the target field
     Parameters
     ----------
     ms_input : str
@@ -340,6 +345,20 @@ def plugin_main( args, **kwargs ):
 
     return
 
+ def is_resolved(Sint, Speak, rms):
+    """ Determines if a source is resolved or unresolved.
+    The calculation is presented in Shimwell et al. 2018 of the LOFAR DR1 paper splash.
+    
+    Args:
+        Sint (float or ndarray): integrated flux density.
+        Speak (float or ndarray): peak flux density.
+        rms (float or ndarray): local rms around the source.
+    Returns:
+        resolved (bool or ndarray): True if the source is resolved, False if not.
+    """
+    resolved = ((Sint / Speak) > 1.25 + 3.1 * (Speak / rms) ** (-0.53))
+    return resolved
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -356,5 +375,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy )
+    plugin_main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy )
 
