@@ -78,7 +78,14 @@
 
 ## Closure phase stations
 ! closure_phase_stations        = 'DE601;DE605;ST001' ## list of three stations separated by ;
-! closure_phase_file            = {{ job_directory }}/closure_phases.txt ## pipeline expects this location - do not change
+! closure_phase_file            = {{ job_directory }}/closure_phases.txt ## pipeline expects this location - do not changes
+
+## Configuration for long baseline pipeline 
+! lin2circ_executable               = {{ scripts }}/lin2circ.py
+! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
+
+##
+## END CONFIGURATION
 
 
 ##########################################################
@@ -88,40 +95,10 @@
 pipeline.steps = [ setup, prep, delaycal, apply ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
-pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, ndppp_prep_target ] 
-## is_add_phase
-pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, calib_cal, make_losoto, process_losoto, make_dppp_prep_map, copyST_gains
-pipeline.steps.apply = [ ndppp_apply_delay, copy_h5imp_cal ]
+pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target ]
+pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, calib_cal, make_losoto, process_losoto ]
+pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, ndppp_apply_delay, copy_h5imp_cal ]
 
-
-## Configuration for long baseline pipeline (update long_baseline_pipeline_dir at top)
-# ! transfer_amp_clock_sols_script    = {{ long_baseline_pipeline_dir }}/bin/transfer_amplitudes+clock+offset_toMS.py
-! transfer_amp_clock_sols_script    = {{ prefactor_dir }}/scripts/transfer_gains_RMextract.py
-! update_ISgains_script             = {{ long_baseline_pipeline_dir }}/bin/addISgains.py
-! add_IS_script                     = {{ long_baseline_pipeline_dir }}/bin/addInternationalStations.py
-! download_cats_script		    = {{ long_baseline_pipeline_dir }}/bin/download_cats.py
-! closure_phase_script              = {{ long_baseline_pipeline_dir }}/bin/closure_v4.py
-! skynet_script                     = {{ long_baseline_pipeline_dir }}/bin/skynet_master.py
-! model_engine_script               = {{ long_baseline_pipeline_dir }}/bin/model_engine.py
-! execute_circ_conv_script          = {{ long_baseline_pipeline_dir }}/bin/execute_circ_pol_conv.py
-! lin2circ_script                   = {{ long_baseline_pipeline_dir }}/bin/lin2circ.py
-! self_cal_and_imaging_script       = {{ long_baseline_pipeline_dir }}/bin/self_calibration_and_imaging.py
-! find_best_delay_cal_script 	    = {{ long_baseline_pipeline_dir }}/bin/evaluate_potential_delay_calibrators.py
-! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
-! convert_ct_script		    = {{ long_baseline_pipeline_dir }}/bin/convert_clocktec_to_npy.py
-! losoto_parset			    = {{ long_baseline_pipeline_dir }}/parsets/losoto.parset
-! copyST_gains_script		    = {{ long_baseline_pipeline_dir }}/bin/gains_toCS_h5parm.py
-
-## Configuration for prefactor scripts (update prefactor_dir at top)
-! losoto_importer       = {{ long_baseline_pipeline_dir }}/bin/losotoImporter.py
-! fitamps_script        = {{ long_baseline_pipeline_dir }}/bin/amplitudes_losoto_3.py
-# ! plotsols_script       = {{ prefactor_dir }}/scripts/examine_npys.py
-! plotsols_script       = {{ long_baseline_pipeline_dir }}/bin/examine_npys_losoto.py
-! sort_concat_script    = {{ prefactor_dir }}/scripts/sort_times_into_freqGroups.py
-
-
-##
-## END CONFIGURATION
 
 ###########################################################################
 
@@ -218,13 +195,15 @@ process_losoto_RMextract.control.mapfile_in                    =   combine_data_
 process_losoto_RMextract.control.inputkey                      =   input
 process_losoto_RMextract.argument.flags = [{{ cal_solutions }}, input.output.job_directory/losoto.parset]
 
-## international stations already exist in calibrator solutions
-## add international stations to phase solutions to target h5parm ??
-is_add_phase.control.type                            = pythonplugin
-is_add_phase.control.executable                      = {{ add_IS_script }}
-is_add_phase.control.mapfile_in                      = match_files.output.ISparmdbs
-is_add_phase.control.inputkey                        = tables
-is_add_phase.argument.flags                          = [tables,match_files.output.mapfile]
+## international stations already exist in calibrator solutions but not in target
+## run script to add them to necessary solution tables
+h5parm_add_IS.control.type                            	= pythonplugin
+h5parm_add_IS.control.executable                      	= {{ scripts }}/addIS_to_h5.py
+h5parm_add_IS.control.mapfile_in                      	= combine_data_target_map.output.mapfile
+h5parm_add_IS.control.inputkey                        	= mslist
+h5parm_add_IS.argument.flags                      	= [{{ cal_solutions }},mslist]
+h5parm_add_IS.argument.solset_in			= target
+h5parm_add_IS.argument.solset_out			= targetIS			
 
 # run NDPPP on the target data to flag and apply solutions
 ndppp_prep_target.control.type                    = dppp
@@ -263,11 +242,11 @@ ndppp_prep_target.argument.applybeam.updateweights  	= True
 ndppp_prep_target.argument.applyRM.type            	= applycal
 ndppp_prep_target.argument.applyRM.parmdb               = {{ cal_solutions }}
 ndppp_prep_target.argument.applyRM.correction           = RMextract
-ndppp_prep_target.argument.applyRM.solset 		= target
+ndppp_prep_target.argument.applyRM.solset 		= targetIS
 ndppp_prep_target.argument.applyphase.type	  	= applycal
 ndppp_prep_target.argument.applyphase.parmdb	  	= {{ cal_solutions }}
 ndppp_prep_target.argument.applyphase.correction	= phase001
-ndppp_prep_target.argument.applyphase.solset		= target
+ndppp_prep_target.argument.applyphase.solset		= targetIS
 
 ##################################################################
 #                                                               ##
@@ -279,7 +258,7 @@ ndppp_prep_target.argument.applyphase.solset		= target
 # do a parallel search for the best delay calibrator
 do_parallel.control.type                  = pythonplugin
 do_parallel.control.max_per_node          = {{ num_proc_per_node }}
-do_parallel.control.executable            = {{ find_best_delay_cal_script }}
+do_parallel.control.executable            = {{ scripts }}/evaluate_potential_delay_calibrators.py
 do_parallel.argument.flags                = [combine_data_target_map.output.mapfile,{{ delay_cat }}]
 do_parallel.argument.ncpu                 = {{ num_proc_per_node_limit }}
 
@@ -324,9 +303,9 @@ dppp_phaseup.argument.numthreads          = {{ max_dppp_threads }}
 
 # Convert to circular polarisation (in place)
 make_circ.control.type                    = pythonplugin
-make_circ.control.executable              = {{ execute_circ_conv_script }}
+make_circ.control.executable              = {{ scripts }}/execute_circ_pol_conv.py
 make_circ.argument.flags                  = [ dppp_phaseup.output.mapfile ]
-make_circ.argument.cpath                  = {{ lin2circ_script }}
+make_circ.argument.cpath                  = {{ lin2circ_executable }}
 make_circ.argument.mode                   = lin2circ
 
 # collect all subbands in one list
@@ -339,7 +318,7 @@ make_concatmap.control.filename           =  make_concatmap.mapfile
 
 # sort them by frequency and fill in missing subband information
 sort_concatmap.control.type               = pythonplugin
-sort_concatmap.control.executable         = {{ sort_concat_script }}
+sort_concatmap.control.executable         = {{ prefactor_scripts }}/sort_times_into_freqGroups.py
 sort_concatmap.argument.flags             = [make_concatmap.output.mapfile]
 sort_concatmap.argument.filename          = sort_concatmap
 sort_concatmap.argument.mapfile_dir       = input.output.mapfile_dir
@@ -373,11 +352,11 @@ dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
 
 # generate the calibrator model with skynet
 delay_cal_model.control.type		  = pythonplugin
-delay_cal_model.control.executable	  = {{ skynet_script }}
+delay_cal_model.control.executable	  = {{ scripts }}/skynet_master.py
 delay_cal_model.control.mapfile_in	  = do_sortmap_maps.output.groupmap
 delay_cal_model.control.inputkey	  = msin
 delay_cal_model.argument.flags		  = [msin]
-delay_cal_model.argument.self_cal_script  = {{ self_cal_and_imaging_script }}
+delay_cal_model.argument.self_cal_script  = {{ scripts }}/self_calibration_and_imaging.py
 delay_cal_model.argument.mode		  = 2
 delay_cal_model.argument.closure_tels	  = {{ closure_phase_stations }}
 delay_cal_model.argument.cthr		  = 1.6
@@ -440,7 +419,7 @@ make_losoto.control.flagextend.soltab                =   sol000/amplitude000
 make_losoto.control.flagextend.axesToExt             =   [freq,time]
 make_losoto.control.flagextend.size                  =   [50,100]
 make_losoto.control.flagextend.percent               =   50
-make_losoto.control.flagextend.maxCycles             =   3
+make_losotomake_losoto.control.flagextend.maxCycles             =   3
 make_losoto.control.plotA2.operation                 =   PLOT
 make_losoto.control.plotA2.soltab                    =   sol000/amplitude000
 make_losoto.control.plotA2.axesInPlot                =   [time,freq]
@@ -552,9 +531,9 @@ make_dppp_prep_map.control.mapfile_dir               =  input.output.mapfile_dir
 make_dppp_prep_map.control.filename                  =  make_dppp_prep_map.mapfile
 
 # in delay cal parmdb, copy ST values to CS values
-copyST_gains.control.kind			                       =   recipe
+copyST_gains.control.kind			     =   recipe
 copyST_gains.control.type                            =   executable_args
-copyST_gains.control.executable                      =   {{ copyST_gains_script }}
+copyST_gains.control.executable                      =   {{ scripts }}/gains_toCS_h5parm.py
 copyST_gains.argument.flags                          =   [{{ job_directory }}/delay_cal.h5,make_dppp_prep_map.output.mapfile]
 
 # Apply the gain solutions directly to the data -- no need to remove time dependence
@@ -563,17 +542,15 @@ ndppp_apply_delay.control.inplace                        =   True
 ndppp_apply_delay.control.max_per_node                   =   {{ num_proc_per_node }}
 ndppp_apply_delay.control.error_tolerance                =   {{ error_tolerance }}
 ndppp_apply_delay.control.outputkey                      =
-ndppp_apply_delay.control.mapfiles_in                    =   [ndppp_prep_target.output.mapfile,match_files.output.parmdbs,transfer_amp_clock_sols.output.transfer_parmDB.mapfile]
-ndppp_apply_delay.control.inputkeys                      =   [inputms,parmdbs,ampclockparmdb]
-
-
+ndppp_apply_delay.control.mapfile_in                    =   ndppp_prep_target.output.mapfile
+ndppp_apply_delay.control.inputkey                      =   inputms
 ndppp_apply_delay.control.type                    = dppp
 ndppp_apply_delay.control.inplace		  = True
 ndppp_apply_delay.control.max_per_node            = {{ num_proc_per_node }}
 ndppp_apply_delay.control.error_tolerance         = {{ error_tolerance }}
 ndppp_apply_delay.control.outputkey		  = 
 ndppp_apply_delay.argument.numthreads             = {{ max_dppp_threads }}
-ndppp_apply_delay.argument.msin                   = match_files.output.mapfile
+ndppp_apply_delay.argument.msin                   = inputms
 ndppp_apply_delay.argument.msin.datacolumn        = DATA
 ndppp_apply_delay.argument.msin.baseline          = *&
 ndppp_apply_delay.argument.msout.datacolumn       = CORRECTED_DATA
@@ -599,11 +576,11 @@ ndppp_apply_delay.argument.applybeam.updateweights      = True
 ndppp_apply_delay.argument.applyRM.type                 = applycal
 ndppp_apply_delay.argument.applyRM.parmdb               = {{ cal_solutions }}
 ndppp_apply_delay.argument.applyRM.correction           = RMextract
-ndppp_apply_delay.argument.applyRM.solset               = target
+ndppp_apply_delay.argument.applyRM.solset               = targetIS
 ndppp_apply_delay.argument.applyphase.type              = applycal
 ndppp_apply_delay.argument.applyphase.parmdb            = {{ cal_solutions }}
 ndppp_apply_delay.argument.applyphase.correction        = phase001
-ndppp_apply_delay.argument.applyphase.solset            = target
+ndppp_apply_delay.argument.applyphase.solset            = targetIS
 ndppp_apply_delay.argument.applydelayamp.type            =   applycal
 ndppp_apply_delay.argument.applyDelayAmp.parmdb          =   {{ job_directory }}/delay_cal.h5
 ndppp_apply_delay.argument.applyDelayAmp.correction      =   amplitude000
