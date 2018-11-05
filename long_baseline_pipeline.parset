@@ -18,6 +18,9 @@
 ! long_baseline_pipeline_dir            = /home/lmorabit/long_baseline_pipeline_new
 ! prefactor_dir                         = /home/lmorabit/prefactor
 ! losoto_executable                     = /home/lmorabit/losoto/bin/losoto
+! rmextract_directory			= /home/lmorabit/RMextract
+! aoflagger				= /opt/cep/aoflagger/aoflagger-2.10.0/build/bin/aoflagger ## path to your aoflagger executable
+! lofar_directory 			= $LOFARROOT
 
 # ## target data information
 ! target_input_path             = /data/scratch/lb_bw/targetdata
@@ -84,6 +87,8 @@
 ! lin2circ_executable               = {{ scripts }}/lin2circ.py
 ! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
 
+! rfistrategy			= HBAdefault
+
 ##
 ## END CONFIGURATION
 
@@ -92,10 +97,11 @@
 ## Steps to run.					##
 ##########################################################
 
-pipeline.steps = [ setup, prep, delaycal, apply ]
+pipeline.steps = [ setup, prep, aoflagging, delaycal, apply ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
 pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target ]
+pipeline.steps.aoflagging = [ combine_target_map, ms_concat_target, msconcat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, calib_cal, make_losoto, process_losoto ]
 pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, ndppp_apply_delay, copy_h5imp_cal ]
 
@@ -165,14 +171,14 @@ download_cats.control.doDownload                = {{ do_download }}
 
 ## run ionex
 h5imp_RMextract.control.type                                   =   pythonplugin
-h5imp_RMextract.control.executable                             =   {{ prefactor_scripts }}/createRMh5parm.py
+h5imp_RMextract.control.executable                             =   {{ rmextract_directory }}/bin/createRMh5parm.py
 h5imp_RMextract.control.error_tolerance                        =   {{ error_tolerance }}
 h5imp_RMextract.argument.flags                                 =   [combine_data_target_map.output.mapfile, {{ cal_solutions }}]
 h5imp_RMextract.argument.ionex_server                          =   {{ ionex_server }}
 h5imp_RMextract.argument.ionex_prefix                          =   {{ ionex_prefix }}
 h5imp_RMextract.argument.ionexPath                             =   {{ ionex_path }}
 h5imp_RMextract.argument.solset_name                           =   target
-h5imp_RMextract.argument.all_stations = True
+h5imp_RMextract.argument.all_stations 			       = True
 
 ## create losoto v2 parset file to plot RM
 prepare_losoto_RMextract.control.kind                          =   plugin
@@ -247,6 +253,47 @@ ndppp_prep_target.argument.applyphase.type	  	= applycal
 ndppp_prep_target.argument.applyphase.parmdb	  	= {{ cal_solutions }}
 ndppp_prep_target.argument.applyphase.correction	= phase001
 ndppp_prep_target.argument.applyphase.solset		= targetIS
+
+##################################################################
+#                                                               ##
+#                     AOFLAGGING	                        ##
+#                                                               ##
+##################################################################
+
+# combine all entries into one mapfile, for the sortmap script
+combine_target_map.control.kind                                =   plugin
+combine_target_map.control.type                                =   createMapfile
+combine_target_map.control.method                              =   mapfile_all_to_one
+combine_target_map.control.mapfile_dir                         =   input.output.mapfile_dir
+combine_target_map.control.filename                            =   combine_target_map.mapfile
+combine_target_map.control.mapfile_in                          =   ndppp_prep_target.output.mapfile
+
+# virtually concatenate target subbands
+ms_concat_target.control.type                                  =   pythonplugin
+ms_concat_target.control.executable                            =   {{ prefactor_scripts }}/concat_MS.py
+ms_concat_target.control.error_tolerance                       =   {{ error_tolerance }}
+ms_concat_target.argument.filename                             =   concatmapfile.mapfile
+ms_concat_target.argument.mapfile_dir                          =   input.output.mapfile_dir
+ms_concat_target.argument.flags                                =   [combine_target_map.output.mapfile,outputkey,{{ max_length }}]
+
+# convert the output of ms_concat_target into usable mapfiles
+ms_concat_target_map.control.kind                              =   plugin
+ms_concat_target_map.control.type                              =   mapfilenamesFromMapfiles
+ms_concat_target_map.control.mapfile_concatmap                 =   ms_concat_target.output.concatmapfile.mapfile
+
+# run aoflagger on the concatenated data
+aoflag.control.kind                                            =   recipe
+aoflag.control.type                                            =   executable_args
+aoflag.control.inplace                                         =   True
+aoflag.control.executable                                      =   {{ aoflagger }}
+aoflag.control.max_per_node                                    =   1
+aoflag.control.error_tolerance                                 =   {{ error_tolerance }}
+aoflag.control.mapfile_in                                      =   ms_concat_target_map.output.concatmap
+aoflag.control.inputkey                                        =   msin
+aoflag.control.args_format                                     =   wsclean
+aoflag.argument.strategy                                       =   {{ lofar_directory }}/share/rfistrategies/{{ rfistrategy }}
+aoflag.argument.flags                                          =   [-v,-combine-spws,msin]
+
 
 ##################################################################
 #                                                               ##
