@@ -97,10 +97,14 @@
 ## Steps to run.					##
 ##########################################################
 
-pipeline.steps = [ setup, prep, aoflagging, delaycal, apply ]
+substep = clipATeam, ## leave blank for no a-team clipping
+
+
+pipeline.steps = [ setup, prep, {{ substep }}, aoflagging, delaycal, apply ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
 pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target ]
+pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ combine_target_map, ms_concat_target, msconcat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, calib_cal, make_losoto, process_losoto ]
 pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, ndppp_apply_delay, copy_h5imp_cal ]
@@ -253,6 +257,76 @@ ndppp_prep_target.argument.applyphase.type	  	= applycal
 ndppp_prep_target.argument.applyphase.parmdb	  	= {{ cal_solutions }}
 ndppp_prep_target.argument.applyphase.correction	= phase001
 ndppp_prep_target.argument.applyphase.solset		= targetIS
+
+
+
+
+##################################################################
+#                                                               ##
+#                     CLIP THE A-TEAM                           ##
+#                                                               ##
+##################################################################
+
+
+# create a mapfile with the A-Team skymodel, length = 1
+create_ateam_model_map.control.kind                            =   plugin
+create_ateam_model_map.control.type                            =   addListMapfile
+create_ateam_model_map.control.hosts                           =   ['localhost']
+create_ateam_model_map.control.files                           =   [ {{ prefactor_dir }}/skymodels/Ateam_LBA_CC.skymodel ]
+create_ateam_model_map.control.mapfile_dir                     =   input.output.mapfile_dir
+create_ateam_model_map.control.filename                        =   ateam_model_name.mapfile
+
+# make sourcedbs from the A-Team skymodel, length = 1
+make_sourcedb_ateam.control.kind                               =   recipe
+make_sourcedb_ateam.control.type                               =   executable_args
+make_sourcedb_ateam.control.executable                         =   {{ lofar_directory }}/bin/makesourcedb
+make_sourcedb_ateam.control.error_tolerance                    =   {{ error_tolerance }}
+make_sourcedb_ateam.control.args_format                        =   lofar
+make_sourcedb_ateam.control.outputkey                          =   out
+make_sourcedb_ateam.control.mapfile_in                         =   create_ateam_model_map.output.mapfile
+make_sourcedb_ateam.control.inputkey                           =   in
+make_sourcedb_ateam.argument.format                            =   <
+make_sourcedb_ateam.argument.outtype                           =   blob
+
+# expand the sourcedb mapfile so that there is one entry for every file, length = nfiles
+expand_sourcedb_ateam.control.kind                             =   plugin
+expand_sourcedb_ateam.control.type                             =   expandMapfile
+expand_sourcedb_ateam.control.mapfile_in                       =   make_sourcedb_ateam.output.mapfile
+expand_sourcedb_ateam.control.mapfile_to_match                 =   ndppp_prep_target.output.mapfile
+expand_sourcedb_ateam.control.mapfile_dir                      =   input.output.mapfile_dir
+expand_sourcedb_ateam.control.filename                         =   expand_sourcedb_ateam.datamap
+
+# Predict, corrupt, and predict the ateam-resolution model, length = nfiles
+predict_ateam.control.type                                     =   dppp
+predict_ateam.control.mapfiles_in                              =   [ndppp_prep_target.output.mapfile,expand_sourcedb_ateam.output.mapfile]
+predict_ateam.control.inputkeys                                =   [msin,sourcedb]
+predict_ateam.control.inplace                                  =   True
+predict_ateam.control.max_per_node                             =   {{ num_proc_per_node_limit }}
+predict_ateam.control.error_tolerance                          =   {{ error_tolerance }}
+predict_ateam.argument.numthreads                              =   {{ max_dppp_threads }}
+predict_ateam.argument.msin.datacolumn                         =   DATA
+predict_ateam.argument.msin.baseline                           =   [CR]S*&
+predict_ateam.argument.msout.datacolumn                        =   MODEL_DATA
+predict_ateam.argument.msout.storagemanager                    =   "Dysco"
+predict_ateam.argument.msout.storagemanager.databitrate        =   0
+predict_ateam.argument.steps                                   =   [predict]
+predict_ateam.argument.predict.type                            =   predict
+predict_ateam.argument.predict.operation                       =   replace
+predict_ateam.argument.predict.sourcedb                        =   sourcedb
+predict_ateam.argument.predict.sources                         =   [VirA_4_patch,CygAGG,CasA_4_patch,TauAGG]
+predict_ateam.argument.predict.usebeammodel                    =   True
+predict_ateam.argument.predict.usechannelfreq                  =   false
+
+# run the a-team clipper to flag data affected by the a-team
+ateamcliptar.control.kind                                      =   recipe
+ateamcliptar.control.type                                      =   executable_args
+ateamcliptar.control.max_per_node                              =   {{ num_proc_per_node }}
+ateamcliptar.control.executable                                =   {{ scripts }}/Ateamclipper.py
+ateamcliptar.control.error_tolerance                           =   {{ error_tolerance }}
+ateamcliptar.control.mapfile_in                                =   ndppp_prep_target.output.mapfile
+ateamcliptar.control.arguments                                 =   [allms]
+ateamcliptar.control.inputkey                                  =   allms
+
 
 ##################################################################
 #                                                               ##
