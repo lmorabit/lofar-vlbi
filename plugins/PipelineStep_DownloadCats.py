@@ -345,7 +345,7 @@ def plugin_main( args, **kwargs ):
 
     return
 
- def is_resolved(Sint, Speak, rms):
+def is_resolved(Sint, Speak, rms):
     """ Determines if a source is resolved or unresolved.
     The calculation is presented in Shimwell et al. 2018 of the LOFAR DR1 paper splash.
     
