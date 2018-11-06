@@ -255,7 +255,7 @@ ndppp_prep_target.argument.applyRM.correction           = RMextract
 ndppp_prep_target.argument.applyRM.solset 		= targetIS
 ndppp_prep_target.argument.applyphase.type	  	= applycal
 ndppp_prep_target.argument.applyphase.parmdb	  	= {{ cal_solutions }}
-ndppp_prep_target.argument.applyphase.correction	= phase001
+ndppp_prep_target.argument.applyphase.correction	= phase000
 ndppp_prep_target.argument.applyphase.solset		= targetIS
 
 
@@ -700,7 +700,7 @@ ndppp_apply_delay.argument.applyRM.correction           = RMextract
 ndppp_apply_delay.argument.applyRM.solset               = targetIS
 ndppp_apply_delay.argument.applyphase.type              = applycal
 ndppp_apply_delay.argument.applyphase.parmdb            = {{ cal_solutions }}
-ndppp_apply_delay.argument.applyphase.correction        = phase001
+ndppp_apply_delay.argument.applyphase.correction        = phase000
 ndppp_apply_delay.argument.applyphase.solset            = targetIS
 ndppp_apply_delay.argument.applydelayamp.type            =   applycal
 ndppp_apply_delay.argument.applyDelayAmp.parmdb          =   {{ job_directory }}/delay_cal.h5
