@@ -287,6 +287,14 @@ def plugin_main( args, **kwargs ):
 
     
     if doDownload.capitalize() == 'True':
+	lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy ) 
+	lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius ) 
+	if len(lotss_catalogue) == 0:
+	    print('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
+	    lbcs_catalogue.write(delay_cals_file, format='csv')
+	    return
+	result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance ) 
+
         lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy )
         lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius )
         result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance )
