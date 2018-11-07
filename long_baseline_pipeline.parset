@@ -36,17 +36,17 @@
 ## These parameters may need to be updated.		##
 ##########################################################
 
+## Output directories
+! job_directory                 = input.output.job_directory ## directory of the prefactor outputs
+! results_directory             = {{ job_directory }}/results
+! inspection_directory          = {{ results_directory }}/inspection/
+! cal_values_directory          = {{ results_directory }}/calibrator_results/
+
 ## catalogue information
 ! image_cat  = {{ job_directory }}/lotss_catalogue.csv
 ! delay_cat  = {{ job_directory }}/delay_calibrators.csv
 ! subtract_cat  = {{ job_directory }}/subtract_sources.csv
 ! do_download = True
-
-## Output directories
-! job_directory 		= input.output.job_directory ## directory of the prefactor outputs
-! results_directory             = {{ job_directory }}/results
-! inspection_directory          = {{ results_directory }}/inspection/
-! cal_values_directory          = {{ results_directory }}/calibrator_results/
 
 ## Runtime setup -- will depend on your computing cluster
 ! num_proc_per_node             = input.output.max_per_node    ## number of processes to use per step per node
