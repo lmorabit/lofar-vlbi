@@ -97,10 +97,10 @@
 ## Steps to run.					##
 ##########################################################
 
-substep = clipATeam, ## leave blank for no a-team clipping
+! substep = clipATeam, ## leave blank for no a-team clipping
 
 
-pipeline.steps = [ setup, prep, {{ substep }}, aoflagging, delaycal, apply ]
+pipeline.steps = [ setup, prep, {{ substep }} aoflagging, delaycal, apply ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
 pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target ]
