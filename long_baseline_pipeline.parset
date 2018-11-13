@@ -88,6 +88,7 @@
 ! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
 
 ! rfistrategy			= HBAdefault
+! max_length = 148 ## amount of subbands to concatenate for full-bandwidth flagging (for calibrator you can take all SBs, for target stick to about 148)
 
 ##
 ## END CONFIGURATION
