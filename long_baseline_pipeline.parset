@@ -106,8 +106,8 @@ pipeline.steps = [ setup, prep, {{ substep }} aoflagging, delaycal, apply ]
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
 pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target ]
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
-pipeline.steps.aoflagging = [ combine_target_map, ms_concat_target, msconcat_target_map, aoflag ]
-pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, do_sortmap_maps, dppp_concat, delay_cal_model, delay_cal_model_map, calib_cal, make_losoto, process_losoto ]
+pipeline.steps.aoflagging = [ combine_target_map, sortmap_target, do_sortmap_maps, dpppconcat, combine_concat_map, ms_concat_target, msconcat_target_map, aoflag ]
+pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, delay_cal_sortmap_maps, delay_cal_dppp_concat, delay_cal_model, delay_cal_model_map, calib_cal, make_losoto, process_losoto ]
 pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, ndppp_apply_delay, copy_h5imp_cal ]
 
 
@@ -343,6 +343,50 @@ combine_target_map.control.mapfile_dir                         =   input.output.
 combine_target_map.control.filename                            =   combine_target_map.mapfile
 combine_target_map.control.mapfile_in                          =   ndppp_prep_target.output.mapfile
 
+# sort the target data by frequency into groups so that NDPPP can concatenate them
+sortmap_target.control.type                                    =   pythonplugin
+sortmap_target.control.executable                              =   {{ prefactor_scripts }}/sort_times_into_freqGroups.py
+sortmap_target.argument.flags                                  =   [combine_target_map.output.mapfile]
+sortmap_target.argument.filename                               =   sortmap_target
+sortmap_target.argument.mapfile_dir                            =   input.output.mapfile_dir
+sortmap_target.argument.target_path                            =   input.output.working_directory/input.output.job_name
+sortmap_target.argument.numSB                                  =   10
+sortmap_target.argument.NDPPPfill                              =   True
+sortmap_target.argument.stepname                               =   dpppconcat
+sortmap_target.argument.firstSB                                =   None
+sortmap_target.argument.truncateLastSBs                        =   False
+
+# convert the output of sortmap_target into usable mapfiles
+do_sortmap_maps.control.kind                                   =   plugin
+do_sortmap_maps.control.type                                   =   mapfilenamesFromMapfiles
+do_sortmap_maps.control.mapfile_groupmap                       =   sortmap_target.output.groupmapfile.mapfile
+do_sortmap_maps.control.mapfile_datamap                        =   sortmap_target.output.mapfile.mapfile
+
+# run NDPPP to concatenate the target
+dpppconcat.control.type                                        =   dppp
+dpppconcat.control.max_per_node                                =   {{ num_proc_per_node_limit }}
+dpppconcat.control.error_tolerance                             =   {{ error_tolerance }}
+dpppconcat.control.mapfile_out                                 =   do_sortmap_maps.output.groupmap # tell the pipeline to give the output useful names
+dpppconcat.control.mapfiles_in                                 =   [do_sortmap_maps.output.datamap]
+dpppconcat.control.inputkey                                    =   msin
+dpppconcat.argument.msin.datacolumn                            =   DATA
+dpppconcat.argument.msin.missingdata                           =   True    #\ these two lines will make NDPPP generate dummy data when
+dpppconcat.argument.msin.orderms                               =   False   #/ concatenating data
+dpppconcat.argument.msout.datacolumn                           =   DATA
+dpppconcat.argument.msout.writefullresflag                     =   False
+dpppconcat.argument.msout.overwrite                            =   True
+dpppconcat.argument.msout.storagemanager                       =   "Dysco"
+dpppconcat.argument.msout.storagemanager.databitrate           =   0
+dpppconcat.argument.steps                                      =   []
+
+# combine all entries into one mapfile, for the sortmap script
+combine_concat_map.control.kind                                =   plugin
+combine_concat_map.control.type                                =   createMapfile
+combine_concat_map.control.method                              =   mapfile_all_to_one
+combine_concat_map.control.mapfile_dir                         =   input.output.mapfile_dir
+combine_concat_map.control.filename                            =   combine_concat_map.mapfile
+combine_concat_map.control.mapfile_in                          =   do_sortmap_maps.output.groupmap
+
 # virtually concatenate target subbands
 ms_concat_target.control.type                                  =   pythonplugin
 ms_concat_target.control.executable                            =   {{ prefactor_scripts }}/concat_MS.py
@@ -451,31 +495,31 @@ sort_concatmap.argument.firstSB           = None
 sort_concatmap.argument.truncateLastSBs   = False
 
 # convert the output of sort_concatmap into usable mapfile
-do_sortmap_maps.control.kind              =  plugin
-do_sortmap_maps.control.type              =  mapfilenamesFromMapfiles
-do_sortmap_maps.control.mapfile_groupmap  =  sort_concatmap.output.groupmapfile.mapfile
-do_sortmap_maps.control.mapfile_datamap   =  sort_concatmap.output.mapfile.mapfile
+delay_cal_sortmap_maps.control.kind              =  plugin
+delay_cal_sortmap_maps.control.type              =  mapfilenamesFromMapfiles
+delay_cal_sortmap_maps.control.mapfile_groupmap  =  sort_concatmap.output.groupmapfile.mapfile
+delay_cal_sortmap_maps.control.mapfile_datamap   =  sort_concatmap.output.mapfile.mapfile
 
 # concatenate all measurement sets into one
-dppp_concat.control.type                  = dppp
-dppp_concat.control.max_per_node          = {{ num_proc_per_node }}
-dppp_concat.control.error_tolerance       = {{ error_tolerance }}
-dppp_concat.control.mapfile_out           = do_sortmap_maps.output.groupmap
-dppp_concat.control.mapfiles_in           = [do_sortmap_maps.output.datamap]
-dppp_concat.control.inputkey              = msin
-dppp_concat.argument.msin.datacolumn      = DATA
-dppp_concat.argument.msin.missingdata     = True
-dppp_concat.argument.msin.orderms         = False
-dppp_concat.argument.msout.datacolumn     = DATA
-dppp_concat.argument.msout.writefullresflag = False
-dppp_concat.argument.msout.overwrite      = True
-dppp_concat.argument.steps                = []
-dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
+delay_cal_dppp_concat.control.type                  = dppp
+delay_cal_dppp_concat.control.max_per_node          = {{ num_proc_per_node }}
+delay_cal_dppp_concat.control.error_tolerance       = {{ error_tolerance }}
+delay_cal_dppp_concat.control.mapfile_out           = delay_cal_sortmap_maps.output.groupmap
+delay_cal_dppp_concat.control.mapfiles_in           = [delay_cal_sortmap_maps.output.datamap]
+delay_cal_dppp_concat.control.inputkey              = msin
+delay_cal_dppp_concat.argument.msin.datacolumn      = DATA
+delay_cal_dppp_concat.argument.msin.missingdata     = True
+delay_cal_dppp_concat.argument.msin.orderms         = False
+delay_cal_dppp_concat.argument.msout.datacolumn     = DATA
+delay_cal_dppp_concat.argument.msout.writefullresflag = False
+delay_cal_dppp_concat.argument.msout.overwrite      = True
+delay_cal_dppp_concat.argument.steps                = []
+delay_cal_dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
 
 # generate the calibrator model with skynet
 delay_cal_model.control.type		  = pythonplugin
 delay_cal_model.control.executable	  = {{ scripts }}/skynet_master.py
-delay_cal_model.control.mapfile_in	  = do_sortmap_maps.output.groupmap
+delay_cal_model.control.mapfile_in	  = delay_cal_sortmap_maps.output.groupmap
 delay_cal_model.control.inputkey	  = msin
 delay_cal_model.argument.flags		  = [msin]
 delay_cal_model.argument.self_cal_script  = {{ scripts }}/self_calibration_and_imaging.py
@@ -490,7 +534,7 @@ delay_cal_model.argument.delayCalFile	  = {{ job_directory }}/primary_delay_cali
 delay_cal_model_map.control.kind               =  plugin
 delay_cal_model_map.control.type               =  createMapfile
 delay_cal_model_map.control.method             =  add_suffix_to_file
-delay_cal_model_map.control.mapfile_in         =  dppp_concat.output.mapfile
+delay_cal_model_map.control.mapfile_in         =  delay_cal_dppp_concat.output.mapfile
 delay_cal_model_map.control.add_suffix_to_file =  /sky
 delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
@@ -499,7 +543,7 @@ delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
 calib_cal.control.type                    = dppp
 calib_cal.control.max_per_node            = {{ num_proc_per_node_limit }}
 calib_cal.control.error_tolerance         = {{ error_tolerance }}
-calib_cal.control.mapfiles_in             = [dppp_concat.output.mapfile, delay_cal_model_map.output.mapfile]
+calib_cal.control.mapfiles_in             = [delay_cal_dppp_concat.output.mapfile, delay_cal_model_map.output.mapfile]
 calib_cal.control.inputkeys               = [msin, gaincal.sourcedb]
 calib_cal.argument.numthreads             = {{ max_dppp_threads }}
 calib_cal.argument.msin.datacolumn        = DATA
@@ -639,8 +683,8 @@ make_losoto.control.plotPr3.minmax                   =   [-3.14,3.14]
 process_losoto.control.kind                          =  recipe
 process_losoto.control.type                          =  executable_args
 process_losoto.control.executable                    =  {{ losoto_executable }}
-process_losoto.control.max_per_node		               =  {{ num_proc_per_node }}
-process_losoto.control.mapfile_in                    =  do_sortmap_maps.output.groupmap
+process_losoto.control.max_per_node		     =  {{ num_proc_per_node }}
+process_losoto.control.mapfile_in                    =  delay_cal_sortmap_maps.output.groupmap
 process_losoto.control.skip_infile                   =  True
 process_losoto.argument.flags                        =  [{{ job_directory }}/delay_cal.h5, {{ job_directory }}/losoto.parset]
 
@@ -722,7 +766,7 @@ ndppp_apply_delay.argument.applyDelayTEC.updateweights   =   false
 # copy the LoSoTo file to the inspection_directory
 copy_h5imp_cal.control.kind               =  recipe
 copy_h5imp_cal.control.type               =  executable_args
-copy_h5imp_cal.control.mapfile_in         =  do_sortmap_maps.output.groupmap
+copy_h5imp_cal.control.mapfile_in         =  delay_cal_sortmap_maps.output.groupmap
 copy_h5imp_cal.control.skip_infile        =  True
 copy_h5imp_cal.control.executable         =  /bin/cp
 copy_h5imp_cal.control.arguments          =  [{{ job_directory }}/delay_cal.h5, {{ cal_values_directory }}]
