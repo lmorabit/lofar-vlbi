@@ -38,36 +38,39 @@ from astropy.coordinates import SkyCoord
 
 ###################### taql_funcs ################################
 def taql_calc (vis, vistable, qtab, qtype):
+    visout = vis + '_taql_out'
     os.system('taql \'CALC '+qtype+' ([select '+qtab+' from '+vis+\
-              '/'+vistable+'])\' >taql_out')
-    f=open('taql_out')
+              '/'+vistable+'])\' >'+visout)
+    f=open(visout)
     for v in f:
         try:
             val = float(v.rstrip('\n'))
         except:
             pass
     f.close()
-    os.system('rm taql_out')
+    os.system('rm '+visout)
     return val
 
 def taql_num (vis,vistable,qtab):
-    os.system('taql \'select '+qtab+' from '+vis+'/'+vistable+'\' >taql_out')
-    f=open('taql_out')
+    visout = vis + '_taql_out'
+    os.system('taql \'select '+qtab+' from '+vis+'/'+vistable+'\' >'+visout)
+    f=open(visout)
     for v in f:
         if 'select result of' in v:
             n = int(v.split('of')[1].split('row')[0])
             break
     f.close()
-    os.system('rm taql_out')
+    os.system('rm '+visout)
     return n
 
 def taql_from (vis,vistable,qtab):
-    os.system('taql \'select '+qtab+' from '+vis+'/'+vistable+'\' >taql_out')
-    f = open('taql_out')
+    visout = vis + '_taql_out'
+    os.system('taql \'select '+qtab+' from '+vis+'/'+vistable+'\' >'+visout)
+    f = open(visout)
     for v in f:
         pass
     f.close()
-    os.system('rm taql_out')
+    os.system('rm '+visout)
     return v.rstrip('\n').rstrip(']').lstrip('[').split(',')
 
 ################## idx_tels #############################
@@ -83,21 +86,22 @@ def taql_from (vis,vistable,qtab):
 # lower one first if reading data out of a MS.
 
 def get_idx_tels (data, tel):
-    os.system('taql \'select NAME from %s/ANTENNA\' >closure_which'%data)
-    f = open('closure_which')
+    dataout = data + '_closure_which'
+    os.system('taql \'select NAME from %s/ANTENNA\' >%s'%(data,dataout))
+    f = open(dataout)
     for line in f:
         if 'select' in line or not len(line.rstrip('\n')):
             continue
         try:
             a = int(line) # it's just a number, use STATION column instead
             f.close()
-            os.system('taql \'select STATION from %s/ANTENNA\' >closure_which'%data)
+            os.system('taql \'select STATION from %s/ANTENNA\' >%s'%(data,dataout))
             break
         except:
             f.close()
             break
     idx_tels, iline = [-1]*len(tel), 0
-    f = open('closure_which')
+    f = open(dataout)
     for line in f:
         if not 'select' in line:
             for i in range(len(tel)):
@@ -106,11 +110,11 @@ def get_idx_tels (data, tel):
             iline += 1
     f.close()
     if -1 in idx_tels:
-        os.system('cat closure_which')
+        os.system('cat %s'%dataout)
         print 'Did not find one or more of the telescopes'
         print 'Telescopes present are those in list above'
         return []
-    os.system('rm closure_which')
+    os.system('rm %s'%dataout)
     return idx_tels
 
 ################## mkgauss ##############################
@@ -295,8 +299,9 @@ def uvw2reim (uvw, model):
     return re,im
 
 def dget_t (vis, tel1, tel2):
-    os.system('taql \'select from %s where ANTENNA1==%d and ANTENNA2==%d giving %s\'' % (vis, tel1, tel2, 'cl_temp.ms'))
-    t = pt.table('cl_temp.ms')
+    visout = vis + '.tmp'
+    os.system('taql \'select from %s where ANTENNA1==%d and ANTENNA2==%d giving %s\'' % (vis, tel1, tel2, visout))
+    t = pt.table(visout)
     ut = np.ravel(np.asarray([tuple(each.values()) for each in t.select('TIME')]))
     spw = np.ravel(np.asarray([tuple(each.values()) for each in t.select('DATA_DESC_ID')]))
     dc = t.select('DATA')
@@ -371,7 +376,7 @@ def data_extract (vis):
        (trname[0],trname[1],int(np.sqrt((uvw01[0]**2).sum())*wlength/1000),\
         trname[0],trname[2],int(np.sqrt((uvw02[0]**2).sum())*wlength/1000),\
         trname[1],trname[2],int(np.sqrt((uvw12[0]**2).sum())*wlength/1000))
-    os.system('rm -fr cl_tmp*.ms')
+    os.system('rm -fr %s'%visout)
     return itel,np.mean(wlength),ra,dec
 
 def model_extract (model,itel):
