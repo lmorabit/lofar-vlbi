@@ -42,7 +42,7 @@ def makesolset(MS, data, solset_name):
 
     return antennaNames
 
-def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', soltab_list = ['clock000', 'tec000', 'amplitude000'], superstation = 'ST001', restrictToCS = True):
+def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', soltab_list = ['phase000', 'amplitude000'], superstation = 'ST001', restrictToCS = True):
 
     mslist = MSfiles.lstrip('[').rstrip(']').replace(' ','').replace("'","").split(',')
     
@@ -95,14 +95,14 @@ def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', solta
                 weights = reorderAxes( weights, soltab.getAxesNames(), ['time', 'ant'] )
                 pass
             pass
-        elif 'amplitude' in soltab_name:
+        elif 'amplitude' in soltab_name or 'phase' in soltab_name:
             for vals, weights, coord, selection in soltab.getValuesIter(returnAxes=['pol','ant','freq', 'time'], weight=True):
                 vals = reorderAxes( vals, soltab.getAxesNames(), ['time', 'ant', 'freq', 'pol'] )
                 weights = reorderAxes( weights, soltab.getAxesNames(), ['time', 'ant', 'freq', 'pol'] )
                 pass
             pass
         else:
-            loggin.error('No clock, tec or amplitude soltab has been found or specified.')
+            loggin.error('No phase or amplitude soltab has been found or specified.')
             return(1)
             pass
         
@@ -112,7 +112,7 @@ def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', solta
             new_vals    = np.ndarray(shape = (dimension[0], len(new_station_names)))
             new_weights = np.ndarray(shape = (dimension[0], len(new_station_names)))
             pass
-        if 'amplitude' in soltab_name:
+        if 'amplitude' in soltab_name or 'phase' in soltab_name:
             new_vals    = np.ndarray(shape = (dimension[0], len(new_station_names), dimension[2], dimension[3]))
             new_weights = np.ndarray(shape = (dimension[0], len(new_station_names), dimension[2], dimension[3]))
             pass
@@ -124,7 +124,7 @@ def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', solta
                     new_vals[:,i]    = vals[:,ant_index]
                     new_weights[:,i] = weights[:,ant_index]
                     pass
-                if 'amplitude' in soltab_name:
+                if 'amplitude' in soltab_name or 'phase' in soltab_name:
                     new_vals[:,i,:,:]    = vals[:,ant_index,:,:]
                     new_weights[:,i,:,:] = weights[:,ant_index,:,:]
                     pass
@@ -139,7 +139,7 @@ def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', solta
                     new_vals[:,i]    = vals[:,STindex]
                     new_weights[:,i] = weights[:,STindex]
                     pass
-                if 'amplitude' in soltab_name:
+                if 'amplitude' in soltab_name or 'phase' in soltab_name: 
                     new_vals[:,i,:,:]    = vals[:,STindex,:,:]
                     new_weights[:,i,:,:] = weights[:,STindex,:,:]
                     pass                 
@@ -164,6 +164,12 @@ def main(h5parmfile, MSfiles, solset_in = 'sol000', solset_out = 'sol001', solta
                                         axesVals=[soltab.time, new_station_names, soltab.freq, soltab.pol],
                                         vals=new_vals, weights=new_weights)
             pass
+        elif 'phase' in soltab_name:
+            new_soltab = OutSolset.makeSoltab(soltype='phase', soltabName=soltab_name,
+                                        axesNames=['time', 'ant', 'freq', 'pol'],
+                                        axesVals=[soltab.time, new_station_names, soltab.freq, soltab.pol],
+                                        vals=new_vals, weights=new_weights)
+            pass
         
         soltab = 0
         pass
@@ -182,7 +188,7 @@ if __name__ == "__main__":
                         help='Input solution set')
     parser.add_argument('--solset_out', type=str, default='sol001',
                         help='Output solution set (has to be different from input solution set)')
-    parser.add_argument('--soltab_list', '--soltab_list', type=str, default='clock000,tec000,amplitude000',
+    parser.add_argument('--soltab_list', '--soltab_list', type=str, default='phase000,amplitude000',
                         help='Comma-separated list of soltabs to be copied')
     parser.add_argument('--superstation', type=str, default='ST001',
                         help='Reference station from which data should be copied')
