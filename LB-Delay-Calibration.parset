@@ -98,17 +98,17 @@
 ## Steps to run.					##
 ##########################################################
 
-! substep = clipATeam, ## leave blank for no a-team clipping
+! substep_clip = clipATeam, ## leave blank for no a-team clipping
+! substep_flag = aoflagging,
 
-
-pipeline.steps = [ setup, prep, {{ substep }} aoflagging, delaycal, apply ]
+pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, apply ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
-pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target ]
+pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, combine_target_map ]
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
-pipeline.steps.aoflagging = [ combine_target_map, sortmap_target, do_sortmap_maps, dpppconcat, combine_concat_map, ms_concat_target, msconcat_target_map, aoflag ]
+pipeline.steps.aoflagging = [ sortmap_target, do_sortmap_maps, flag_dpppconcat, ms_concat_target, msconcat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, delay_cal_sortmap_maps, delay_cal_dppp_concat, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
-pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal ]
+pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, cleanup ]
 
 
 ###########################################################################
@@ -259,6 +259,13 @@ ndppp_prep_target.argument.applyphase.parmdb	  	= {{ cal_solutions }}
 ndppp_prep_target.argument.applyphase.correction	= phase000
 ndppp_prep_target.argument.applyphase.solset		= targetIS
 
+# combine all entries into one mapfile, for the sortmap script
+combine_target_map.control.kind                                =   plugin
+combine_target_map.control.type                                =   createMapfile
+combine_target_map.control.method                              =   mapfile_all_to_one
+combine_target_map.control.mapfile_dir                         =   input.output.mapfile_dir
+combine_target_map.control.filename                            =   combine_target_map.mapfile
+combine_target_map.control.mapfile_in                          =   ndppp_prep_target.output.mapfile
 
 
 
@@ -335,14 +342,6 @@ ateamcliptar.control.inputkey                                  =   allms
 #                                                               ##
 ##################################################################
 
-# combine all entries into one mapfile, for the sortmap script
-combine_target_map.control.kind                                =   plugin
-combine_target_map.control.type                                =   createMapfile
-combine_target_map.control.method                              =   mapfile_all_to_one
-combine_target_map.control.mapfile_dir                         =   input.output.mapfile_dir
-combine_target_map.control.filename                            =   combine_target_map.mapfile
-combine_target_map.control.mapfile_in                          =   ndppp_prep_target.output.mapfile
-
 # sort the target data by frequency into groups so that NDPPP can concatenate them
 sortmap_target.control.type                                    =   pythonplugin
 sortmap_target.control.executable                              =   {{ prefactor_scripts }}/sort_times_into_freqGroups.py
@@ -363,29 +362,21 @@ do_sortmap_maps.control.mapfile_groupmap                       =   sortmap_targe
 do_sortmap_maps.control.mapfile_datamap                        =   sortmap_target.output.mapfile.mapfile
 
 # run NDPPP to concatenate the target
-dpppconcat.control.type                                        =   dppp
-dpppconcat.control.max_per_node                                =   {{ num_proc_per_node_limit }}
-dpppconcat.control.error_tolerance                             =   {{ error_tolerance }}
-dpppconcat.control.mapfile_out                                 =   do_sortmap_maps.output.groupmap # tell the pipeline to give the output useful names
-dpppconcat.control.mapfiles_in                                 =   [do_sortmap_maps.output.datamap]
-dpppconcat.control.inputkey                                    =   msin
-dpppconcat.argument.msin.datacolumn                            =   DATA
-dpppconcat.argument.msin.missingdata                           =   True    #\ these two lines will make NDPPP generate dummy data when
-dpppconcat.argument.msin.orderms                               =   False   #/ concatenating data
-dpppconcat.argument.msout.datacolumn                           =   DATA
-dpppconcat.argument.msout.writefullresflag                     =   False
-dpppconcat.argument.msout.overwrite                            =   True
-dpppconcat.argument.msout.storagemanager                       =   "Dysco"
-dpppconcat.argument.msout.storagemanager.databitrate           =   0
-dpppconcat.argument.steps                                      =   []
-
-# combine all entries into one mapfile, for the sortmap script
-combine_concat_map.control.kind                                =   plugin
-combine_concat_map.control.type                                =   createMapfile
-combine_concat_map.control.method                              =   mapfile_all_to_one
-combine_concat_map.control.mapfile_dir                         =   input.output.mapfile_dir
-combine_concat_map.control.filename                            =   combine_concat_map.mapfile
-combine_concat_map.control.mapfile_in                          =   do_sortmap_maps.output.groupmap
+flag_dpppconcat.control.type                                        =   dppp
+flag_dpppconcat.control.max_per_node                                =   {{ num_proc_per_node_limit }}
+flag_dpppconcat.control.error_tolerance                             =   {{ error_tolerance }}
+flag_dpppconcat.control.mapfile_out                                 =   do_sortmap_maps.output.groupmap # tell the pipeline to give the output useful names
+flag_dpppconcat.control.mapfiles_in                                 =   [do_sortmap_maps.output.datamap]
+flag_dpppconcat.control.inputkey                                    =   msin
+flag_dpppconcat.argument.msin.datacolumn                            =   DATA
+flag_dpppconcat.argument.msin.missingdata                           =   True    #\ these two lines will make NDPPP generate dummy data when
+flag_dpppconcat.argument.msin.orderms                               =   False   #/ concatenating data
+flag_dpppconcat.argument.msout.datacolumn                           =   DATA
+flag_dpppconcat.argument.msout.writefullresflag                     =   False
+flag_dpppconcat.argument.msout.overwrite                            =   True
+flag_dpppconcat.argument.msout.storagemanager                       =   "Dysco"
+flag_dpppconcat.argument.msout.storagemanager.databitrate           =   0
+flag_dpppconcat.argument.steps                                      =   []
 
 # virtually concatenate target subbands
 ms_concat_target.control.type                                  =   pythonplugin
