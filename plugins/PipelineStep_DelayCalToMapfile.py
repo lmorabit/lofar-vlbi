@@ -3,6 +3,7 @@ from lofarpipe.support.data_map import DataMap
 from lofarpipe.support.data_map import DataProduct
 import numpy as np
 import glob
+from astropy.io import ascii
 
 
 # Leah Morabito, May 2017
@@ -52,16 +53,17 @@ def plugin_main(args, **kwargs):
     else:
         best_calibrator = direction[0][0]
 
-    with open( delaycal_list, 'r' ) as f:
-	lines = f.readlines()
-    f.close()
+    a = ascii.read(delaycal_list)
 
-    for l in lines:
-	tmp = l.split(',')
-	if tmp[0] == best_calibrator:
-	    cal_ra = tmp[4]
-	    cal_dec = tmp[5]
-	    cal_total_flux = tmp[7]
+    for xx in range(len(a)):
+	tmp = a[xx]
+        src = tmp['Source_id']
+        if type(src) != str:
+            src = 'S'+str(src)
+        if src == best_calibrator:
+	    cal_ra = str(tmp['LOTSS_RA'])
+	    cal_dec = str(tmp['LOTSS_DEC'])
+	    cal_total_flux = str(tmp['Total_flux'])
 
     ss = ','.join([cal_ra, cal_dec, best_calibrator, cal_total_flux])
 
