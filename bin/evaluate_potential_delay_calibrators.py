@@ -11,6 +11,12 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import argparse
 from astropy.io import ascii
+import re
+
+def natural_sort(l):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
+    return sorted(l, key = alphanum_key)
 
 def closure(vis,tel,lastv=-1,pol=0,use_spw=0,bchan=0,echan=-1,\
             doplot=False,doret=False):
@@ -186,6 +192,10 @@ def addghost (inarray):        # deal with missing frequencies between subbands
 
 
 def combine_subbands (in1array, nameout, phasecenter, fstep, tstep):
+    # get datacolumn
+    tmp = phasecenter.split(';')
+    datacol = tmp[0]
+    phasecenter = tmp[1]
     in2array = addghost(inarray)
     ismissing = False if np.array_equal(in1array,in2array) else True
     fo=open('NDPPP_%s.parset'%nameout,'w')   # write the parset file
@@ -195,7 +205,7 @@ def combine_subbands (in1array, nameout, phasecenter, fstep, tstep):
         fo.write(']' if i==len(in2array)-1 else ',')
     fo.write('\n')
     fo.write('msout = '+nameout+'\n')
-    fo.write('msin.datacolumn = DATA\n')
+    fo.write('msin.datacolumn = %s\n'%datacol)
     if ismissing:
         fo.write('msin.missingdata=True\n')
         fo.write('msin.orderms=False\n')
@@ -221,16 +231,18 @@ def combine_subbands (in1array, nameout, phasecenter, fstep, tstep):
     
 
 def lotss2coords (lotssfile):
-    #a=np.loadtxt(lotssfile,dtype='S')
+
     a = ascii.read(lotssfile)
-    #if a.ndim==1:
     if len(a) == 1:
-        #a=np.array([a])
 	a = ','.join([str(a['LOTSS_RA']),str(a['LOTSS_DEC']),a['Source_id']])
     coords=np.array([],dtype='S')
     for xx in range(len(a)):
 	tmp = a[xx]
-	tmp_1 = ','.join([str(tmp['LOTSS_RA']),str(tmp['LOTSS_DEC']),tmp['Source_id']])
+	## check if the source_id needs to be converted to a string
+	src = tmp['Source_id']
+	if type(src) != str:
+	    src = 'S'+str(src)
+	tmp_1 = ','.join([str(tmp['LOTSS_RA']),str(tmp['LOTSS_DEC']),src])
         coords=np.append(coords,tmp_1)
     return coords
 
@@ -261,14 +273,28 @@ def source (coords,ncpu):
     source_thread.parallel = parallel_function(source_thread,ncpu)
     parallel_result = source_thread.parallel(coords)
 
-def main( ms_input, lotss_file, ncpu=1 ):
+def main( ms_input, lotss_file, ncpu=10, datacol='DATA', nsbs=20 ):
 
     ncpu = int(ncpu)
-    mslist = str(ms_input).lstrip('[').rstrip(']').replace("'","").replace(" ","").split(',')
-    mslist = mslist[0:20]
+    datacol = str(datacol)
+    nsbs = int(nsbs)
+
+    if type(ms_input) == str:
+        mslist = ms_input.lstrip('[').rstrip(']').replace("'","").replace(" ","").split(',')
+    else:
+	mslist = ms_input
+    mslist = natural_sort( mslist )
+    if nsbs < 0:
+	nsbs = len(mslist)
+    mslist = mslist[0:nsbs]
+    print mslist
     global inarray
     inarray = mslist
     coords = lotss2coords( lotss_file )
+    tmp = []
+    for coord in coords:
+	tmp.append( ';'.join([datacol,coord]) )
+    coords = tmp
     source( coords, ncpu )
 
 
@@ -276,10 +302,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='function to parallel process sources to search for the delay calibrator')
     parser.add_argument('MS_pattern',type=str, help='pattern to search for MS')
-    parser.add_argument('--lotss_file',type=str,help='catalogue to process')
+    parser.add_argument('lotss_file',type=str,help='catalogue to process')
     parser.add_argument('--ncpu',type=int,help='number of CPUs')
+    parser.add_argument('--datacol',type=str,help='datacolumn to use (default DATA)',default='DATA')
+    parser.add_argument('--nsbs',type=int,help='number of subbands, default 20, use -1 for all',default=20)
     args = parser.parse_args()
 
     MS_input = glob.glob( args.MS_pattern )
 
-    main( MS_input, args.lotss_file, args.ncpu )
+    main( MS_input, args.lotss_file, ncpu=args.ncpu, datacol=args.datacol, nsbs=args.nsbs )
