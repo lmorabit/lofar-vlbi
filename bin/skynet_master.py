@@ -320,6 +320,7 @@ def dget_t (vis, tel1, tel2):
             except:
                 d_out = np.copy(new)
         d = d_out
+    os.system('rm -r %s'%visout)
     return d,ut,uvw
 
 def norm(a,isred=True):
@@ -376,7 +377,6 @@ def data_extract (vis):
        (trname[0],trname[1],int(np.sqrt((uvw01[0]**2).sum())*wlength/1000),\
         trname[0],trname[2],int(np.sqrt((uvw02[0]**2).sum())*wlength/1000),\
         trname[1],trname[2],int(np.sqrt((uvw12[0]**2).sum())*wlength/1000))
-    os.system('rm -fr %s'%visout)
     return itel,np.mean(wlength),ra,dec
 
 def model_extract (model,itel):
