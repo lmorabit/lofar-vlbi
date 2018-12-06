@@ -106,7 +106,7 @@ pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
 pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, combine_target_map ]
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
-pipeline.steps.aoflagging = [ sortmap_target, do_sortmap_maps, flag_dpppconcat, ms_concat_target, msconcat_target_map, aoflag ]
+pipeline.steps.aoflagging = [ sortmap_target, do_sortmap_maps, flag_dpppconcat, ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, delay_cal_sortmap_maps, delay_cal_dppp_concat, delay_cal_cleanup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
 pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, cleanup ]
 
