@@ -27,10 +27,11 @@
 ! target_input_pattern          = L*.MS
 
 ## Prefactor solution information
-! cal_solutions 		= /path/to/prefactorV3/calibrator/results/cal_solutions/cal_solutions.h5  ## location of h5parm from prefactor - if prefactor was set correctly, this will contain 'calibrator' and 'target' information
+! cal_solutions 		= input.output.job_directory/../Pre-Facet-Target/results/cal_solutions/solutions.h5  ## location of h5parm from prefactor - if prefactor was set correctly, this will contain 'calibrator' and 'target' information
+! solutions			= input.output.job_directory/solutions.h5
 
 ## Stations to flag
-! flag_baselines                = [ RS310* ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
+! flag_baselines                = [ ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
 
 ##########################################################
 ## These parameters may need to be updated.		##
@@ -103,8 +104,8 @@
 
 pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, apply ]
 
-pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir ]
-pipeline.steps.prep = [ createmap_target, combine_data_target_map, download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, combine_target_map ]
+pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, combine_data_target_map, cp_cal_solutions ]
+pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, combine_target_map ]
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ sortmap_target, do_sortmap_maps, flag_dpppconcat, ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, delay_cal_sortmap_maps, delay_cal_dppp_concat, delay_cal_cleanup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
@@ -159,6 +160,15 @@ combine_data_target_map.control.mapfile_dir     =   input.output.mapfile_dir
 combine_data_target_map.control.filename        =   combine_data_tar_map.mapfile
 combine_data_target_map.control.mapfile_in      =   createmap_target.output.mapfile
 
+# copy the cal solutions to operate on
+cp_cal_solutions.control.kind             = recipe
+cp_cal_solutions.control.type             = executable_args
+cp_cal_solutions.control.executable       = /bin/cp
+cp_cal_solutions.control.max_per_node     = 1
+cp_cal_solutions.control.skip_infile      = True
+cp_cal_solutions.control.mapfile_in       = combine_data_target_map.output.mapfile
+cp_cal_solutions.argument.flags           = [{{ cal_solutions }}, {{ solutions }}]
+
 # download the relevant catalogues
 download_cats.control.kind                      = plugin
 download_cats.control.type                      = DownloadCats
@@ -178,7 +188,7 @@ download_cats.control.doDownload                = {{ do_download }}
 h5imp_RMextract.control.type                                   =   pythonplugin
 h5imp_RMextract.control.executable                             =   {{ rmextract_directory }}/bin/createRMh5parm.py
 h5imp_RMextract.control.error_tolerance                        =   {{ error_tolerance }}
-h5imp_RMextract.argument.flags                                 =   [combine_data_target_map.output.mapfile, {{ cal_solutions }}]
+h5imp_RMextract.argument.flags                                 =   [combine_data_target_map.output.mapfile, {{ solutions }}]
 h5imp_RMextract.argument.ionex_server                          =   {{ ionex_server }}
 h5imp_RMextract.argument.ionex_prefix                          =   {{ ionex_prefix }}
 h5imp_RMextract.argument.ionexPath                             =   {{ ionex_path }}
@@ -204,7 +214,7 @@ process_losoto_RMextract.control.executable                    =   {{ losoto_dir
 process_losoto_RMextract.control.max_per_node                  =   {{ num_proc_per_node }}
 process_losoto_RMextract.control.mapfile_in                    =   combine_data_target_map.output.mapfile
 process_losoto_RMextract.control.inputkey                      =   input
-process_losoto_RMextract.argument.flags = [{{ cal_solutions }}, input.output.job_directory/losoto.parset]
+process_losoto_RMextract.argument.flags = [{{ solutions }}, input.output.job_directory/losoto.parset]
 
 ## international stations already exist in calibrator solutions but not in target
 ## run script to add them to necessary solution tables
@@ -212,7 +222,7 @@ h5parm_add_IS.control.type                            	= pythonplugin
 h5parm_add_IS.control.executable                      	= {{ scripts }}/addIS_to_h5.py
 h5parm_add_IS.control.mapfile_in                      	= combine_data_target_map.output.mapfile
 h5parm_add_IS.control.inputkey                        	= mslist
-h5parm_add_IS.argument.flags                      	= [{{ cal_solutions }},mslist]
+h5parm_add_IS.argument.flags                      	= [{{ solutions }},mslist]
 h5parm_add_IS.argument.solset_in			= target
 h5parm_add_IS.argument.solset_out			= targetIS			
 
@@ -235,15 +245,15 @@ ndppp_prep_target.argument.elev.elevation	  	= 0deg..20deg
 ndppp_prep_target.argument.flagamp.type           	= preflagger
 ndppp_prep_target.argument.flagamp.amplmin        	= 1e-30
 ndppp_prep_target.argument.applyclock.type          	= applycal
-ndppp_prep_target.argument.applyclock.parmdb        	= {{ cal_solutions }}
+ndppp_prep_target.argument.applyclock.parmdb        	= {{ solutions }}
 ndppp_prep_target.argument.applyclock.correction    	= clock000
 ndppp_prep_target.argument.applyclock.solset	   	= calibrator
 ndppp_prep_target.argument.applyPA.type                 = applycal
-ndppp_prep_target.argument.applyPA.parmdb               = {{ cal_solutions }}
+ndppp_prep_target.argument.applyPA.parmdb               = {{ solutions }}
 ndppp_prep_target.argument.applyPA.correction           = polalign
 ndppp_prep_target.argument.applyPA.solset               = calibrator
 ndppp_prep_target.argument.applybandpass.type           = applycal
-ndppp_prep_target.argument.applybandpass.parmdb         = {{ cal_solutions }}
+ndppp_prep_target.argument.applybandpass.parmdb         = {{ solutions }}
 ndppp_prep_target.argument.applybandpass.correction     = bandpass
 ndppp_prep_target.argument.applybandpass.updateweights  = True
 ndppp_prep_target.argument.applybandpass.solset 	= calibrator
@@ -251,11 +261,11 @@ ndppp_prep_target.argument.applybeam.type           	= applybeam
 ndppp_prep_target.argument.applybeam.usechannelfreq 	= True
 ndppp_prep_target.argument.applybeam.updateweights  	= True
 ndppp_prep_target.argument.applyRM.type            	= applycal
-ndppp_prep_target.argument.applyRM.parmdb               = {{ cal_solutions }}
+ndppp_prep_target.argument.applyRM.parmdb               = {{ solutions }}
 ndppp_prep_target.argument.applyRM.correction           = RMextract
 ndppp_prep_target.argument.applyRM.solset 		= targetIS
 ndppp_prep_target.argument.applyphase.type	  	= applycal
-ndppp_prep_target.argument.applyphase.parmdb	  	= {{ cal_solutions }}
+ndppp_prep_target.argument.applyphase.parmdb	  	= {{ solutions }}
 ndppp_prep_target.argument.applyphase.correction	= phase000
 ndppp_prep_target.argument.applyphase.solset		= targetIS
 
