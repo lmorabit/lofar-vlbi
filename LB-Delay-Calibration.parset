@@ -27,7 +27,7 @@
 ! target_input_pattern          = L*.MS
 
 ## Prefactor solution information
-! cal_solutions 		= input.output.job_directory/../Pre-Facet-Target/results/cal_solutions/solutions.h5  ## location of h5parm from prefactor - if prefactor was set correctly, this will contain 'calibrator' and 'target' information
+! cal_solutions 		= input.output.job_directory/../Pre-Facet-Target/results/cal_values/solutions.h5  ## location of h5parm from prefactor - if prefactor was set correctly, this will contain 'calibrator' and 'target' information
 ! solutions			= input.output.job_directory/solutions.h5
 
 ## Stations to flag
