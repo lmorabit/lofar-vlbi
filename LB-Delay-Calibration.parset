@@ -107,7 +107,7 @@ pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, combine_data_target_map, cp_cal_solutions ]
 pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, combine_target_map ]
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
-pipeline.steps.aoflagging = [ sortmap_target, do_sortmap_maps, flag_dpppconcat, ms_concat_target, ms_concat_target_map, aoflag ]
+pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, delay_cal_sortmap_maps, delay_cal_dppp_concat, delay_cal_cleanup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
 pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, cleanup ]
 
@@ -351,42 +351,6 @@ ateamcliptar.control.inputkey                                  =   allms
 #                     AOFLAGGING	                        ##
 #                                                               ##
 ##################################################################
-
-# sort the target data by frequency into groups so that NDPPP can concatenate them
-sortmap_target.control.type                                    =   pythonplugin
-sortmap_target.control.executable                              =   {{ prefactor_scripts }}/sort_times_into_freqGroups.py
-sortmap_target.argument.flags                                  =   [combine_target_map.output.mapfile]
-sortmap_target.argument.filename                               =   sortmap_target
-sortmap_target.argument.mapfile_dir                            =   input.output.mapfile_dir
-sortmap_target.argument.target_path                            =   input.output.working_directory/input.output.job_name
-sortmap_target.argument.numSB                                  =   10
-sortmap_target.argument.NDPPPfill                              =   True
-sortmap_target.argument.stepname                               =   dpppconcat
-sortmap_target.argument.firstSB                                =   None
-sortmap_target.argument.truncateLastSBs                        =   False
-
-# convert the output of sortmap_target into usable mapfiles
-do_sortmap_maps.control.kind                                   =   plugin
-do_sortmap_maps.control.type                                   =   mapfilenamesFromMapfiles
-do_sortmap_maps.control.mapfile_groupmap                       =   sortmap_target.output.groupmapfile.mapfile
-do_sortmap_maps.control.mapfile_datamap                        =   sortmap_target.output.mapfile.mapfile
-
-# run NDPPP to concatenate the target
-flag_dpppconcat.control.type                                        =   dppp
-flag_dpppconcat.control.max_per_node                                =   {{ num_proc_per_node_limit }}
-flag_dpppconcat.control.error_tolerance                             =   {{ error_tolerance }}
-flag_dpppconcat.control.mapfile_out                                 =   do_sortmap_maps.output.groupmap # tell the pipeline to give the output useful names
-flag_dpppconcat.control.mapfiles_in                                 =   [do_sortmap_maps.output.datamap]
-flag_dpppconcat.control.inputkey                                    =   msin
-flag_dpppconcat.argument.msin.datacolumn                            =   DATA
-flag_dpppconcat.argument.msin.missingdata                           =   True    #\ these two lines will make NDPPP generate dummy data when
-flag_dpppconcat.argument.msin.orderms                               =   False   #/ concatenating data
-flag_dpppconcat.argument.msout.datacolumn                           =   DATA
-flag_dpppconcat.argument.msout.writefullresflag                     =   False
-flag_dpppconcat.argument.msout.overwrite                            =   True
-flag_dpppconcat.argument.msout.storagemanager                       =   "Dysco"
-flag_dpppconcat.argument.msout.storagemanager.databitrate           =   0
-flag_dpppconcat.argument.steps                                      =   []
 
 # virtually concatenate target subbands
 ms_concat_target.control.type                                  =   pythonplugin
