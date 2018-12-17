@@ -390,7 +390,7 @@ aoflag.argument.flags                                          =   [-v,-combine-
 do_parallel.control.type                  = pythonplugin
 do_parallel.control.max_per_node          = {{ num_proc_per_node }}
 do_parallel.control.executable            = {{ scripts }}/evaluate_potential_delay_calibrators.py
-do_parallel.argument.flags                = [combine_data_target_map.output.mapfile,{{ delay_cat }}]
+do_parallel.argument.flags                = [combine_target_map.output.mapfile,{{ delay_cat }}]
 do_parallel.argument.ncpu                 = {{ num_proc_per_node }}
 
 # automatically find the best calibrator 
