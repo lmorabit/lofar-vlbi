@@ -701,7 +701,7 @@ def main (vis, self_cal_script, firstnpy, delayCalFile='', mode=3, closure_tels=
         lines = f.readlines()
     f.close()
     tmp = lines[0].split(',')
-    smodel = float(tmp[-1] )*1e-3
+    smodel = float(tmp[-1] ) #*1e-3
 
     if not len(closure_tels) == 3:
 	closure_tels = closure_tels.split(';')
