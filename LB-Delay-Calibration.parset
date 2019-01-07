@@ -104,12 +104,12 @@
 
 pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, apply ]
 
-pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, combine_data_target_map, cp_cal_solutions ]
-pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, combine_target_map ]
+pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_target_list, cp_cal_solutions ]
+pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
-pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, delay_cal_sortmap_maps, delay_cal_dppp_concat, delay_cal_cleanup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
-pipeline.steps.apply = [ make_dppp_prep_map, copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, cleanup ]
+pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, make_concatmap, sort_concatmap, delay_cal_bands, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
+pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, delay_cal_dppp_concat, delay_cal_cleanup ]
 
 
 ###########################################################################
@@ -153,12 +153,12 @@ createmap_target.control.folder           = {{ target_input_path }}
 createmap_target.control.pattern          = {{ target_input_pattern }}
 
 # convert to a mapfile with all subbands in one list
-combine_data_target_map.control.kind            =   plugin
-combine_data_target_map.control.type            =   createMapfile
-combine_data_target_map.control.method          =   mapfile_all_to_one
-combine_data_target_map.control.mapfile_dir     =   input.output.mapfile_dir
-combine_data_target_map.control.filename        =   combine_data_tar_map.mapfile
-combine_data_target_map.control.mapfile_in      =   createmap_target.output.mapfile
+createmap_target_list.control.kind            =   plugin
+createmap_target_list.control.type            =   createMapfile
+createmap_target_list.control.method          =   mapfile_all_to_one
+createmap_target_list.control.mapfile_dir     =   input.output.mapfile_dir
+createmap_target_list.control.filename        =   combine_data_tar_map.mapfile
+createmap_target_list.control.mapfile_in      =   createmap_target.output.mapfile
 
 # copy the cal solutions to operate on
 cp_cal_solutions.control.kind             = recipe
@@ -166,13 +166,13 @@ cp_cal_solutions.control.type             = executable_args
 cp_cal_solutions.control.executable       = /bin/cp
 cp_cal_solutions.control.max_per_node     = 1
 cp_cal_solutions.control.skip_infile      = True
-cp_cal_solutions.control.mapfile_in       = combine_data_target_map.output.mapfile
+cp_cal_solutions.control.mapfile_in       = createmap_target_list.output.mapfile
 cp_cal_solutions.argument.flags           = [{{ cal_solutions }}, {{ solutions }}]
 
 # download the relevant catalogues
 download_cats.control.kind                      = plugin
 download_cats.control.type                      = DownloadCats
-download_cats.control.mapfile_in                = combine_data_target_map.output.mapfile
+download_cats.control.mapfile_in                = createmap_target_list.output.mapfile
 download_cats.control.lotss_radius              = 2.
 download_cats.control.lbcs_radius               = 2.
 download_cats.control.bright_limit_Jy           = 5.
@@ -188,7 +188,7 @@ download_cats.control.doDownload                = {{ do_download }}
 h5imp_RMextract.control.type                                   =   pythonplugin
 h5imp_RMextract.control.executable                             =   {{ rmextract_directory }}/bin/createRMh5parm.py
 h5imp_RMextract.control.error_tolerance                        =   {{ error_tolerance }}
-h5imp_RMextract.argument.flags                                 =   [combine_data_target_map.output.mapfile, {{ solutions }}]
+h5imp_RMextract.argument.flags                                 =   [createmap_target_list.output.mapfile, {{ solutions }}]
 h5imp_RMextract.argument.ionex_server                          =   {{ ionex_server }}
 h5imp_RMextract.argument.ionex_prefix                          =   {{ ionex_prefix }}
 h5imp_RMextract.argument.ionexPath                             =   {{ ionex_path }}
@@ -212,7 +212,7 @@ process_losoto_RMextract.control.kind                          =   recipe
 process_losoto_RMextract.control.type                          =   executable_args
 process_losoto_RMextract.control.executable                    =   {{ losoto_directory }}/bin/losoto
 process_losoto_RMextract.control.max_per_node                  =   {{ num_proc_per_node }}
-process_losoto_RMextract.control.mapfile_in                    =   combine_data_target_map.output.mapfile
+process_losoto_RMextract.control.mapfile_in                    =   createmap_target_list.output.mapfile
 process_losoto_RMextract.control.inputkey                      =   input
 process_losoto_RMextract.argument.flags = [{{ solutions }}, input.output.job_directory/losoto.parset]
 
@@ -220,7 +220,7 @@ process_losoto_RMextract.argument.flags = [{{ solutions }}, input.output.job_dir
 ## run script to add them to necessary solution tables
 h5parm_add_IS.control.type                            	= pythonplugin
 h5parm_add_IS.control.executable                      	= {{ scripts }}/addIS_to_h5.py
-h5parm_add_IS.control.mapfile_in                      	= combine_data_target_map.output.mapfile
+h5parm_add_IS.control.mapfile_in                      	= createmap_target_list.output.mapfile
 h5parm_add_IS.control.inputkey                        	= mslist
 h5parm_add_IS.argument.flags                      	= [{{ solutions }},mslist]
 h5parm_add_IS.argument.solset_in			= target
@@ -269,15 +269,13 @@ ndppp_prep_target.argument.applyphase.parmdb	  	= {{ solutions }}
 ndppp_prep_target.argument.applyphase.correction	= phase000
 ndppp_prep_target.argument.applyphase.solset		= targetIS
 
-# combine all entries into one mapfile, for the sortmap script
-combine_target_map.control.kind                                =   plugin
-combine_target_map.control.type                                =   createMapfile
-combine_target_map.control.method                              =   mapfile_all_to_one
-combine_target_map.control.mapfile_dir                         =   input.output.mapfile_dir
-combine_target_map.control.filename                            =   combine_target_map.mapfile
-combine_target_map.control.mapfile_in                          =   ndppp_prep_target.output.mapfile
-
-
+# combine all entries into one mapfile
+ndppp_prep_target_list.control.kind                                =   plugin
+ndppp_prep_target_list.control.type                                =   createMapfile
+ndppp_prep_target_list.control.method                              =   mapfile_all_to_one
+ndppp_prep_target_list.control.mapfile_dir                         =   input.output.mapfile_dir
+ndppp_prep_target_list.control.filename                            =   ndppp_prep_target_list.mapfile
+ndppp_prep_target_list.control.mapfile_in                          =   ndppp_prep_target.output.mapfile
 
 ##################################################################
 #                                                               ##
@@ -358,7 +356,7 @@ ms_concat_target.control.executable                            =   {{ prefactor_
 ms_concat_target.control.error_tolerance                       =   {{ error_tolerance }}
 ms_concat_target.argument.filename                             =   concatmapfile.mapfile
 ms_concat_target.argument.mapfile_dir                          =   input.output.mapfile_dir
-ms_concat_target.argument.flags                                =   [combine_target_map.output.mapfile,outputkey,{{ max_length }}]
+ms_concat_target.argument.flags                                =   [ndppp_prep_target_list.output.mapfile,outputkey,{{ max_length }}]
 
 # convert the output of ms_concat_target into usable mapfiles
 ms_concat_target_map.control.kind                              =   plugin
@@ -390,7 +388,7 @@ aoflag.argument.flags                                          =   [-v,-combine-
 do_parallel.control.type                  = pythonplugin
 do_parallel.control.max_per_node          = {{ num_proc_per_node }}
 do_parallel.control.executable            = {{ scripts }}/evaluate_potential_delay_calibrators.py
-do_parallel.argument.flags                = [combine_target_map.output.mapfile,{{ delay_cat }}]
+do_parallel.argument.flags                = [ndppp_prep_target_list.output.mapfile,{{ delay_cat }}]
 do_parallel.argument.ncpu                 = {{ num_proc_per_node }}
 
 # automatically find the best calibrator 
@@ -461,39 +459,15 @@ sort_concatmap.argument.firstSB           = None
 sort_concatmap.argument.truncateLastSBs   = False
 
 # convert the output of sort_concatmap into usable mapfile
-delay_cal_sortmap_maps.control.kind              =  plugin
-delay_cal_sortmap_maps.control.type              =  mapfilenamesFromMapfiles
-delay_cal_sortmap_maps.control.mapfile_groupmap  =  sort_concatmap.output.groupmapfile.mapfile
-delay_cal_sortmap_maps.control.mapfile_datamap   =  sort_concatmap.output.mapfile.mapfile
-
-# concatenate all measurement sets into one
-delay_cal_dppp_concat.control.type                  = dppp
-delay_cal_dppp_concat.control.max_per_node          = {{ num_proc_per_node }}
-delay_cal_dppp_concat.control.error_tolerance       = {{ error_tolerance }}
-delay_cal_dppp_concat.control.mapfile_out           = delay_cal_sortmap_maps.output.groupmap
-delay_cal_dppp_concat.control.mapfiles_in           = [delay_cal_sortmap_maps.output.datamap]
-delay_cal_dppp_concat.control.inputkey              = msin
-delay_cal_dppp_concat.argument.msin.datacolumn      = DATA
-delay_cal_dppp_concat.argument.msin.missingdata     = True
-delay_cal_dppp_concat.argument.msin.orderms         = False
-delay_cal_dppp_concat.argument.msout.datacolumn     = DATA
-delay_cal_dppp_concat.argument.msout.writefullresflag = False
-delay_cal_dppp_concat.argument.msout.overwrite      = True
-delay_cal_dppp_concat.argument.steps                = []
-delay_cal_dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
-
-# delete the temporary (single subband) files
-delay_cal_cleanup.control.kind			= recipe
-delay_cal_cleanup.control.type			= executable_args
-delay_cal_cleanup.control.executable		= /bin/rm
-delay_cal_cleanup.control.mapfile_in		= delay_cal_sortmap_maps.output.datamap
-delay_cal_cleanup.control.inputkey		= mslist
-delay_cal_cleanup.control.arguments		= [-r, mslist]
+delay_cal_bands.control.kind              =  plugin
+delay_cal_bands.control.type              =  mapfilenamesFromMapfiles
+delay_cal_bands.control.mapfile_groupmap  =  sort_concatmap.output.groupmapfile.mapfile
+delay_cal_bands.control.mapfile_datamap   =  sort_concatmap.output.mapfile.mapfile
 
 # generate the calibrator model with skynet
 delay_cal_model.control.type		  = pythonplugin
 delay_cal_model.control.executable	  = {{ scripts }}/skynet_master.py
-delay_cal_model.control.mapfile_in	  = delay_cal_dppp_concat.output.mapfile
+delay_cal_model.control.mapfile_in	  = delay_cal_bands.output.datamap
 delay_cal_model.control.inputkey	  = msin
 delay_cal_model.argument.flags		  = [msin]
 delay_cal_model.argument.self_cal_script  = {{ scripts }}/self_calibration_and_imaging.py
@@ -508,7 +482,7 @@ delay_cal_model.argument.delayCalFile	  = {{ job_directory }}/primary_delay_cali
 delay_cal_model_map.control.kind               =  plugin
 delay_cal_model_map.control.type               =  createMapfile
 delay_cal_model_map.control.method             =  add_suffix_to_file
-delay_cal_model_map.control.mapfile_in         =  delay_cal_dppp_concat.output.mapfile
+delay_cal_model_map.control.mapfile_in         =  delay_cal_bands.output.datamap
 delay_cal_model_map.control.add_suffix_to_file =  /sky
 delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
@@ -517,7 +491,7 @@ delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
 delay_cal_parmmap.control.kind               =  plugin
 delay_cal_parmmap.control.type               =  createMapfile
 delay_cal_parmmap.control.method             =  add_suffix_to_file
-delay_cal_parmmap.control.mapfile_in         =  delay_cal_dppp_concat.output.mapfile
+delay_cal_parmmap.control.mapfile_in         =  delay_cal_bands.output.mapfile
 delay_cal_parmmap.control.add_suffix_to_file =  _delay_instrument.h5
 delay_cal_parmmap.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_parmmap.control.filename           =  delay_cal_parmdbs.mapfile
@@ -526,7 +500,7 @@ delay_cal_parmmap.control.filename           =  delay_cal_parmdbs.mapfile
 calib_cal.control.type                    = dppp
 calib_cal.control.max_per_node            = {{ num_proc_per_node_limit }}
 calib_cal.control.error_tolerance         = {{ error_tolerance }}
-calib_cal.control.mapfiles_in             = [delay_cal_dppp_concat.output.mapfile, delay_cal_model_map.output.mapfile, delay_cal_parmmap.output.mapfile]
+calib_cal.control.mapfiles_in             = [delay_cal_bands.output.datamap, delay_cal_model_map.output.mapfile, delay_cal_parmmap.output.mapfile]
 calib_cal.control.inputkeys               = [msin, gaincal.sourcedb, gaincal.parmdb]
 calib_cal.argument.numthreads             = {{ max_dppp_threads }}
 calib_cal.argument.msin.datacolumn        = DATA
@@ -629,18 +603,10 @@ process_losoto.control.mapfile_in                    =  h5_imp_delaysol_map.outp
 process_losoto.control.inputkey                      =  h5in
 process_losoto.argument.flags                        =  [h5in,{{ job_directory }}/losoto.parset]
 
-# get a list of all subbands
-make_dppp_prep_map.control.kind                      =  plugin
-make_dppp_prep_map.control.type                      =  createMapfile
-make_dppp_prep_map.control.method                    =  mapfile_all_to_one
-make_dppp_prep_map.control.mapfile_in                =  ndppp_prep_target.output.mapfile
-make_dppp_prep_map.control.mapfile_dir               =  input.output.mapfile_dir
-make_dppp_prep_map.control.filename                  =  make_dppp_prep_map.mapfile
-
 # in delay cal parmdb, copy ST values to CS values
 copyST_gains.control.type                            = pythonplugin
 copyST_gains.control.executable                      = {{ scripts }}/gains_toCS_h5parm.py
-copyST_gains.argument.flags                          = [h5_imp_delaysol_map.output.mapfile,combine_target_map.output.mapfile]
+copyST_gains.argument.flags                          = [h5_imp_delaysol_map.output.mapfile,ndppp_prep_target_list.output.mapfile]
 
 # expand the mapfile so there's one entry per ms
 expand_h5_map.control.kind                      = plugin
@@ -683,6 +649,30 @@ copy_h5imp_cal.control.executable         =  /bin/cp
 copy_h5imp_cal.control.mapfile_in         =  h5_imp_delaysol_map.output.mapfile
 copy_h5imp_cal.control.inputkey           =  h5in
 copy_h5imp_cal.control.arguments          =  [h5in, {{ cal_values_directory }}/delay_cal.h5]
+
+# concatenate the delay calibrator bands into a single measurement set
+delay_cal_dppp_concat.control.type                  = dppp
+delay_cal_dppp_concat.control.max_per_node          = {{ num_proc_per_node }}
+delay_cal_dppp_concat.control.error_tolerance       = {{ error_tolerance }}
+delay_cal_dppp_concat.control.mapfile_out           = delay_cal_bands.output.groupmap
+delay_cal_dppp_concat.control.mapfiles_in           = [delay_cal_bands.output.datamap]
+delay_cal_dppp_concat.control.inputkey              = msin
+delay_cal_dppp_concat.argument.msin.datacolumn      = DATA # CORRECTED_DATA # use DATA if need to troubleshoot
+delay_cal_dppp_concat.argument.msin.missingdata     = True
+delay_cal_dppp_concat.argument.msin.orderms         = False
+delay_cal_dppp_concat.argument.msout.datacolumn     = DATA
+delay_cal_dppp_concat.argument.msout.writefullresflag = False
+delay_cal_dppp_concat.argument.msout.overwrite      = True
+delay_cal_dppp_concat.argument.steps                = []
+delay_cal_dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
+
+# delete the temporary files
+delay_cal_cleanup.control.kind                  = recipe
+delay_cal_cleanup.control.type                  = executable_args
+delay_cal_cleanup.control.executable            = /bin/rm
+delay_cal_cleanup.control.mapfile_in            = delay_cal_bands.output.datamap
+delay_cal_cleanup.control.inputkey              = mslist
+delay_cal_cleanup.control.arguments             = [-r, mslist]
 
 
 ##################################################################
