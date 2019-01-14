@@ -336,7 +336,7 @@ predict_ateam.argument.predict.usechannelfreq                  =   false
 # run the a-team clipper to flag data affected by the a-team
 ateamcliptar.control.kind                                      =   recipe
 ateamcliptar.control.type                                      =   executable_args
-ateamcliptar.control.max_per_node                              =   {{ num_proc_per_node }}
+ateamcliptar.control.max_per_node                              =   {{ num_proc_per_node_limit }}
 ateamcliptar.control.executable                                =   {{ prefactor_scripts }}/Ateamclipper.py
 ateamcliptar.control.error_tolerance                           =   {{ error_tolerance }}
 ateamcliptar.control.mapfile_in                                =   ndppp_prep_target.output.mapfile
