@@ -222,12 +222,13 @@ def combine_subbands (in1array, nameout, phasecenter, fstep, tstep):
     fo.write('filter.baseline = \'!CS*&*\'\n')
     fo.write('filter.remove = True')
     fo.close()
-    os.system('NDPPP NDPPP_%s.parset'%nameout)  # run with NDPPPa
+    os.system('NDPPP NDPPP_%s.parset'%nameout)  # run with NDPPP
     mytels = [['DE601','DE605','ST001']]
     scatter_cp = closure( nameout, mytels )
     print '\n Scatter for the direction ' + nameout.replace('.ms','') + ' is %s \n' % scatter_cp
     os.system( 'echo Scatter for the direction '+nameout.replace('.ms','')+' is '+str(scatter_cp)+' >> closure_phases.txt' )
     os.system( 'rm -rf %s'%nameout )
+    os.system('rm NDPPP_%s.parset'%nameout)
     
 
 def lotss2coords (lotssfile):
