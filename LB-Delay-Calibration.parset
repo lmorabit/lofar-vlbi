@@ -670,7 +670,7 @@ delay_cal_dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
 delay_cal_cleanup.control.kind                  = recipe
 delay_cal_cleanup.control.type                  = executable_args
 delay_cal_cleanup.control.executable            = /bin/rm
-delay_cal_cleanup.control.mapfile_in            = delay_cal_bands.output.datamap
+delay_cal_cleanup.control.mapfile_in            = dppp_phaseup.output.mapfile
 delay_cal_cleanup.control.inputkey              = mslist
 delay_cal_cleanup.control.arguments             = [-r, mslist]
 
