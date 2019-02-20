@@ -85,7 +85,6 @@
 ! closure_phase_file            = {{ job_directory }}/closure_phases.txt ## pipeline expects this location - do not changes
 
 ## Configuration for long baseline pipeline 
-! lin2circ_executable               = {{ scripts }}/lin2circ.py
 ! firstnpy_file                     = {{ long_baseline_pipeline_dir }}/data/first_2008.simple.npy
 
 ! rfistrategy			= HBAdefault
@@ -108,7 +107,7 @@ pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_i
 pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
-pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, make_circ, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
+pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
 pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, delay_cal_dppp_concat, delay_cal_cleanup ]
 
 
@@ -238,36 +237,34 @@ ndppp_prep_target.argument.msout.datacolumn       = DATA
 ndppp_prep_target.argument.msout.writefullresflag = False
 ndppp_prep_target.argument.msout		  = .
 ndppp_prep_target.argument.steps                  = [flag,elev,flagamp,applyPA,applybandpass,applyclock,applyRM,applybeam,applyphase,count]
-ndppp_prep_target.argument.flag.type              	= preflagger
-ndppp_prep_target.argument.flag.baseline          	= {{ flag_baselines }}
-ndppp_prep_target.argument.elev.type		  	= preflagger
-ndppp_prep_target.argument.elev.elevation	  	= 0deg..20deg
-ndppp_prep_target.argument.flagamp.type           	= preflagger
-ndppp_prep_target.argument.flagamp.amplmin        	= 1e-30
-ndppp_prep_target.argument.applyclock.type          	= applycal
-ndppp_prep_target.argument.applyclock.parmdb        	= {{ solutions }}
-ndppp_prep_target.argument.applyclock.correction    	= clock000
-ndppp_prep_target.argument.applyclock.solset	   	= calibrator
+ndppp_prep_target.argument.flag.type                    = preflagger
+ndppp_prep_target.argument.flag.baseline                = {{ flag_baselines }}
+ndppp_prep_target.argument.flagamp.type                 = preflagger
+ndppp_prep_target.argument.flagamp.amplmin              = 1e-30
+ndppp_prep_target.argument.applyclock.type              = applycal
+ndppp_prep_target.argument.applyclock.parmdb            = {{ solutions }}
+ndppp_prep_target.argument.applyclock.correction        = clock000
+ndppp_prep_target.argument.applyclock.solset            = {{ cal_table }}
 ndppp_prep_target.argument.applyPA.type                 = applycal
 ndppp_prep_target.argument.applyPA.parmdb               = {{ solutions }}
 ndppp_prep_target.argument.applyPA.correction           = polalign
-ndppp_prep_target.argument.applyPA.solset               = calibrator
+ndppp_prep_target.argument.applyPA.solset               = {{ cal_table }}
 ndppp_prep_target.argument.applybandpass.type           = applycal
 ndppp_prep_target.argument.applybandpass.parmdb         = {{ solutions }}
 ndppp_prep_target.argument.applybandpass.correction     = bandpass
 ndppp_prep_target.argument.applybandpass.updateweights  = True
-ndppp_prep_target.argument.applybandpass.solset 	= calibrator
-ndppp_prep_target.argument.applybeam.type           	= applybeam
-ndppp_prep_target.argument.applybeam.usechannelfreq 	= True
-ndppp_prep_target.argument.applybeam.updateweights  	= True
-ndppp_prep_target.argument.applyRM.type            	= applycal
+ndppp_prep_target.argument.applybandpass.solset         = {{ cal_table }}
+ndppp_prep_target.argument.applybeam.type               = applybeam
+ndppp_prep_target.argument.applybeam.usechannelfreq     = True
+ndppp_prep_target.argument.applybeam.updateweights      = False
+ndppp_prep_target.argument.applyRM.type                 = applycal
 ndppp_prep_target.argument.applyRM.parmdb               = {{ solutions }}
 ndppp_prep_target.argument.applyRM.correction           = RMextract
-ndppp_prep_target.argument.applyRM.solset 		= targetIS
-ndppp_prep_target.argument.applyphase.type	  	= applycal
-ndppp_prep_target.argument.applyphase.parmdb	  	= {{ solutions }}
-ndppp_prep_target.argument.applyphase.correction	= phase000
-ndppp_prep_target.argument.applyphase.solset		= targetIS
+ndppp_prep_target.argument.applyRM.solset               = {{ cal_table }}
+ndppp_prep_target.argument.applyphase.type              = applycal
+ndppp_prep_target.argument.applyphase.parmdb            = {{ solutions }}
+ndppp_prep_target.argument.applyphase.correction        = phase000
+ndppp_prep_target.argument.applyphase.solset            = {{ cal_table }}
 
 # combine all entries into one mapfile
 ndppp_prep_target_list.control.kind                                =   plugin
@@ -429,13 +426,6 @@ dppp_phaseup.argument.filter.type         = filter
 dppp_phaseup.argument.filter.baseline     = {{ filter_command }}
 dppp_phaseup.argument.filter.remove       = True
 dppp_phaseup.argument.numthreads          = {{ max_dppp_threads }}
-
-# Convert to circular polarisation (in place)
-make_circ.control.type                    = pythonplugin
-make_circ.control.executable              = {{ scripts }}/execute_circ_pol_conv.py
-make_circ.argument.flags                  = [ dppp_phaseup.output.mapfile ]
-make_circ.argument.cpath                  = {{ lin2circ_executable }}
-make_circ.argument.mode                   = lin2circ
 
 # generate the calibrator model with skynet
 delay_cal_model.control.type		  = pythonplugin
