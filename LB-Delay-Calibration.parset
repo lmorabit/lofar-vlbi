@@ -29,6 +29,7 @@
 ## Prefactor solution information
 ! cal_solutions 		= input.output.job_directory/../Pre-Facet-Target/results/cal_values/solutions.h5  ## location of h5parm from prefactor - if prefactor was set correctly, this will contain 'calibrator' and 'target' information
 ! solutions			= input.output.job_directory/solutions.h5
+! cal_table			= {{ combinedsols }}
 
 ## Stations to flag
 ! flag_baselines                = [ ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
