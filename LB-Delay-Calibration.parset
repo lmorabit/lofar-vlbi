@@ -109,7 +109,10 @@ pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
-pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, delay_cal_dppp_concat, delay_cal_cleanup ]
+pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, ndppp_delaycal_apply, delay_cal_dppp_concat ]
+# TO DO: Final concatentation of bands into delay calibrator measurement set
+# 	 and write a cleanip script
+# pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, ndppp_delaycal_apply, delay_cal_dppp_concat, final_delay_concat, delay_cal_cleanup ]
 
 
 ###########################################################################
@@ -464,14 +467,13 @@ delay_cal_parmmap.control.filename           =  delay_cal_parmdbs.mapfile
 
 # generate gain solutions for clock/tec separation -- need also to apply amplitude corrections
 calib_cal.control.type                    = dppp
+calib_cal.control.inplace		  = True
 calib_cal.control.max_per_node            = {{ num_proc_per_node_limit }}
 calib_cal.control.error_tolerance         = {{ error_tolerance }}
 calib_cal.control.mapfiles_in             = [dppp_phaseup.output.mapfile, delay_cal_model_map.output.mapfile, delay_cal_parmmap.output.mapfile]
 calib_cal.control.inputkeys               = [msin, gaincal.sourcedb, gaincal.parmdb]
 calib_cal.argument.numthreads             = {{ max_dppp_threads }}
 calib_cal.argument.msin.datacolumn        = DATA
-calib_cal.argument.msin.baseline          = *&
-calib_cal.argument.msout.datacolumn       = DATA
 calib_cal.argument.steps                  = [gaincal]
 calib_cal.argument.gaincal.type           = gaincal
 calib_cal.argument.gaincal.caltype        = diagonal
@@ -560,7 +562,7 @@ make_losoto.control.plotAi3.plotFlag                 =   True
 make_losoto.control.plotAi3.prefix                   =   {{ inspection_directory }}/delay_cal_amp_
 
 
-# do losoto clock/tec fitting to get the nice plots
+# run losoto to get nice plots
 process_losoto.control.kind                          =  recipe
 process_losoto.control.type                          =  executable_args
 process_losoto.control.executable                    =  {{ losoto_directory }}/bin/losoto
@@ -616,6 +618,31 @@ copy_h5imp_cal.control.mapfile_in         =  h5_imp_delaysol_map.output.mapfile
 copy_h5imp_cal.control.inputkey           =  h5in
 copy_h5imp_cal.control.arguments          =  [h5in, {{ cal_values_directory }}/delay_cal.h5]
 
+# apply solutions also to delay calibrator for loop3 processing
+ndppp_delaycal_apply.control.type	  = dppp
+ndppp_delaycal_apply.control.inplace	  = True
+ndppp_delaycal_apply.control.max_per_node	  = {{ num_proc_per_node }}
+ndppp_delaycal_apply.control.error_tolerance	  = {{ error_tolerance }}
+ndppp_delaycal_apply.control.mapfiles_in	  = [dppp_phaseup.output.mapfile,expand_h5_map.output.mapfile]
+ndppp_delaycal_apply.control.inputkeys		  = [inputms,h5parm]
+ndppp_delaycal_apply.argument.numthreads	  = {{ max_dppp_threads }}
+ndppp_delaycal_apply.argument.msin		  = inputms
+ndppp_delaycal_apply.argument.msin.datacolumn		  = DATA
+ndppp_delaycal_apply.argument.msout.datacolumn		  = CORRECTED_DATA
+ndppp_delaycal_apply.argument.msout.writefullresflag	  = False
+ndppp_delaycal_apply.argument.msout			  = .
+ndppp_delaycal_apply.argument.steps			  = [applyamp,applyphase]
+ndppp_delaycal_apply.argument.applyamp.type		  = applycal
+ndppp_delaycal_apply.argument.applyamp.parmdb		  = h5parm
+ndppp_delaycal_apply.argument.applyamp.correction	  = amplitude000
+ndppp_delaycal_apply.argument.applyamp.solset		  = sol000
+ndppp_delaycal_apply.argument.applyamp.updateweights	  = False
+ndppp_delaycal_apply.argument.applyphase.type               = applycal
+ndppp_delaycal_apply.argument.applyphase.parmdb             = h5parm
+ndppp_delaycal_apply.argument.applyphase.correction         = phase000
+ndppp_delaycal_apply.argument.applyphase.solset             = sol000
+ndppp_delaycal_apply.argument.applyphase.updateweights      = False
+
 # collect all subbands in one list
 make_concatmap.control.kind               =  plugin
 make_concatmap.control.type               =  createMapfile
@@ -650,7 +677,7 @@ delay_cal_dppp_concat.control.error_tolerance       = {{ error_tolerance }}
 delay_cal_dppp_concat.control.mapfile_out           = delay_cal_bands.output.groupmap
 delay_cal_dppp_concat.control.mapfiles_in           = [delay_cal_bands.output.datamap]
 delay_cal_dppp_concat.control.inputkey              = msin
-delay_cal_dppp_concat.argument.msin.datacolumn      = DATA # CORRECTED_DATA # use DATA if need to troubleshoot
+delay_cal_dppp_concat.argument.msin.datacolumn      = CORRECTED_DATA # use DATA if need to troubleshoot
 delay_cal_dppp_concat.argument.msin.missingdata     = True
 delay_cal_dppp_concat.argument.msin.orderms         = False
 delay_cal_dppp_concat.argument.msout.datacolumn     = DATA
@@ -662,7 +689,7 @@ delay_cal_dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
 # delete the temporary files
 delay_cal_cleanup.control.kind                  = recipe
 delay_cal_cleanup.control.type                  = executable_args
-delay_cal_cleanup.control.executable            = /bin/rm
+delay_cal_cleanup.control.executable            = {{ long_baseline_pipeline_dir }}/bin/cleanup_script.py
 delay_cal_cleanup.control.mapfile_in            = dppp_phaseup.output.mapfile
 delay_cal_cleanup.control.inputkey              = mslist
 delay_cal_cleanup.control.arguments             = [-r, mslist]
