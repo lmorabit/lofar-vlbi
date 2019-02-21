@@ -29,7 +29,7 @@
 ## Prefactor solution information
 ! cal_solutions 		= input.output.job_directory/../Pre-Facet-Target/results/cal_values/solutions.h5  ## location of h5parm from prefactor - if prefactor was set correctly, this will contain 'calibrator' and 'target' information
 ! solutions			= input.output.job_directory/solutions.h5
-! cal_table			= {{ combinedsols }}
+! cal_table			= combinedsols
 
 ## Stations to flag
 ! flag_baselines                = [ ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
@@ -223,8 +223,10 @@ h5parm_add_IS.control.executable                      	= {{ scripts }}/addIS_to_
 h5parm_add_IS.control.mapfile_in                      	= createmap_target_list.output.mapfile
 h5parm_add_IS.control.inputkey                        	= mslist
 h5parm_add_IS.argument.flags                      	= [{{ solutions }},mslist]
+h5parm_add_IS.cal_solset				= calibrator
 h5parm_add_IS.argument.solset_in			= target
-h5parm_add_IS.argument.solset_out			= targetIS			
+h5parm_add_IS.argument.solset_out			= {{ cal_table }}
+h5parm_add_IS.argument.do_int_stations			= True			
 
 # run NDPPP on the target data to flag and apply solutions
 ndppp_prep_target.control.type                    = dppp
