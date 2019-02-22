@@ -101,15 +101,17 @@
 
 ! substep_clip = clipATeam, ## leave blank for no a-team clipping
 ! substep_flag = aoflagging,
+! substep_cleanup = ,cleanup
 
-pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, apply ]
+pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, apply {{ substep_cleanup }} ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_target_list, cp_cal_solutions ]
 pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
-pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, ndppp_delaycal_apply, delay_cal_dppp_concat ]
+pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, ndppp_delaycal_apply, delay_cal_dppp_concat, combine_delaycal_map, sort_delaycal_bands, sort_delaycal_bands_map, delay_cal_dppp_singlems ]
+pipeline.steps.cleanup = [ delay_cal_cleanup ]
 # TO DO: Final concatentation of bands into delay calibrator measurement set
 # 	 and write a cleanip script
 # pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, ndppp_delaycal_apply, delay_cal_dppp_concat, final_delay_concat, delay_cal_cleanup ]
@@ -686,14 +688,54 @@ delay_cal_dppp_concat.argument.msout.overwrite      = True
 delay_cal_dppp_concat.argument.steps                = []
 delay_cal_dppp_concat.argument.numthreads           = {{ max_dppp_threads }}
 
+# combine all entries into one mapfile, for the sortmap script
+combine_delaycal_map.control.kind                       = plugin
+combine_delaycal_map.control.type                       = createMapfile
+combine_delaycal_map.control.method                     = mapfile_all_to_one
+combine_delaycal_map.control.mapfile_in                 = delay_cal_dppp_concat.output.mapfile
+combine_delaycal_map.control.mapfile_dir                = input.output.mapfile_dir
+combine_delaycal_map.control.filename                   = combine_delaycal_map.mapfile
+
+# sort the bands into one big band
+sort_delaycal_bands.control.type                        = pythonplugin
+sort_delaycal_bands.control.executable                  = {{ prefactor_scripts }}/sort_times_into_freqGroups.py
+sort_delaycal_bands.argument.flags                      = [combine_delaycal_map.output.mapfile]
+sort_delaycal_bands.argument.filename                   = sort_delaycal_bands.mapfile
+sort_delaycal_bands.argument.mapfile_dir                = input.output.mapfile_dir
+sort_delaycal_bands.argument.target_path                = {{ job_directory }}
+sort_delaycal_bands.argument.numSB                      = -1
+sort_delaycal_bands.argument.NDPPPfill                  = True
+sort_delaycal_bands.argument.stepname                   = dpppconcat
+sort_delaycal_bands.argument.firstSB                    = None
+sort_delaycal_bands.argument.truncateLastSBs            = False
+
+# convert the output into usable mapfiles
+sort_delaycal_bands_map.control.kind                    = plugin
+sort_delaycal_bands_map.control.type                    = mapfilenamesFromMapfiles
+sort_delaycal_bands_map.control.mapfile_groupmap        = sort_delaycal_bands.output.groupmapfile.mapfile
+sort_delaycal_bands_map.control.mapfile_datamap         = sort_delaycal_bands.output.mapfile.mapfile
+
+# concatenate the delay calibrator bands into a single measurement set
+delay_cal_dppp_singlems.control.type                  = dppp
+delay_cal_dppp_singlems.control.max_per_node          = {{ num_proc_per_node }}
+delay_cal_dppp_singlems.control.error_tolerance       = {{ error_tolerance }}
+delay_cal_dppp_singlems.control.mapfile_out           = sort_delaycal_bands_map.output.groupmap
+delay_cal_dppp_singlems.control.mapfiles_in           = [combine_delaycal_map.output.mapfile]
+delay_cal_dppp_singlems.control.inputkey              = msin
+delay_cal_dppp_singlems.argument.msin.datacolumn      = DATA
+delay_cal_dppp_singlems.argument.msin.missingdata     = True
+delay_cal_dppp_singlems.argument.msin.orderms         = False
+delay_cal_dppp_singlems.argument.msout.datacolumn     = DATA
+delay_cal_dppp_singlems.argument.msout.writefullresflag = False
+delay_cal_dppp_singlems.argument.msout.overwrite      = True
+delay_cal_dppp_singlems.argument.steps                = []
+delay_cal_dppp_singlems.argument.numthreads           = {{ max_dppp_threads }}
+
 # delete the temporary files
 delay_cal_cleanup.control.kind                  = recipe
 delay_cal_cleanup.control.type                  = executable_args
-delay_cal_cleanup.control.executable            = {{ long_baseline_pipeline_dir }}/bin/cleanup_script.py
-delay_cal_cleanup.control.mapfile_in            = dppp_phaseup.output.mapfile
-delay_cal_cleanup.control.inputkey              = mslist
-delay_cal_cleanup.control.arguments             = [-r, mslist]
-
+delay_cal_cleanup.control.executable            = {{ scripts }}/bin/cleanup.py
+delay_cal_cleanup.control.mapfile_in            = combine_dealycal_map.output.mapfile
 
 ##################################################################
 #                                                               ##
