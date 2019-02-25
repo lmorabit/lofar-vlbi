@@ -110,7 +110,7 @@ pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract
 pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
-pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, ndppp_delaycal_apply, delay_cal_dppp_concat, combine_delaycal_map, sort_delaycal_bands, sort_delaycal_bands_map, delay_cal_dppp_singlems ]
+pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, ndppp_delaycal_apply, delay_cal_dppp_concat, combine_delaycal_map, sort_delaycal_bands, sort_delaycal_bands_map, delay_cal_dppp_singlems, delay_cal_aoflag ]
 pipeline.steps.cleanup = [ delay_cal_cleanup ]
 # TO DO: Final concatentation of bands into delay calibrator measurement set
 # 	 and write a cleanip script
@@ -730,6 +730,19 @@ delay_cal_dppp_singlems.argument.msout.writefullresflag = False
 delay_cal_dppp_singlems.argument.msout.overwrite      = True
 delay_cal_dppp_singlems.argument.steps                = []
 delay_cal_dppp_singlems.argument.numthreads           = {{ max_dppp_threads }}
+
+# run aoflagger on the concatenated data
+delay_cal_aoflag.control.kind                                            =   recipe
+delay_cal_aoflag.control.type                                            =   executable_args
+delay_cal_aoflag.control.inplace                                         =   True
+delay_cal_aoflag.control.executable                                      =   {{ aoflagger }}
+delay_cal_aoflag.control.max_per_node                                    =   1
+delay_cal_aoflag.control.error_tolerance                                 =   {{ error_tolerance }}
+delay_cal_aoflag.control.mapfile_in                                      =   delay_cal_dppp_singlems.output.mapfile
+delay_cal_aoflag.control.inputkey                                        =   msin
+delay_cal_aoflag.control.args_format                                     =   wsclean
+delay_cal_aoflag.argument.strategy                                       =   {{ lofar_directory }}/share/rfistrategies/{{ rfistrategy }}
+delay_cal_aoflag.argument.flags                                          =   [-v,-combine-spws,msin]
 
 # delete the temporary files
 delay_cal_cleanup.control.kind                  = recipe
