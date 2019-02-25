@@ -81,7 +81,7 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5. ):
     ## this is the tier 1 database to query
     #url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
     # HETDEX database.
-    url = 'https://vo.astron.nl/hetdex/hetdex/cone/scs.xml'
+    url = 'https://vo.astron.nl/hetdex/lotss-dr1/cone/scs.xml'
 
     ## query the database
     query = vo.dal.scs.SCSQuery( url )
@@ -114,7 +114,7 @@ def my_lbcs_catalogue( ms_input, Radius=1.5 ):
         Radius for the LOTSS cone search in degrees
     
     """
-    print "DOWNLOADING LOTSS Skymodel for the target field"
+    print "DOWNLOADING LBCS Skymodel for the target field"
 
     # Reading a MS to find the coordinate (pyrap)
     RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
