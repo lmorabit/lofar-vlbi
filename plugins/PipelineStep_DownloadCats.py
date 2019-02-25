@@ -120,7 +120,7 @@ def my_lbcs_catalogue( ms_input, Radius=1.5 ):
     RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
     ## this is the tier 1 database to query
-    url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
+    url = 'https://vo.astron.nl/hetdex/lotss-dr1/cone/scs.xml'
 
     ## query the database
     query = vo.dal.scs.SCSQuery( url )
