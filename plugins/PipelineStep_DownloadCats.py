@@ -114,7 +114,7 @@ def my_lbcs_catalogue( ms_input, Radius=1.5 ):
         Radius for the LOTSS cone search in degrees
     
     """
-    print "DOWNLOADING LOTSS Skymodel for the target field"
+    print "DOWNLOADING LBCS Skymodel for the target field"
 
     # Reading a MS to find the coordinate (pyrap)
     RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
