@@ -199,8 +199,8 @@ def main(h5parmfile, MSfiles, cal_solset='calibrator', solset_in='target', solse
                                     new_vals[:,i] = np.ones(shape=(dimension[0],len(new_station_names)) )
                                     new_weights[:,i] = np.ones(shape=(dimension[0],len(new_station_names)) )
                                 else:
-                                    new_vals[i,:] = np.zeros(shape=(dimension[0],len(new_station_names)) )
-                                    new_weights[i,:] = np.ones(shape=(dimension[0],len(new_station_names)) )
+                                    new_vals[:,i] = np.zeros(dimension[0])
+                                    new_weights[:,i] = np.ones(dimension[0])
                         new_soltab = OutSolset.makeSoltab(soltype=soltab_type, soltabName=soltab_name,
                                                 axesNames=out_axes, axesVals=out_axes_vals, vals=new_vals, weights=new_weights)
 
