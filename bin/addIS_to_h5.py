@@ -191,8 +191,8 @@ def main(h5parmfile, MSfiles, cal_solset='calibrator', solset_in='target', solse
                             if new_station in old_stations:
                                 ## antenna exists, copy solutions
                                 ant_index = soltab.getAxisValues('ant', ignoreSelection=True).tolist().index(new_station)
-                                new_vals[:,i] = vals[:,ant_axis]
-                                new_weights[:,i] = weights[:,ant_axis]
+                                new_vals[:,i] = vals[:,ant_index]
+                                new_weights[:,i] = weights[:,ant_index]
                             else:
                                 ## antenna does not exist, create default solutions
                                 if soltab_type == 'amplitude':
