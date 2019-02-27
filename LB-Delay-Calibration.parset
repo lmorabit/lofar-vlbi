@@ -18,7 +18,6 @@
 ! long_baseline_pipeline_dir            = /home/lmorabit/long_baseline_pipeline_new
 ! prefactor_dir                         = /home/lmorabit/prefactor
 ! losoto_directory                     = /home/lmorabit/losoto
-! rmextract_directory			= /home/lmorabit/RMextract
 ! aoflagger				= /opt/cep/aoflagger/aoflagger-2.10.0/build/bin/aoflagger ## path to your aoflagger executable
 ! lofar_directory 			= $LOFARROOT
 
@@ -30,6 +29,7 @@
 ! cal_solutions 		= input.output.job_directory/../Pre-Facet-Target/results/cal_values/solutions.h5  ## location of h5parm from prefactor - if prefactor was set correctly, this will contain 'calibrator' and 'target' information
 ! solutions			= input.output.job_directory/solutions.h5
 ! cal_table			= combinedsols
+! phasesol			= TGSSphase # or GSMphase ?
 
 ## Stations to flag
 ! flag_baselines                = [ ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
@@ -72,11 +72,6 @@
 ! tgt_shift_avg_timestep        = 16   ## Target time averaging: output should be 16 seconds
 ! tgt_shift_avg_freqstep        = 16   ## Target freq averaging: output should be 1 channel per subband
 
-## RMextract settings
-! ionex_server             =  "ftp://ftp.aiub.unibe.ch/CODE/"        ## to download from the "standard" server
-! ionex_prefix             =  CODG                                   ## the prefix of the IONEX files
-! ionex_path = {{ job_directory }}/IONEX/ ## path where the IONEX files can be stored or are already stored
-
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
 ! filter_command                = '!CS*&*'      ## remove the core stations after combination
@@ -105,9 +100,9 @@
 
 pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, apply {{ substep_cleanup }} ]
 
-pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_target_list, cp_cal_solutions ]
-pipeline.steps.prep = [ download_cats, h5imp_RMextract, prepare_losoto_RMextract, process_losoto_RMextract, h5parm_add_IS, ndppp_prep_target, ndppp_prep_target_list ]
-pipeline.steps.clipATeam   =  [create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
+pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_target_list, cp_cal_solutions, download_cats ]
+pipeline.steps.prep = [ h5parm_add_IS, ndppp_prep_target, ndppp_prep_target_list ]
+pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto ]
 pipeline.steps.apply = [ copyST_gains, expand_h5_map, ndppp_apply_delay, copy_h5imp_cal, make_concatmap, sort_concatmap, delay_cal_bands, ndppp_delaycal_apply, delay_cal_dppp_concat, combine_delaycal_map, sort_delaycal_bands, sort_delaycal_bands_map, delay_cal_dppp_singlems, delay_cal_aoflag ]
@@ -189,39 +184,7 @@ download_cats.control.subtract_limit            = 0.5
 download_cats.control.image_limit_Jy            = 0.05
 download_cats.control.doDownload                = {{ do_download }}
 
-## run ionex
-h5imp_RMextract.control.type                                   =   pythonplugin
-h5imp_RMextract.control.executable                             =   {{ rmextract_directory }}/bin/createRMh5parm.py
-h5imp_RMextract.control.error_tolerance                        =   {{ error_tolerance }}
-h5imp_RMextract.argument.flags                                 =   [createmap_target_list.output.mapfile, {{ solutions }}]
-h5imp_RMextract.argument.ionex_server                          =   {{ ionex_server }}
-h5imp_RMextract.argument.ionex_prefix                          =   {{ ionex_prefix }}
-h5imp_RMextract.argument.ionexPath                             =   {{ ionex_path }}
-h5imp_RMextract.argument.solset_name                           =   target
-h5imp_RMextract.argument.all_stations 			       = True
-
-## create losoto v2 parset file to plot RM
-prepare_losoto_RMextract.control.kind                          =   plugin
-prepare_losoto_RMextract.control.type                          =   makeLosotoParset
-prepare_losoto_RMextract.control.steps                         =   [plotRM]
-prepare_losoto_RMextract.control.filename                      =   input.output.job_directory/losoto.parset
-prepare_losoto_RMextract.control.global.ncpu                   =   {{ num_proc_per_node }}
-prepare_losoto_RMextract.control.plotRM.operation              =   PLOT
-prepare_losoto_RMextract.control.plotRM.soltab                 =   target/RMextract
-prepare_losoto_RMextract.control.plotRM.axesInPlot             =   time
-prepare_losoto_RMextract.control.plotRM.axisInTable            =   ant
-prepare_losoto_RMextract.control.plotRM.prefix                 =   {{ inspection_directory }}/RMextract
-
-## run losoto to plot the RM
-process_losoto_RMextract.control.kind                          =   recipe
-process_losoto_RMextract.control.type                          =   executable_args
-process_losoto_RMextract.control.executable                    =   {{ losoto_directory }}/bin/losoto
-process_losoto_RMextract.control.max_per_node                  =   {{ num_proc_per_node }}
-process_losoto_RMextract.control.mapfile_in                    =   createmap_target_list.output.mapfile
-process_losoto_RMextract.control.inputkey                      =   input
-process_losoto_RMextract.argument.flags = [{{ solutions }}, input.output.job_directory/losoto.parset]
-
-## international stations already exist in calibrator solutions but not in target
+## international stations already exist in calibrator solutions but not in target phase
 ## run script to add them to necessary solution tables
 h5parm_add_IS.control.type                            	= pythonplugin
 h5parm_add_IS.control.executable                      	= {{ scripts }}/addIS_to_h5.py
@@ -251,7 +214,7 @@ ndppp_prep_target.argument.flagamp.type                 = preflagger
 ndppp_prep_target.argument.flagamp.amplmin              = 1e-30
 ndppp_prep_target.argument.applyclock.type              = applycal
 ndppp_prep_target.argument.applyclock.parmdb            = {{ solutions }}
-ndppp_prep_target.argument.applyclock.correction        = clock000
+ndppp_prep_target.argument.applyclock.correction        = clock
 ndppp_prep_target.argument.applyclock.solset            = {{ cal_table }}
 ndppp_prep_target.argument.applyPA.type                 = applycal
 ndppp_prep_target.argument.applyPA.parmdb               = {{ solutions }}
@@ -271,7 +234,7 @@ ndppp_prep_target.argument.applyRM.correction           = RMextract
 ndppp_prep_target.argument.applyRM.solset               = {{ cal_table }}
 ndppp_prep_target.argument.applyphase.type              = applycal
 ndppp_prep_target.argument.applyphase.parmdb            = {{ solutions }}
-ndppp_prep_target.argument.applyphase.correction        = phase000
+ndppp_prep_target.argument.applyphase.correction        = {{ phasesol }}
 ndppp_prep_target.argument.applyphase.solset            = {{ cal_table }}
 
 # combine all entries into one mapfile
