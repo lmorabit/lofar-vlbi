@@ -78,16 +78,23 @@ def main(h5parmfile, MSfiles, cal_solset='calibrator', solset_in='target', solse
         OutSolset = data.getSolset(solset_out)
         station_names = solset.getAnt().keys()
         in_soltabNames = solset.getSoltabNames()
+	for testname in in_soltabNames:
+	    if 'phase' in testname:
+		phase_soltab = testname
         # get new time axis
         if do_int_stations:
-            tmp = solset.getSoltab('phase000')
+	    if 'phase_soltab' in locals():
+                tmp = solset.getSoltab(phase_soltab)
+	    else:
+		logging.error('Phase solutions do not exist in target solset')
+		return(1)
         else:
             tmp = solset.getSoltab('RMextract')
         new_times = tmp.time
         tmp = 0
 
 	calsols = data.getSolset(cal_solset)
-	cal_soltabNames = ['polalign', 'clock000', 'bandpass']
+	cal_soltabNames = ['polalign', 'clock', 'bandpass']
 	
 	logging.info('Finding median values for calibrator and interpolating to target times')
         for cal_soltab_name in cal_soltabNames:
