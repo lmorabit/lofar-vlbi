@@ -91,7 +91,11 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5. ):
     t = query.execute()
 
     ## convert to VO table
-    tb = t.votable.to_table()
+    try:
+        tb = t.votable.to_table()
+    except AttributeError:
+        # Above statement didn't work, try the alternative.
+        tb = t.to_table()
     flux_sort = tb.argsort('Total_flux')
     tb_sorted = tb[flux_sort[::-1]]
     ## and keep only some of the columns
@@ -130,7 +134,11 @@ def my_lbcs_catalogue( ms_input, Radius=1.5 ):
     t = query.execute()
 
     ## convert to VO table
-    tb = t.votable.to_table()
+    try:
+        tb = t.votable.to_table()
+    except AttributeError:
+        # Above statement didn't work, try the alternative.
+        tb = t.to_table()
 
     #### Workaround to sort and pick good calibrator info from tb array ###########
     counts=[]
