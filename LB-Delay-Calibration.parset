@@ -100,7 +100,7 @@
 
 pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, apply {{ substep_cleanup }} ]
 
-pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, mk_ionex_dir, createmap_target, createmap_target_list, cp_cal_solutions, download_cats ]
+pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, createmap_target, createmap_target_list, cp_cal_solutions, download_cats ]
 pipeline.steps.prep = [ h5parm_add_IS, ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
