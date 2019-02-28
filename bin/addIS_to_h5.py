@@ -162,6 +162,8 @@ def main(h5parmfile, MSfiles, cal_solset='calibrator', solset_in='target', solse
                     soltab_type = 'amplitude'
                 if soltab_type == 'polalign':
                     soltab_type = 'phase'
+	        if 'phase' in soltab_type:
+		    soltab_type = 'phase'
                 if len(soltab_axes) == 2:
                     out_axes = ['time','ant']
                     out_axes_vals = [soltab.time, new_station_names]
