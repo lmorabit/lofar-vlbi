@@ -95,7 +95,7 @@
 ##########################################################
 
 ! substep_clip = clipATeam, ## leave blank for no a-team clipping
-! substep_flag = aoflagging,
+! substep_flag = # aoflagging,  ## turned off by default
 ! substep_cleanup = ,cleanup
 
 pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} delaycal, apply {{ substep_cleanup }} ]
