@@ -14,10 +14,10 @@ import os
 import glob
 import logging
 
-def main():
+def main(mapfile):
 
     # delete prep target files
-    os.system('rm S*ndppp_prep_target')
+    os.system('rm -r S*ndppp_prep_target')
     # and the individual h5parms
     os.system('rm S*.h5')
 
@@ -28,7 +28,8 @@ def main():
 	lengths.append(len(concat_file))
     # delete them if they aren't the longest file name
     for xx in range(len(lengths)):
-	if xx < max(lengths):
+	if lengths[xx] < max(lengths):
+	    print('deleting file %s'%concat_files[xx])
 	    os.system('rm -r %s'%concat_files[xx] )
 
     # rename delay calibrator something sensible
@@ -40,4 +41,9 @@ def main():
 
 if __name__ == "__main__":
 
-    main()
+    parser = argparse.ArgumentParser(description='cleanup script at the end of the pipeline.')
+    parser.add_argument('mapfile')
+
+    args = parser.parse_args()
+
+    main(args.mapfile)

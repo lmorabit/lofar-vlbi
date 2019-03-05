@@ -710,8 +710,10 @@ delay_cal_aoflag.argument.flags                                          =   [-v
 # delete the temporary files
 delay_cal_cleanup.control.kind                  = recipe
 delay_cal_cleanup.control.type                  = executable_args
-delay_cal_cleanup.control.executable            = {{ scripts }}/bin/cleanup.py
-delay_cal_cleanup.control.mapfile_in            = combine_dealycal_map.output.mapfile
+delay_cal_cleanup.control.executable            = {{ scripts }}/cleanup.py
+delay_cal_cleanup.control.mapfile_in            = combine_delaycal_map.output.mapfile
+delay_cal_cleanup.control.inputkey		= msin
+delay_cal_cleanup.argument.flags		= [msin]
 
 ##################################################################
 #                                                               ##
