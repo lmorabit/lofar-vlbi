@@ -288,6 +288,7 @@ def plugin_main( args, **kwargs ):
     match_tolerance = float(kwargs['match_tolerance'])
     subtract_limit = float(kwargs['subtract_limit'])
     image_limit_Jy = float(kwargs['image_limit_Jy'])
+    fail_lotss_ok = kwargs['continue_no_lotss'].lower().capitalize()
     doDownload = kwargs['doDownload']
 
     mslist = DataMap.load(mapfile_in)
@@ -302,10 +303,13 @@ def plugin_main( args, **kwargs ):
 	    lbcs_catalogue.write(delay_cals_file, format='csv')
 	    return
 	result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance ) 
-
-        lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy )
-        lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius )
-        result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance )
+        
+        if (len(result) == 0) and (fail_lotss_ok == 'True'):
+            print('No cross matches found between LoTSS and LBCS! Only writing {:s}'.format(delay_cals_file))
+	    lbcs_catalogue.write(delay_cals_file, format='csv')
+	    return
+        else:
+            raise ValueError('No cross matches found between LoTSS and LBCS!')
 
         ## Need to write the following catalogues:
         ## 1 - delay calibrators -- from lbcs_catalogue
@@ -387,9 +391,10 @@ if __name__ == "__main__":
     parser.add_argument( '--subtract_limit', dest='subtract_limit', type=float, help='Flux limit for sources to subtract [Jy]', default=0.5 )
     parser.add_argument( '--bright_limit_Jy', dest='bright_limit_Jy', type=float, help='Flux limit for bright sources [Jy]', default=5.0 )
     parser.add_argument( '--image_limit_Jy', dest='image_limit_Jy', type=float, help='Flux limit for which sources to image [Jy]', default = 0.05 )
+    parser.add_argument( '--continue_no_lotss', dest='continue_no_lotss', action='store_true', help='Continue with the pipeline if no lotss cross-matches can be found?', default = False )
     parser.add_argument( 'MSname', type=str, nargs='+', help='Measurement set name (to get pointing center)' )
 
     args = parser.parse_args()
 
-    plugin_main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy )
+    plugin_main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy, continue_no_lotss = str(args.continue_no_lotss) )
 
