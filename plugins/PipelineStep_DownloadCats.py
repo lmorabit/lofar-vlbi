@@ -302,10 +302,11 @@ def plugin_main( args, **kwargs ):
 	    lbcs_catalogue.write(delay_cals_file, format='csv')
 	    return
 	result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance ) 
-
-        lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy )
-        lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius )
-        result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance )
+        
+        if len(result) == 0:
+            print('No cross matches found between LoTSS and LBCS! Only writing {:s}'.format(delay_cals_file))
+	    lbcs_catalogue.write(delay_cals_file, format='csv')
+	    return
 
         ## Need to write the following catalogues:
         ## 1 - delay calibrators -- from lbcs_catalogue
