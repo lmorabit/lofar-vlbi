@@ -30,6 +30,7 @@
 ! solutions			= input.output.job_directory/solutions.h5
 ! cal_table			= combinedsols
 ! phasesol			= TGSSphase
+! continue_without_lotss = True
 
 ## Stations to flag
 ! flag_baselines                = [ ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
@@ -183,6 +184,7 @@ download_cats.control.match_tolerance           = 5.
 download_cats.control.subtract_limit            = 0.5
 download_cats.control.image_limit_Jy            = 0.05
 download_cats.control.doDownload                = {{ do_download }}
+download_cats.control.continue_no_lotss         = {{ continue_without_lotss }}
 
 ## international stations already exist in calibrator solutions but not in target phase
 ## run script to add them to necessary solution tables
