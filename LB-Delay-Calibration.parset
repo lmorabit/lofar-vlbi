@@ -30,7 +30,6 @@
 ! solutions			= input.output.job_directory/solutions.h5
 ! cal_table			= combinedsols
 ! phasesol			= TGSSphase
-! continue_without_lotss = True
 
 ## Stations to flag
 ! flag_baselines                = [ ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
@@ -50,6 +49,7 @@
 ! delay_cat  = {{ job_directory }}/delay_calibrators.csv
 ! subtract_cat  = {{ job_directory }}/subtract_sources.csv
 ! do_download = True
+! continue_without_lotss = True
 
 ## Runtime setup -- will depend on your computing cluster
 ! num_proc_per_node             = input.output.max_per_node    ## number of processes to use per step per node
