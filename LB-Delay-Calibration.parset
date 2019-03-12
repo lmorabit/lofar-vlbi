@@ -302,6 +302,7 @@ predict_ateam.argument.predict.sourcedb                        =   sourcedb
 predict_ateam.argument.predict.sources                         =   [VirA_4_patch,CygAGG,CasA_4_patch,TauAGG]
 predict_ateam.argument.predict.usebeammodel                    =   True
 predict_ateam.argument.predict.usechannelfreq                  =   false
+predict_ateam.argument.predict.onebeamperpatch                 =   True
 
 # run the a-team clipper to flag data affected by the a-team
 ateamcliptar.control.kind                                      =   recipe
