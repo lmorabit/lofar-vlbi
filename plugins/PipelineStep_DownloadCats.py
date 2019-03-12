@@ -308,7 +308,7 @@ def plugin_main( args, **kwargs ):
             print('No cross matches found between LoTSS and LBCS! Only writing {:s}'.format(delay_cals_file))
 	    lbcs_catalogue.write(delay_cals_file, format='csv')
 	    return
-        else:
+        elif (len(result) == 0) and (fail_lotss_ok == 'False'):
             raise ValueError('No cross matches found between LoTSS and LBCS!')
 
         ## Need to write the following catalogues:
