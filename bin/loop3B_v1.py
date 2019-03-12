@@ -313,6 +313,10 @@ def plot_im( fitsfile, max_scaling=1.0, figsize=3, rms=0., rms_scaling=3. ):
     if rms == 0:
         rms = np.std(hdu.data)
 
+    if hdu.data.max()*max_scaling < rms:
+	print( 'Max value is less than the rms, setting max value scaling to 1' )
+        max_scaling = 1.
+
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1,projection=wcs)
     ax.imshow(hdu.data[0,0,:,:], vmin=rms*rms_scaling, vmax=hdu.data.max()*max_scaling)
@@ -690,7 +694,16 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
           outname=visA+'_final',channelsout=wsclean_chans,robust=-1,\
           fitsmask=fitsmask,dolocalrms=True)
 
+    ## before making a montage, check if self-cal has successfully completed
+    if os.path.isdir(vis+'_processing'):
+	os.chdir(vis+'_processing')
+
     montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
+
+    if os.getcwd().split('_')[-1] == 'processing':
+	os.chdir('../')
+
+
     
     pngfile, h5files = cleanup (vis)
     # loop3log (vis,'Output png file %s'%pngfile)  # commented out as the log file is already moved so this creates a new one with just one line
