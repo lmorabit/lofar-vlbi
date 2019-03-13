@@ -577,12 +577,11 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
 	wsclean_chans = int( np.ceil(total_bw/bw_val) )
 	mfs='-MFS'
 
-    ## make a temporary directory to save things to
+    ## make a working directory and go there
     tmp_dir = 'loop3_'+vis.rstrip('.ms').rstrip('.MS')
     os.system('mkdir %s'%tmp_dir)
     os.chdir(tmp_dir)
     os.system('mv ../%s .'%vis)
-
 
     import bdsf
     prevstat = 0.0
@@ -610,6 +609,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         if thisstat < goodness:
             pstr = 'goodness statistic is %f, breaking out of loop.'%thisstat
             loop3log( vis, pstr+'\n' )
+	    montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=False)
             return(0)
         pstr='******* PHASE LOOP %d making mask %s_%02d%s-image.fits ********'%(iloop,vis,iloop,mfs)
         loop3log (vis, pstr+'\n')
@@ -664,6 +664,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         if thisstat < goodness:
             pstr = 'goodness statistic is %f, breaking out of loop.'%thisstat
             loop3log( vis, pstr+'\n' )
+	    montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
             return(0)
         image_bdsf = '%s_%02d%s-image.fits'%(visA,iloop,mfs)
         pstr='******* AMPLITUDE LOOP %d making mask %s_%02d%s-image.fits ************'%(iloop,visA,iloop,mfs)
@@ -694,19 +695,11 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
           outname=visA+'_final',channelsout=wsclean_chans,robust=-1,\
           fitsmask=fitsmask,dolocalrms=True)
 
-    ## before making a montage, check if self-cal has successfully completed
-    if os.path.isdir(vis+'_processing'):
-	os.chdir(vis+'_processing')
-
+    ## If we got to this point, self-cal has successfully completed    
     montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
 
-    if os.getcwd().split('_')[-1] == 'processing':
-	os.chdir('../')
-
-
-    
     pngfile, h5files = cleanup (vis)
-    # loop3log (vis,'Output png file %s'%pngfile)  # commented out as the log file is already moved so this creates a new one with just one line
+
     for h5file in h5files:
         os.system('mv %s ../'%h5file)
     os.system('mv *.pdf ../')
