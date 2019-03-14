@@ -80,13 +80,8 @@ def clcal (H1,H2,ant_interp=None):
         va1,va2 = np.array(na1['val']),np.array(na2['val'])
     except:
         isamp = False
-    ant_interp = a1 if ant_interp==None else ant_interp
+    ant_interp = a1 if ant_interp is None else ant_interp
     for i in range(len(a1)):
-        # SM: Crashed here for 3C 273 (but not for 3C 280). Traceback:
-        # File "/data020/scratch/sean/fafa/lofar-lb/loop3_serviceB.py", line 72, in clcal
-        # for i in range(len(a1)):
-        # ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
-
         if a1[i] not in ant_interp:
             continue
         for iz in range(v1.shape[1]):
@@ -114,7 +109,7 @@ def clcal (H1,H2,ant_interp=None):
     h1.close()
 
 def calib (vis,incol='DATA',outcol='DATA',solint=180,solmode='P',\
-           model=None,outms='.',outcal=None,tsamp=8.0):
+           model=None,outms='.',outcal=None,tsamp=8.0,nchan=0):
     loop3log (vis,'-------> %d %.1f'%(solint,tsamp))
     outcal = vis+'_cal' if outcal==None else outcal
     mgain = 'sourcedb=%s\n'%model if model else 'usemodelcolumn=true\n'
@@ -128,6 +123,7 @@ def calib (vis,incol='DATA',outcol='DATA',solint=180,solmode='P',\
     f.write('gaincal.'+mgain)
     f.write('gaincal.caltype=%s\n'%caltype)
     f.write('gaincal.solint=%i\n'%(solint/tsamp))
+    f.write('gaincal.nchan=%i\n'%nchan)
     f.write('gaincal.usebeammodel=False\n')
     f.write('gaincal.parmdb=%s\n'%outcal)
     f.write('gaincal.applysolution=%s\n'%('False' if incol==outcol else 'True'))
@@ -224,9 +220,9 @@ def snplt (vis,htab='1327_test.ms_cal.h5',solset='sol000',soltab='phase000',\
 def imagr (vis,threads=0,mem=100,doupdatemodel=True,tempdir='',dosaveweights=False,doprimary=False,\
            robust=-1,domfsweight=False,gausstaper=0.0,tukeytaper=0.0,dostoreweights=False,outname='wsclean',\
            imsize=1024,cellsize='0.05asec',dopredict=False,niter=10000,pol='I',datacolumn='',autothreshold=3.,\
-           dolocalrms=False,gain=0.1,mgain=1.0,domultiscale=False,dojoinchannels=False,channelsout=0,fitsmask='',\
-           baselineaveraging=0.0,maxuvwm=0.0,minuvwm=100000.0,maxuvl=0.0,minuvl=0.0,dostopnegative=False,automask=0.,\
-           dosavesourcelist=False,weightingrankfilter=0.0,weightingrankfiltersize=0.0):
+	   dolocalrms=False,gain=0.1,mgain=1.0,domultiscale=False,dojoinchannels=False,channelsout=0,fitsmask='',\
+	   baselineaveraging=0.0,maxuvwm=0.0,minuvwm=100000.0,maxuvl=0.0,minuvl=0.0,dostopnegative=False,automask=0.,\
+	   dosavesourcelist=False,weightingrankfilter=0.0,weightingrankfiltersize=0.0):
     cmd = 'wsclean '
     cmd += ('' if not threads else '-j '+str(threads)+' ')
     cmd += ('' if not mem==100 else '-mem '+str(mem)+' ')
@@ -235,11 +231,11 @@ def imagr (vis,threads=0,mem=100,doupdatemodel=True,tempdir='',dosaveweights=Fal
     cmd += ('' if not dosaveweights else '-save-weights ')
     cmd += ('' if not doprimary else '-apply-primary-beam ')
     if robust >=5:
-        cmd += '-weight natural '
+	cmd += '-weight natural '
     elif robust <=-5:
-        cmd += '-weight uniform '
+	cmd += '-weight uniform '
     else:
-        cmd += '-weight briggs %f '%robust
+	cmd += '-weight briggs %f '%robust
     cmd += ('' if not domfsweight else '-mfs-weighting ')
     cmd += ('' if gausstaper==0.0 else '-taper-gaussian %f '%gausstaper)
     cmd += ('' if tukeytaper==0.0 else '-taper-tukey %f '%tukeytaper)
@@ -276,16 +272,16 @@ def getcoh_baseline (antenna_list, coh, ccrit):
     '''Returns the maximum baseline length for imaging given
     a list of coherences for stations'''
     aname = ['DE601','DE602','DE603','DE604','DE605','DE609','SE','FR',\
-             'UK','PL','IE']
+	     'UK','PL','IE']
     alen = [260,580,400,420,230,200,600,700,602,800,800]
     cohlength = 2000.0
     np.putmask(coh,coh==-1.0,ccrit)
     for i in range(len(antenna_list)):
-        for j in range(len(aname)):
-            if antenna_list[i][:len(aname[j])]==aname[j]:
-                if coh[i]>ccrit-0.1:
-                    cohlength = alen[j]
-                    break
+	for j in range(len(aname)):
+	    if antenna_list[i][:len(aname[j])]==aname[j]:
+		if coh[i]>ccrit-0.1:
+		    cohlength = alen[j]
+		    break
     return 1000.0*cohlength
 
 
@@ -294,11 +290,11 @@ def sort_filelist( myfiles ):
     ## sort the files by self-cal iteration
     file_index = []
     for myfile in myfiles:
-        tmp = myfile.split('_')[-1]
-        myloop = tmp.split('-')[0]
-        if myloop == 'final':
-            myloop = '999'
-        file_index.append(np.int(myloop))
+	tmp = myfile.split('_')[-1]
+	myloop = tmp.split('-')[0]
+	if myloop == 'final':
+	    myloop = '999'
+	file_index.append(np.int(myloop))
 
     sort_index = np.argsort(file_index)
     file_array = np.array(myfiles)
@@ -311,11 +307,11 @@ def plot_im( fitsfile, max_scaling=1.0, figsize=3, rms=0., rms_scaling=3. ):
     wcs = WCS(hdu.header,naxis=2)
 
     if rms == 0:
-        rms = np.std(hdu.data)
+	rms = np.std(hdu.data)
 
     if hdu.data.max()*max_scaling < rms:
 	print( 'Max value is less than the rms, setting max value scaling to 1' )
-        max_scaling = 1.
+	max_scaling = 1.
 
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1,projection=wcs)
@@ -329,21 +325,20 @@ def make_montage( filelist, outname='', nup='4x2' ):
     # create the filename 
     tmp = filelist[0].split('_')
     if 'image' in filelist[0]:
-        imtype = 'image'
+	imtype = 'image'
     elif 'residual' in filelist[0]:
-        imtype = 'residual'
+	imtype = 'residual'
     outname = tmp[0] + '_' + imtype + '.pdf'
-
 
     # move them to a temporary directory for making a montage
     os.system('mkdir montage_tmp')
 
     imlist = []
     for myfile in filelist:
-        myim = myfile.replace('.fits','.pdf')
-        imlist.append( myim )
-        os.system( 'mv %s montage_tmp/'%myim )
-   
+	myim = myfile.replace('.fits','.pdf')
+	imlist.append( myim )
+	os.system( 'mv %s montage_tmp/'%myim )
+	   
     # montage them together 
     os.chdir('montage_tmp')
     os.system('montage *.pdf -tile %s -geometry 600x600 %s'%(nup,outname))
@@ -354,14 +349,14 @@ def make_montage( filelist, outname='', nup='4x2' ):
 def montage_plot( filepattern, imscale=0.65, nup='4x2', plot_resid=True):
 
     if filepattern.split('.')[-1] == 'fits':
-        filelist = sort_filelist(glob.glob(filepattern))
+	filelist = sort_filelist(glob.glob(filepattern))
     else:
-        filelist = sort_filelist(glob.glob('%s*-MFS-image.fits'%filepattern))
+	filelist = sort_filelist(glob.glob('%s*-MFS-image.fits'%filepattern))
 
     # open the final image to get scaling parameters
     final_im = filelist[-1]
     with pyfits.open( final_im ) as im_hdu:
-        data = im_hdu[0].data
+	data = im_hdu[0].data
     im_hdu.close()
     std_estimate = np.abs(np.median(data))
     max_val = np.max(data)*imscale
@@ -369,22 +364,22 @@ def montage_plot( filepattern, imscale=0.65, nup='4x2', plot_resid=True):
     # plot the images on the same scale
     for myfile in filelist:
 	# get the std dev of the residual image
-        res_im = myfile.replace('image','residual')
-        with pyfits.open( res_im ) as im_hdu:
-            data = im_hdu[0].data
-        im_hdu.close()
-        res_vals = np.std(data)
-        plot_im( myfile, max_scaling = imscale*max_val, rms = res_vals, rms_scaling=1 )
-        if plot_resid:
-            plot_im( myfile.replace('image','residual'), max_scaling = 0.1, rms = res_vals, rms_scaling=1 )
+	res_im = myfile.replace('image','residual')
+	with pyfits.open( res_im ) as im_hdu:
+	    data = im_hdu[0].data
+	im_hdu.close()
+	res_vals = np.std(data)
+	plot_im( myfile, max_scaling = imscale*max_val, rms = res_vals, rms_scaling=1 )
+	if plot_resid:
+	    plot_im( myfile.replace('image','residual'), max_scaling = 0.1, rms = res_vals, rms_scaling=1 )
 
     # make a montage
     make_montage( filelist, nup=nup )
     if plot_resid:
-        residlist = []
-        for myfile in filelist:
-            residlist.append(myfile.replace('image','residual'))
-        make_montage( residlist, nup=nup )
+	residlist = []
+	for myfile in filelist:
+	    residlist.append(myfile.replace('image','residual'))
+	make_montage( residlist, nup=nup )
 
 def cleanup(vis):
     os.system('rm -fr %s_processing'%vis)
@@ -398,13 +393,13 @@ def cleanup(vis):
     os.system('mv %s*.h5 %s_processing'%(vis,vis))
     calfiles = np.array([])
     if len(h5vis):
-        h5vis_head, h5vis_tail = os.path.split(h5vis[-1])  # Sean added
-        os.system('cp %s_processing/%s .'%(vis,h5vis_tail))  # Sean edited
-        calfiles = np.append(calfiles,h5vis[-1])
+	h5vis_head, h5vis_tail = os.path.split(h5vis[-1])  # Sean added
+	os.system('cp %s_processing/%s .'%(vis,h5vis_tail))  # Sean edited
+	calfiles = np.append(calfiles,h5vis[-1])
     if len(h5A):
-        h5A_head, h5A_tail = os.path.split(h5A[-1])  # Sean added
-        os.system('cp %s_processing/%s .'%(vis,h5A_tail))  # Sean edited
-        calfiles = np.append(calfiles,h5A[-1])
+	h5A_head, h5A_tail = os.path.split(h5A[-1])  # Sean added
+	os.system('cp %s_processing/%s .'%(vis,h5A_tail))  # Sean edited
+	calfiles = np.append(calfiles,h5A[-1])
     vis_head, vis_tail = os.path.split(vis)
     os.system('cp %s_processing/%s_output.png .'%(vis,vis_tail))
 
@@ -412,10 +407,10 @@ def cleanup(vis):
 
 def imaging(vis,niters,threshold):
     imagr (vis,cellsize='0.05asec',imsize=1024,maxuvl=1000000,\
-          gain=0.1,mgain=0.85,dostopnegative=True,niter=niters,\
-          autothreshold=threshold,weightingrankfiltersize=256,\
-          weightingrankfilter=3,domultiscale=True,automask=7.0,\
-          outname='test',dolocalrms=True)
+	  gain=0.1,mgain=0.85,dostopnegative=True,niter=niters,\
+	  autothreshold=threshold,weightingrankfiltersize=256,\
+	  weightingrankfilter=3,domultiscale=True,automask=7.0,\
+	  outname='test',dolocalrms=True)
 
 # Needs an initial model. May be provided as:
 #    model=None        Make an image and use that. (Unlikely to be a good idea)
@@ -426,74 +421,74 @@ def imaging(vis,niters,threshold):
 #  other libraries - may need to unload and use 1.8.10 instead 
 
 def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
-            incol='DATA',outcol='DATA',caltype='P'):
+	    incol='DATA',outcol='DATA',caltype='P',nchan=0):
     if not model:
-        imaging(vis,1000,10)
+	imaging(vis,1000,10)
     # need a predict step to deal with sourcedb here if necessary
     ptant = casatb.table(vis+'/ANTENNA')
     antenna_list = np.array([],dtype='S')
     for i in ptant.select('NAME'):
-        antenna_list = np.append(antenna_list,i.values())
+	antenna_list = np.append(antenna_list,i.values())
     nant = len(antenna_list)
     if caltype=='P':
-        sol_int_range = np.arange(np.ceil(np.log(max_sol/init_sol)/np.log(3.)))
-        sol_int_range = np.ceil(init_sol*3.**sol_int_range)
-        nsol = len(sol_int_range)
-        coh = CCRIT*np.ones((nsol,nant))
-        for i in range(nsol):
-            solint = sol_int_range[i]
-            outcal_root = outcal_root if len(outcal_root) else vis
-            outcal = outcal_root+'_c%d.h5'%i
-            loop3log (vis,'Beginning pass with solint %.1f sec\n' % (solint))
-            calib (vis, solint=solint, outcal=outcal, incol=incol, \
-                                 outcol=outcol,solmode='P',tsamp=TSAMP)
-            snplt (vis,htab=outcal,outpng=outcal)
-            coh[i] = coherence_metric (outcal)
-            loop3log(vis,'Coherences: \n')
-            for j in range(nant):
-                loop3log(vis,'%s:%f '%(antenna_list[j],coh[i,j]),cret=False)
-            if len(coh[i][coh[i]>=CCRIT])==0:
-                break
+	sol_int_range = np.arange(np.ceil(np.log(max_sol/init_sol)/np.log(3.)))
+	sol_int_range = np.ceil(init_sol*3.**sol_int_range)
+	nsol = len(sol_int_range)
+	coh = CCRIT*np.ones((nsol,nant))
+	for i in range(nsol):
+	    solint = sol_int_range[i]
+	    outcal_root = outcal_root if len(outcal_root) else vis
+	    outcal = outcal_root+'_c%d.h5'%i
+	    loop3log (vis,'Beginning pass with solint %.1f sec\n' % (solint))
+	    calib (vis, solint=solint, outcal=outcal, incol=incol, \
+				 outcol=outcol,solmode='P',tsamp=TSAMP,nchan=nchan)
+	    snplt (vis,htab=outcal,outpng=outcal)
+	    coh[i] = coherence_metric (outcal)
+	    loop3log(vis,'Coherences: \n')
+	    for j in range(nant):
+		loop3log(vis,'%s:%f '%(antenna_list[j],coh[i,j]),cret=False)
+	    if len(coh[i][coh[i]>=CCRIT])==0:
+		break
     # For each antenna in the antenna list, find the selfcal table with 
     # the shortest solution interval that contains coherent solutions. If 
     # there is no such table, report -1 in order to signal that they should 
     # all be set to zero.
-        ncoh = np.ones(nant,dtype=int)*-1
-        allcoh = np.ones(nant,dtype=float)*CCRIT
-        for i in range(nant):
-            try:
-                ncoh[i] = np.min(np.ravel(np.argwhere(coh[:,i]<CCRIT)))
-                allcoh[i] = coh[:,i][ncoh[i]]
-            except:
-                pass
+	ncoh = np.ones(nant,dtype=int)*-1
+	allcoh = np.ones(nant,dtype=float)*CCRIT
+	for i in range(nant):
+	    try:
+		ncoh[i] = np.min(np.ravel(np.argwhere(coh[:,i]<CCRIT)))
+		allcoh[i] = coh[:,i][ncoh[i]]
+	    except:
+		pass
     # For each selfcal table containing the shortest solution interval with 
     # coherence on some antennas, replace the entries in the first selfcal 
     # table with the interpolated values from that antenna
-        for i in range(1,coh.shape[0]):
-            iant = antenna_list[ncoh==i]
-            if len(iant):
-                clcal (outcal_root+'_c0.h5',outcal_root+'_c%d.h5'%i,\
-                                     ant_interp=iant)
+	for i in range(1,coh.shape[0]):
+	    iant = antenna_list[ncoh==i]
+	    if len(iant):
+		clcal (outcal_root+'_c0.h5',outcal_root+'_c%d.h5'%i,\
+				     ant_interp=iant)
     # For each antenna without any coherence at all, zero the phase 
     # solutions for that antenna
-        iant = antenna_list[ncoh==-1]
-        if len(iant):
-            zerosol (outcal_root+'_c0.h5',iant)
+	iant = antenna_list[ncoh==-1]
+	if len(iant):
+	    zerosol (outcal_root+'_c0.h5',iant)
     else:    # amplitude selfcal: only one interval
-        outcal_root = outcal_root if len(outcal_root) else vis
-        outcal = outcal_root+'_c0.h5'%i
-        calib (vis, solint=init_sol, outcal=outcal, incol=incol, \
-                                 outcol=outcol,solmode='A')
-        snplt (vis,htab=outcal,outpng=outcal,soltab='amplitude000')
-        allcoh = coherence_metric (outcal)
-        loop3log(vis,'Coherences: \n')
-        for i in range(nant):
-            loop3log(vis,'%s:%f '%(antenna_list[i],allcoh[i]),cret=False)
+	outcal_root = outcal_root if len(outcal_root) else vis
+	outcal = outcal_root+'_c0.h5'%i
+	calib (vis, solint=init_sol, outcal=outcal, incol=incol, \
+				 outcol=outcol,solmode='A', nchan=nchan)
+	snplt (vis,htab=outcal,outpng=outcal,soltab='amplitude000')
+	allcoh = coherence_metric (outcal)
+	loop3log(vis,'Coherences: \n')
+	for i in range(nant):
+	    loop3log(vis,'%s:%f '%(antenna_list[i],allcoh[i]),cret=False)
     # For each antenna without any coherence at all, zero the amp/phase 
     # solutions for that antenna
-        iant = antenna_list[allcoh<CCRIT]
-        if len(iant):
-            zerosol (outcal_root+'_c0.h5',ant=iant)
+	iant = antenna_list[allcoh<CCRIT]
+	if len(iant):
+	    zerosol (outcal_root+'_c0.h5',ant=iant)
     # find the maximum baseline length with coherent cal signal
     cohlength = getcoh_baseline (antenna_list,allcoh,CCRIT)
     return allcoh,cohlength
@@ -521,7 +516,7 @@ def measure_statistic ( filename ):
     return abs (img.max()/img.min())
 
 def applycal_split (vis, visA, solset, parmdb, soltab='phase000',\
-                    correction='phase000'):
+		    correction='phase000'):
     fo = open('applycal.parset','w')
     fo.write ('msin=%s\n'%vis)
     fo.write ('msout=%s\n'%vis)
@@ -569,20 +564,22 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
     ## get bandwidth of vis
     spec_info = casatb.table( vis + '/SPECTRAL_WINDOW')
     total_bw = spec_info.getcol('TOTAL_BANDWIDTH')[0]
+    num_chan = spec_info.getcol('NUM_CHAN')[0]
     spec_info.close()
     if total_bw < bw_val:
 	wsclean_chans = 0
 	mfs = ''
+	nchan=0
     else:
 	wsclean_chans = int( np.ceil(total_bw/bw_val) )
 	mfs='-MFS'
+	nchan=num_chan/wsclean_chans
 
-    ## make a temporary directory to save things to
+    ## make a working directory and go there
     tmp_dir = 'loop3_'+vis.rstrip('.ms').rstrip('.MS')
     os.system('mkdir %s'%tmp_dir)
     os.chdir(tmp_dir)
     os.system('mv ../%s .'%vis)
-
 
     import bdsf
     prevstat = 0.0
@@ -610,6 +607,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         if thisstat < goodness:
             pstr = 'goodness statistic is %f, breaking out of loop.'%thisstat
             loop3log( vis, pstr+'\n' )
+	    montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=False)
             return(0)
         pstr='******* PHASE LOOP %d making mask %s_%02d%s-image.fits ********'%(iloop,vis,iloop,mfs)
         loop3log (vis, pstr+'\n')
@@ -632,7 +630,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         loop3log (vis, pstr+'\n')
         caltype, sol0 = strategy[iloop][0], float(strategy[iloop][1:])
         coh, cohlength = selfcal(vis,model='MODEL',incol='DATA',outcol='CORRECTED_DATA',\
-                      outcal_root=vis+'_%02d'%iloop,caltype=caltype,init_sol=sol0)
+                      outcal_root=vis+'_%02d'%iloop,caltype=caltype,init_sol=sol0,nchan=nchan)
         snver = iloop
         pstr='******** END PHASE LOOP %d - coherence on %.1f km **********' % \
               (iloop,cohlength/1000.)
@@ -664,6 +662,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         if thisstat < goodness:
             pstr = 'goodness statistic is %f, breaking out of loop.'%thisstat
             loop3log( vis, pstr+'\n' )
+	    montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
             return(0)
         image_bdsf = '%s_%02d%s-image.fits'%(visA,iloop,mfs)
         pstr='******* AMPLITUDE LOOP %d making mask %s_%02d%s-image.fits ************'%(iloop,visA,iloop,mfs)
@@ -683,7 +682,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         loop3log (vis, pstr+'\n')
         caltype, sol0 = strategy[iloop][0], float(strategy[iloop][1:])
         coh,cohlength = selfcal(visA,model='MODEL',incol='DATA',outcol='CORRECTED_DATA',\
-                      outcal_root=visA+'_%02d'%iloop,caltype=caltype,init_sol=sol0)
+                      outcal_root=visA+'_%02d'%iloop,caltype=caltype,init_sol=sol0,nchan=nchan)
         pstr='******** END AMPLITUDE LOOP %d - coherence on %.1f km **********' % \
                       (iloop,cohlength/1000.)
         loop3log (vis, pstr+'\n')
@@ -694,19 +693,11 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
           outname=visA+'_final',channelsout=wsclean_chans,robust=-1,\
           fitsmask=fitsmask,dolocalrms=True)
 
-    ## before making a montage, check if self-cal has successfully completed
-    if os.path.isdir(vis+'_processing'):
-	os.chdir(vis+'_processing')
-
+    ## If we got to this point, self-cal has successfully completed    
     montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
 
-    if os.getcwd().split('_')[-1] == 'processing':
-	os.chdir('../')
-
-
-    
     pngfile, h5files = cleanup (vis)
-    # loop3log (vis,'Output png file %s'%pngfile)  # commented out as the log file is already moved so this creates a new one with just one line
+
     for h5file in h5files:
         os.system('mv %s ../'%h5file)
     os.system('mv *.pdf ../')
