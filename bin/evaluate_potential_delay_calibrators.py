@@ -235,7 +235,10 @@ def lotss2coords (lotssfile):
 
     a = ascii.read(lotssfile)
     if len(a) == 1:
-	a = ','.join([str(a['LOTSS_RA']),str(a['LOTSS_DEC']),a['Source_id']])
+	src = a['Source_id']
+        if type(src) != str:
+            src = 'S' + str(src)
+            a = ','.join([str(a['LOTSS_RA']), a(tmp['LOTSS_DEC']), src])
     coords=np.array([],dtype='S')
     for xx in range(len(a)):
 	tmp = a[xx]
