@@ -132,7 +132,7 @@ def source (coords,ncpu):
     source_thread.parallel = parallel_function(source_thread,ncpu)
     parallel_result = source_thread.parallel(coords)
 
-def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=-1 ):
+def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=10 ):
 
     phaseup_cmd = str(phaseup_cmd)
     filter_cmd = str(filter_cmd)
@@ -147,29 +147,91 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*'
     else:
 	mslist = ms_input
     mslist = natural_sort( mslist )
-    if nsbs < 0:
-	nsbs = len(mslist)
-    mslist = mslist[0:nsbs]
 
-    global inarray
-    inarray = mslist
-    ## get obsid
-    tmp = mslist[0].split('/')[-1]
-    obsid = tmp.split('_')[0]
+    ## housekeeping
     coords = lotss2coords( lotss_file )
-    print('HELLOOOOOOO')
-    tmp = []
+    ## get the calibrator names
+    cal_names = []
     for coord in coords:
-	coord_tmp = coord.split(',')
-	phasecen = ','.join([coord_tmp[0]+'deg',coord_tmp[1]+'deg'])
-	tmp.append(';'.join([datacol,str(freqstep),str(timestep),phasecen,phaseup_cmd,filter_cmd,coord_tmp[2]+'_'+obsid+'_phasecal.MS']))
-    coords = tmp
-    print( coords )
-    starttime = datetime.datetime.now()
-    source( coords, ncpu )
-    endtime = datetime.datetime.now()
-    timediff = endtime - starttime
-    print( 'total time (sec): %s'%str( timediff.total_seconds() ) )
+	cal_names.append(coord.split(',')[2])
+
+    ## check if you need to concat bands first
+    if nsbs < len(mslist):
+	## need to split into bands
+	nbands = np.ceil(np.float(len(mslist))/nsbs)
+	for xx in np.arange(nbands):
+	    if len(mslist) >= nsbs:
+                bandlist = mslist[0:(nsbs)-1]
+	        mslist = mslist[nsbs:-1]
+	    else:
+	    	bandlist = mslist
+
+   	    global inarray
+            inarray = bandlist
+	    ## get obsid
+	    tmp = bandlist[0].split('/')[-1]
+            obsid = tmp.split('_')[0]
+            coords = lotss2coords( lotss_file )
+            tmp = []
+            for coord in coords:
+                coord_tmp = coord.split(',')
+                phasecen = ','.join([coord_tmp[0]+'deg',coord_tmp[1]+'deg'])
+                tmp.append(';'.join([datacol,str(freqstep),str(timestep),phasecen,phaseup_cmd,filter_cmd,coord_tmp[2]+'_'+obsid+'_phasecal_band'+str(xx)+'.MS']))
+            coords = tmp
+            starttime = datetime.datetime.now()
+            source( coords, ncpu )
+            endtime = datetime.datetime.now()
+            timediff = endtime - starttime
+            print( 'total time (sec): %s'%str( timediff.total_seconds() ) )
+ 
+	## now combine the bands
+        for cal_name in cal_names:
+	    cal_bands = glob.glob(cal_name+'*phasecal_band*MS')
+	    cal_bands = natural_sort(cal_bands)
+	    tmp = cal_bands[0].split('_')
+	    nameout = '_'.join([tmp[0],tmp[1],tmp[2]])
+	    nameout = nameout + '.MS'
+	    parset_name = 'NDPPP_%s_total.parset'%cal_name
+	    with open(parset_name,'w') as fo:  # write the parset file
+                fo.write('msin = [')
+                ss = ""
+                for cal_band in cal_bands:
+                    ss = ss + "'%s',"%cal_band
+                ss = ss.rstrip(',')
+                ss = ss + ']'
+                fo.write(ss+'\n')
+                fo.write('msout = '+nameout+'\n')
+                fo.write('msin.datacolumn = %s\n'%datacol)
+                if ismissing:
+                    fo.write('msin.missingdata=True\n')
+                    fo.write('msin.orderms=False\n')
+                fo.write('steps = []\n')
+	    fo.close()
+    	    os.system('NDPPP %s'%parset_name)  # run with NDPPP
+            os.system('rm %s'%parset_name) # remove the parset
+	    ## remove the intermediate bands
+	    for cal_band in cal_bands:
+	        os.system('rm -r %s'%cal_band )
+
+    else:
+        global inarray
+        inarray = mslist
+        ## get obsid
+        tmp = mslist[0].split('/')[-1]
+        obsid = tmp.split('_')[0]
+        coords = lotss2coords( lotss_file )
+        tmp = []
+        for coord in coords:
+	    coord_tmp = coord.split(',')
+            phasecen = ','.join([coord_tmp[0]+'deg',coord_tmp[1]+'deg'])
+	    tmp.append(';'.join([datacol,str(freqstep),str(timestep),phasecen,phaseup_cmd,filter_cmd,coord_tmp[2]+'_'+obsid+'_phasecal.MS']))
+        coords = tmp
+        print( coords )
+        starttime = datetime.datetime.now()
+        source( coords, ncpu )
+        endtime = datetime.datetime.now()
+        timediff = endtime - starttime
+        print( 'total time (sec): %s'%str( timediff.total_seconds() ) )
 
 
 
@@ -184,7 +246,7 @@ if __name__ == "__main__":
     parser.add_argument('--datacol',type=str,help='datacolumn to use (default CORRECTED_DATA)',default='CORRECTED_DATA')
     parser.add_argument('--timestep',type=int,default=8)
     parser.add_argument('--freqstep',type=int,default=8)
-    parser.add_argument('--nsbs',type=int,help='number of subbands, default 20, use -1 for all',default=-1)
+    parser.add_argument('--nsbs',type=int,help='number of subbands to combine before combining all (default 10)',default=10)
     args = parser.parse_args()
 
     MS_input = glob.glob( args.MS_pattern )
