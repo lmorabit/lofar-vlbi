@@ -144,7 +144,7 @@ def calib (vis,incol='DATA',outcol='DATA',solint=180,solmode='P',\
     time_end = time.time()
     loop3log(vis,'NDPPP took %d s' % int(time_end-time_start))
 
-def coherence_metric (htab='1327_test.ms_cal.h5',solset='sol000',soltab='phase000'):
+def coherence_metric (htab='1327_test.ms_cal.h5',antenna_list='',solset='sol000',soltab='phase000'):
     # Make the coherence parameter. This relies on the difference in the phase
     # solutions in XX and YY remaining constant if the solutions are coherent.
     # Also need to return an incoherent answer (2.0) if there are too many NaN
@@ -153,16 +153,25 @@ def coherence_metric (htab='1327_test.ms_cal.h5',solset='sol000',soltab='phase00
     v, vm = h5read (htab, solset, soltab)
     ant,freq,pol,time = vm['ant'],vm['freq'],vm['pol'],vm['time']
     coh = np.array([])
-    for i in range(len(ant)):   # assumes two polarizations XX YY
-#     changed this (njj) - note that np.unwrap gives an array full of NaN
-#     if even the first element of the input array is NaN
-#        diff = np.unwrap(v[:,0,i,0]-v[:,0,i,1])
-        diff = v[:,0,i,0]-v[:,0,i,1]
-        if float(len(diff[np.isnan(diff)]))>NANFRAC*float(len(diff)):
+#   If no antenna list is passed, assume that the antennas in the calibration
+#   table are the ones requested. This will fail on return if they are not
+#   the same antennas in the same order.
+    if not len(antenna_list):
+        antenna_list=ant    
+#   loop over antennas for which calibration is requested
+    for i in range(len(antenna_list)):
+        try: # find index of corresponding correction in the h5 
+            j = ant.index(antenna_list[i])
+# -- njj: do not use np.unwrap here - gives array full of NaN if even the
+#    first element is NaN
+            diff = v[:,0,j,0]-v[:,0,j,1]
+            if float(len(diff[np.isnan(diff)]))>NANFRAC*float(len(diff)):
+                coh = np.append(coh,INCOH)
+            else:
+                diff = np.unwrap(diff[~np.isnan(diff)])
+                coh = np.append(coh,np.nanmean(np.gradient(abs(diff))**2))
+        except:  # does not contain correction for this antenna
             coh = np.append(coh,INCOH)
-        else:
-            diff = np.unwrap(diff[~np.isnan(diff)])
-            coh = np.append(coh,np.nanmean(np.gradient(abs(diff))**2))
     return coh
 
 def snplt (vis,htab='1327_test.ms_cal.h5',solset='sol000',soltab='phase000',\
@@ -448,7 +457,7 @@ def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
 	    calib (vis, solint=solint, outcal=outcal, incol=incol, \
 				 outcol=outcol,solmode='P',tsamp=TSAMP,nchan=nchan)
 	    snplt (vis,htab=outcal,outpng=outcal)
-	    coh[i] = coherence_metric (outcal)
+	    coh[i] = coherence_metric (outcal,antenna_list)
 	    loop3log(vis,'Coherences: \n')
 	    for j in range(nant):
 		loop3log(vis,'%s:%f '%(antenna_list[j],coh[i,j]),cret=False)
@@ -485,7 +494,7 @@ def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
 	calib (vis, solint=init_sol, outcal=outcal, incol=incol, \
 				 outcol=outcol,solmode='A', nchan=nchan)
 	snplt (vis,htab=outcal,outpng=outcal,soltab='amplitude000')
-	allcoh = coherence_metric (outcal)
+	allcoh = coherence_metric (outcal,antenna_list)
 	loop3log(vis,'Coherences: \n')
 	for i in range(nant):
 	    loop3log(vis,'%s:%f '%(antenna_list[i],allcoh[i]),cret=False)
