@@ -693,6 +693,18 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
           outname=visA+'_final',channelsout=wsclean_chans,robust=-1,\
           fitsmask=fitsmask,dolocalrms=True)
 
+    ## make a model from the final image
+    final_im = glob.glob('*final*image.fits')
+    if len(final_im) > 1:
+	tmp = [ a for a in final_im if 'MFS' in a ]
+	final_im = tmp
+    img = bdsf_process_image( final_im[0], atrous_do=True, thresh_isl=10.0 )
+    skyfile = final_im[0].replace('fits','skymodel')
+    img.write_catalog( outfile=skyfile, bbs_patches='single', catalog_type='gaul', format='bbs' )
+    ## convert it to a sourcedb
+    ss = "makesourcedb in=%s out=%s format='<'"%(skyfile,skyfile.replace('skymodel','sky'))
+    os.system(ss)
+
     ## If we got to this point, self-cal has successfully completed    
     montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
 
@@ -702,6 +714,8 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         os.system('mv %s ../'%h5file)
     os.system('mv *.pdf ../')
     os.system('mv *.png ../')
+    os.system('mv *skymodel ../')
+    os.system('mv *sky ../')
     os.system('mv %s ../'%vis )
     
     print 'Output calibration tables',h5files
