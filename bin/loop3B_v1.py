@@ -82,6 +82,11 @@ def clcal (H1,H2,ant_interp=None):
         isamp = False
     ant_interp = a1 if ant_interp is None else ant_interp
     for i in range(len(a1)):
+        # SM: Crashed here for 3C 273 (but not for 3C 280). Traceback:
+        # File "/data020/scratch/sean/fafa/lofar-lb/loop3_serviceB.py", line 72, in clcal
+        # for i in range(len(a1)):
+        # ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+
         if a1[i] not in ant_interp:
             continue
         for iz in range(v1.shape[1]):
@@ -139,7 +144,7 @@ def calib (vis,incol='DATA',outcol='DATA',solint=180,solmode='P',\
     time_end = time.time()
     loop3log(vis,'NDPPP took %d s' % int(time_end-time_start))
 
-def coherence_metric (htab='1327_test.ms_cal.h5',solset='sol000',soltab='phase000'):
+def coherence_metric (htab='1327_test.ms_cal.h5',antenna_list='',solset='sol000',soltab='phase000'):
     # Make the coherence parameter. This relies on the difference in the phase
     # solutions in XX and YY remaining constant if the solutions are coherent.
     # Also need to return an incoherent answer (2.0) if there are too many NaN
@@ -148,16 +153,25 @@ def coherence_metric (htab='1327_test.ms_cal.h5',solset='sol000',soltab='phase00
     v, vm = h5read (htab, solset, soltab)
     ant,freq,pol,time = vm['ant'],vm['freq'],vm['pol'],vm['time']
     coh = np.array([])
-    for i in range(len(ant)):   # assumes two polarizations XX YY
-#     changed this (njj) - note that np.unwrap gives an array full of NaN
-#     if even the first element of the input array is NaN
-#        diff = np.unwrap(v[:,0,i,0]-v[:,0,i,1])
-        diff = v[:,0,i,0]-v[:,0,i,1]
-        if float(len(diff[np.isnan(diff)]))>NANFRAC*float(len(diff)):
+#   If no antenna list is passed, assume that the antennas in the calibration
+#   table are the ones requested. This will fail on return if they are not
+#   the same antennas in the same order.
+    if not len(antenna_list):
+        antenna_list=ant    
+#   loop over antennas for which calibration is requested
+    for i in range(len(antenna_list)):
+        try: # find index of corresponding correction in the h5 
+            j = ant.index(antenna_list[i])
+# -- njj: do not use np.unwrap here - gives array full of NaN if even the
+#    first element is NaN
+            diff = v[:,0,j,0]-v[:,0,j,1]
+            if float(len(diff[np.isnan(diff)]))>NANFRAC*float(len(diff)):
+                coh = np.append(coh,INCOH)
+            else:
+                diff = np.unwrap(diff[~np.isnan(diff)])
+                coh = np.append(coh,np.nanmean(np.gradient(abs(diff))**2))
+        except:  # does not contain correction for this antenna
             coh = np.append(coh,INCOH)
-        else:
-            diff = np.unwrap(diff[~np.isnan(diff)])
-            coh = np.append(coh,np.nanmean(np.gradient(abs(diff))**2))
     return coh
 
 def snplt (vis,htab='1327_test.ms_cal.h5',solset='sol000',soltab='phase000',\
@@ -443,7 +457,7 @@ def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
 	    calib (vis, solint=solint, outcal=outcal, incol=incol, \
 				 outcol=outcol,solmode='P',tsamp=TSAMP,nchan=nchan)
 	    snplt (vis,htab=outcal,outpng=outcal)
-	    coh[i] = coherence_metric (outcal)
+	    coh[i] = coherence_metric (outcal,antenna_list)
 	    loop3log(vis,'Coherences: \n')
 	    for j in range(nant):
 		loop3log(vis,'%s:%f '%(antenna_list[j],coh[i,j]),cret=False)
@@ -480,7 +494,7 @@ def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
 	calib (vis, solint=init_sol, outcal=outcal, incol=incol, \
 				 outcol=outcol,solmode='A', nchan=nchan)
 	snplt (vis,htab=outcal,outpng=outcal,soltab='amplitude000')
-	allcoh = coherence_metric (outcal)
+	allcoh = coherence_metric (outcal,antenna_list)
 	loop3log(vis,'Coherences: \n')
 	for i in range(nant):
 	    loop3log(vis,'%s:%f '%(antenna_list[i],allcoh[i]),cret=False)
@@ -499,17 +513,12 @@ def measure_statistic2 (filename):
     img = pyfits.open(filename)[0].data.squeeze()
     im_rms = np.std(img)
     im_max = np.max(img)
-    ## find the central 10 percent of pixels
-    imdim = img.shape
-    midpoint = np.int(imdim[0]/2)
-    central_size = np.int(midpoint*0.1)
-    cen_cutout = img[midpoint-central_size:midpoint+central_size,midpoint-central_size:midpoint+central_size]
-    cen_rms = np.std(cen_cutout)
-    cen_max = np.max(cen_cutout)
-    ## compare the two
-    snr_img = im_max / im_rms
-    snr_cen = cen_max / cen_rms 
-    return abs (snr_cen/snr_img)
+    resfile = filename.replace('image','residual')
+    res = pyfits.open(resfile)[0].data.squeeze()
+    res_rms = np.std(res)
+    res_max = np.max(res)
+    snr = im_max / res_rms
+    return snr
 
 def measure_statistic ( filename ):
     img = pyfits.open(filename)[0].data.squeeze()
@@ -603,9 +612,9 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
             # Need something here to produce an image from startmod
             pass
         # check if there's a source
-        thisstat = measure_statistic(vis+'_%02d%s-image.fits'%(iloop,mfs))
+        thisstat = measure_statistic2(vis+'_%02d%s-image.fits'%(iloop,mfs))
         if thisstat < goodness:
-            pstr = 'goodness statistic is %f, breaking out of loop.'%thisstat
+            pstr = 'SNR is %f, breaking out of loop.'%thisstat
             loop3log( vis, pstr+'\n' )
 	    montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=False)
             return(0)
@@ -658,9 +667,9 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
                   outname=visA+'_%02d'%iloop,channelsout=wsclean_chans,robust=-1,\
                   fitsmask=fitsmask,dolocalrms=True,maxuvwm=cohlength)
 	## check if there's a source
-        thisstat = measure_statistic(visA+'_%02d%s-image.fits'%(iloop,mfs))
+        thisstat = measure_statistic2(visA+'_%02d%s-image.fits'%(iloop,mfs))
         if thisstat < goodness:
-            pstr = 'goodness statistic is %f, breaking out of loop.'%thisstat
+            pstr = 'SNR is %f, breaking out of loop.'%thisstat
             loop3log( vis, pstr+'\n' )
 	    montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
             return(0)
@@ -674,6 +683,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         if iloop!=ploop and thisstat-prevstat<0.01:
             pstr='****** EXITING AMPLITUDE CAL with diff %f *********'%(thisstat-prevstat)
             loop3log (vis, pstr+'\n')
+	    break
         else:   
             prevstat = thisstat
             imagr(visA,dopredict=True,fitsmask=fitsmask,autothreshold=3,dolocalrms=True,\
@@ -693,6 +703,18 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
           outname=visA+'_final',channelsout=wsclean_chans,robust=-1,\
           fitsmask=fitsmask,dolocalrms=True)
 
+    ## make a model from the final image
+    final_im = glob.glob('*final*image.fits')
+    if len(final_im) > 1:
+	tmp = [ a for a in final_im if 'MFS' in a ]
+	final_im = tmp
+    img = bdsf_process_image( final_im[0], atrous_do=True, thresh_isl=10.0 )
+    skyfile = final_im[0].replace('fits','skymodel')
+    img.write_catalog( outfile=skyfile, bbs_patches='single', catalog_type='gaul', format='bbs' )
+    ## convert it to a sourcedb
+    ss = "makesourcedb in=%s out=%s format='<'"%(skyfile,skyfile.replace('skymodel','sky'))
+    os.system(ss)
+
     ## If we got to this point, self-cal has successfully completed    
     montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
 
@@ -702,6 +724,8 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         os.system('mv %s ../'%h5file)
     os.system('mv *.pdf ../')
     os.system('mv *.png ../')
+    os.system('mv *skymodel ../')
+    os.system('mv *sky ../')
     os.system('mv %s ../'%vis )
     
     print 'Output calibration tables',h5files
