@@ -504,17 +504,12 @@ def measure_statistic2 (filename):
     img = pyfits.open(filename)[0].data.squeeze()
     im_rms = np.std(img)
     im_max = np.max(img)
-    ## find the central 10 percent of pixels
-    imdim = img.shape
-    midpoint = np.int(imdim[0]/2)
-    central_size = np.int(midpoint*0.1)
-    cen_cutout = img[midpoint-central_size:midpoint+central_size,midpoint-central_size:midpoint+central_size]
-    cen_rms = np.std(cen_cutout)
-    cen_max = np.max(cen_cutout)
-    ## compare the two
-    snr_img = im_max / im_rms
-    snr_cen = cen_max / cen_rms 
-    return abs (snr_cen/snr_img)
+    resfile = filename.replace('image','residual')
+    res = pyfits.open(resfile)[0].data.squeeze()
+    res_rms = np.std(res)
+    res_max = np.max(res)
+    snr = im_max / res_rms
+    return snr
 
 def measure_statistic ( filename ):
     img = pyfits.open(filename)[0].data.squeeze()
@@ -608,9 +603,9 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
             # Need something here to produce an image from startmod
             pass
         # check if there's a source
-        thisstat = measure_statistic(vis+'_%02d%s-image.fits'%(iloop,mfs))
+        thisstat = measure_statistic2(vis+'_%02d%s-image.fits'%(iloop,mfs))
         if thisstat < goodness:
-            pstr = 'goodness statistic is %f, breaking out of loop.'%thisstat
+            pstr = 'SNR is %f, breaking out of loop.'%thisstat
             loop3log( vis, pstr+'\n' )
 	    montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=False)
             return(0)
@@ -663,9 +658,9 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
                   outname=visA+'_%02d'%iloop,channelsout=wsclean_chans,robust=-1,\
                   fitsmask=fitsmask,dolocalrms=True,maxuvwm=cohlength)
 	## check if there's a source
-        thisstat = measure_statistic(visA+'_%02d%s-image.fits'%(iloop,mfs))
+        thisstat = measure_statistic2(visA+'_%02d%s-image.fits'%(iloop,mfs))
         if thisstat < goodness:
-            pstr = 'goodness statistic is %f, breaking out of loop.'%thisstat
+            pstr = 'SNR is %f, breaking out of loop.'%thisstat
             loop3log( vis, pstr+'\n' )
 	    montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
             return(0)
