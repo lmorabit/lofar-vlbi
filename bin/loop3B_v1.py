@@ -674,6 +674,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         if iloop!=ploop and thisstat-prevstat<0.01:
             pstr='****** EXITING AMPLITUDE CAL with diff %f *********'%(thisstat-prevstat)
             loop3log (vis, pstr+'\n')
+	    break
         else:   
             prevstat = thisstat
             imagr(visA,dopredict=True,fitsmask=fitsmask,autothreshold=3,dolocalrms=True,\
