@@ -66,6 +66,7 @@ def combine_subbands (in1array, nameout, datacol, phasecenter, fstep, tstep, phs
     if ismissing:
         fo.write('msin.missingdata=True\n')
         fo.write('msin.orderms=False\n')
+    fo.write('numthreads=3\n')
     fo.write('steps = [shift,avg,sadder,filter]\n')
     ss = 'shift.phasecenter = [%s]\n'%phasecenter
     fo.write(ss)
@@ -201,10 +202,7 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*'
                 ss = ss + ']'
                 fo.write(ss+'\n')
                 fo.write('msout = '+nameout+'\n')
-                fo.write('msin.datacolumn = %s\n'%datacol)
-                if ismissing:
-                    fo.write('msin.missingdata=True\n')
-                    fo.write('msin.orderms=False\n')
+		fo.write('numthreads=3\n')
                 fo.write('steps = []\n')
 	    fo.close()
     	    os.system('NDPPP %s'%parset_name)  # run with NDPPP
