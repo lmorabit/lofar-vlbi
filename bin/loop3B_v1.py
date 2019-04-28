@@ -161,7 +161,7 @@ def coherence_metric (htab='1327_test.ms_cal.h5',antenna_list='',solset='sol000'
 #   loop over antennas for which calibration is requested
     for i in range(len(antenna_list)):
         try: # find index of corresponding correction in the h5 
-            j = ant.index(antenna_list[i])
+            j = np.where(ant == antenna_list[i])
 # -- njj: do not use np.unwrap here - gives array full of NaN if even the
 #    first element is NaN
             diff = v[:,0,j,0]-v[:,0,j,1]
