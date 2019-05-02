@@ -10,6 +10,7 @@ import astropy.io.fits as pyfits
 from astropy.wcs import WCS
 import time
 import scipy
+from scipy import stats
 import pickle
 import losoto.h5parm as h5parm
 import matplotlib
@@ -17,18 +18,22 @@ matplotlib.use('Agg')
 import astropy
 from matplotlib import pyplot as plt
 import h5py
+import aplpy
 
 CCRIT=1.6 
 TSAMP=4.0    # time per sample. All times are in seconds. TSAMP is passed to NDPPP for writing
              # the parset, since solints in NDPPP parsets are in samples.
 
 def loop3log (vis, pstr, cret = True):
-    # write a log
+    # write a log entry
+    if '_A' in vis:
+        vis = vis.replace('_A','')
     fo = open(vis+'_proc.log','a')
     fo.write('%s'%pstr)
     fo.write('\n' if cret else '')
     fo.close()
-    print pstr
+    sys.stdout.write(pstr)
+    sys.stdout.write('\n' if cret else '')
 
 def h5read (htab, solset, soltab):
     # h5 routine to read h5 files. This is done in a separate python call
@@ -48,7 +53,7 @@ def h5read (htab, solset, soltab):
     os.system('rm tmp_read.py;rm v.pkl;rm vm.pkl')
     return v, vm
 
-def zerosol (H1,ant):
+def zerosol (vis,H1,ant):
     # Return a solution to zero (and ones if an amplitude solution exists).
     # Used after detection of an incoherent solution on an antenna.
     h1 = h5py.File(H1,'r+')
@@ -56,6 +61,7 @@ def zerosol (H1,ant):
     v1 = np.array(n1['val'])
     z = np.zeros_like(v1[:,:,0,:])
     ant1 = np.array(h1.get('sol000/phase000/ant'))
+    loop3log (vis, 'Solutions present and zeroed: ',cret=False)
     for i in range(len(ant1)):
         if ant1[i] in ant:
             try:
@@ -63,9 +69,11 @@ def zerosol (H1,ant):
             except:
                 pass
             h1['sol000/phase000/val'][:,:,i,:] = z
+            loop3log (vis,'%d '%i,cret=False)
+    loop3log (vis,' ')
     h1.close()
 
-def clcal (H1,H2,ant_interp=None):
+def clcal (vis,H1,H2,ant_interp=None):
     # Given two calibration structures H1 and H2, and antennas to interpolate, 
     # replace the phase calibration of H1 for each antenna with an interpolated 
     # version of H2. (Has been tested for phase, needs testing for amplitude)
@@ -74,6 +82,14 @@ def clcal (H1,H2,ant_interp=None):
     n1,n2 = h1.get('sol000/phase000'),h2.get('sol000/phase000')
     t1,t2 = np.array(n1['time']),np.array(n2['time'])
     v1,v2 = np.array(n1['val']),np.array(n2['val'])
+    for i in ant_interp:
+        loop3log (vis,i)
+    loop3log (vis,'Interpolating %s:'%H2)
+    for i in v2[0,0,:,0]:
+        loop3log (vis,('%6.2f'%i) if ~np.isnan(i) else 'nan', cret=False)
+    loop3log (vis,'\nInto %s:'%H1)
+    for i in v1[0,0,:,0]:
+        loop3log (vis,('%6.2f'%i) if ~np.isnan(i) else 'nan', cret=False)
     a1 = np.array(h1.get('sol000/phase000/ant'))
     try:
         na1,na2 = h1.get('sol000/amplitude000'),h2.get('sol000/amplitude000')
@@ -86,7 +102,6 @@ def clcal (H1,H2,ant_interp=None):
         # File "/data020/scratch/sean/fafa/lofar-lb/loop3_serviceB.py", line 72, in clcal
         # for i in range(len(a1)):
         # ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
-
         if a1[i] not in ant_interp:
             continue
         for iz in range(v1.shape[1]):
@@ -106,16 +121,17 @@ def clcal (H1,H2,ant_interp=None):
                     while z.min()<-np.pi:
                         np.putmask(z,z<-np.pi,z+2.*np.pi)
                     h1['sol000/phase000/val'][:,iz,i,ipol] = z
-
     h1.close(); h2.close()
     h1 = h5py.File(H1,'r+')
     n1 = h1.get('sol000/phase000')
     v1 = np.array(n1['val'])
+    loop3log (vis,'\nInterpolation result:')
+    for i in v1[0,0,:,0]:
+        loop3log (vis,('%6.2f'%i) if ~np.isnan(i) else 'nan', cret=False)
     h1.close()
 
 def calib (vis,incol='DATA',outcol='DATA',solint=180,solmode='P',\
            model=None,outms='.',outcal=None,tsamp=8.0,nchan=0):
-    loop3log (vis,'-------> %d %.1f'%(solint,tsamp))
     outcal = vis+'_cal' if outcal==None else outcal
     mgain = 'sourcedb=%s\n'%model if model else 'usemodelcolumn=true\n'
     caltype = 'phaseonly' if solmode=='P' else 'diagonal'
@@ -152,6 +168,8 @@ def coherence_metric (htab='1327_test.ms_cal.h5',antenna_list='',solset='sol000'
     NANFRAC, INCOH = 0.1, 2.0
     v, vm = h5read (htab, solset, soltab)
     ant,freq,pol,time = vm['ant'],vm['freq'],vm['pol'],vm['time']
+    if type(ant) != list:
+	ant = ant.tolist()
     coh = np.array([])
 #   If no antenna list is passed, assume that the antennas in the calibration
 #   table are the ones requested. This will fail on return if they are not
@@ -161,7 +179,7 @@ def coherence_metric (htab='1327_test.ms_cal.h5',antenna_list='',solset='sol000'
 #   loop over antennas for which calibration is requested
     for i in range(len(antenna_list)):
         try: # find index of corresponding correction in the h5 
-            j = np.where(ant == antenna_list[i])
+            j = ant.index(antenna_list[i])
 # -- njj: do not use np.unwrap here - gives array full of NaN if even the
 #    first element is NaN
             diff = v[:,0,j,0]-v[:,0,j,1]
@@ -235,7 +253,7 @@ def imagr (vis,threads=0,mem=100,doupdatemodel=True,tempdir='',dosaveweights=Fal
            robust=-1,domfsweight=False,gausstaper=0.0,tukeytaper=0.0,dostoreweights=False,outname='wsclean',\
            imsize=1024,cellsize='0.05asec',dopredict=False,niter=10000,pol='I',datacolumn='',autothreshold=3.,\
 	   dolocalrms=False,gain=0.1,mgain=1.0,domultiscale=False,dojoinchannels=False,channelsout=0,fitsmask='',\
-	   baselineaveraging=0.0,maxuvwm=0.0,minuvwm=100000.0,maxuvl=0.0,minuvl=0.0,dostopnegative=False,automask=0.,\
+	   baselineaveraging=0.0,maxuvwm=0.0,minuvwm=0.0,maxuvl=0.0,minuvl=0.0,dostopnegative=False,automask=0.,\
 	   dosavesourcelist=False,weightingrankfilter=0.0,weightingrankfiltersize=0.0):
     cmd = 'wsclean '
     cmd += ('' if not threads else '-j '+str(threads)+' ')
@@ -309,24 +327,19 @@ def sort_filelist( myfiles ):
 	if myloop == 'final':
 	    myloop = '999'
 	file_index.append(np.int(myloop))
-
     sort_index = np.argsort(file_index)
     file_array = np.array(myfiles)
     myfiles = list(file_array[sort_index])
     return myfiles    
 
 def plot_im( fitsfile, max_scaling=1.0, figsize=3, rms=0., rms_scaling=3. ):
-
     hdu = pyfits.open(fitsfile)[0]
     wcs = WCS(hdu.header,naxis=2)
-
     if rms == 0:
 	rms = np.std(hdu.data)
-
     if hdu.data.max()*max_scaling < rms:
 	print( 'Max value is less than the rms, setting max value scaling to 1' )
 	max_scaling = 1.
-
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1,projection=wcs)
     ax.imshow(hdu.data[0,0,:,:], vmin=rms*rms_scaling, vmax=hdu.data.max()*max_scaling)
@@ -335,7 +348,6 @@ def plot_im( fitsfile, max_scaling=1.0, figsize=3, rms=0., rms_scaling=3. ):
     fig.savefig( fitsfile.replace('.fits','.pdf') )
 
 def make_montage( filelist, outname='', nup='4x2' ):
-
     # create the filename 
     tmp = filelist[0].split('_')
     if 'image' in filelist[0]:
@@ -343,16 +355,13 @@ def make_montage( filelist, outname='', nup='4x2' ):
     elif 'residual' in filelist[0]:
 	imtype = 'residual'
     outname = tmp[0] + '_' + imtype + '.pdf'
-
     # move them to a temporary directory for making a montage
     os.system('mkdir montage_tmp')
-
     imlist = []
     for myfile in filelist:
 	myim = myfile.replace('.fits','.pdf')
 	imlist.append( myim )
 	os.system( 'mv %s montage_tmp/'%myim )
-	   
     # montage them together 
     os.chdir('montage_tmp')
     os.system('montage *.pdf -tile %s -geometry 600x600 %s'%(nup,outname))
@@ -361,12 +370,10 @@ def make_montage( filelist, outname='', nup='4x2' ):
     os.system('rm -r montage_tmp' )
 
 def montage_plot( filepattern, imscale=0.65, nup='4x2', plot_resid=True):
-
     if filepattern.split('.')[-1] == 'fits':
 	filelist = sort_filelist(glob.glob(filepattern))
     else:
 	filelist = sort_filelist(glob.glob('%s*-MFS-image.fits'%filepattern))
-
     # open the final image to get scaling parameters
     final_im = filelist[-1]
     with pyfits.open( final_im ) as im_hdu:
@@ -374,7 +381,6 @@ def montage_plot( filepattern, imscale=0.65, nup='4x2', plot_resid=True):
     im_hdu.close()
     std_estimate = np.abs(np.median(data))
     max_val = np.max(data)*imscale
-
     # plot the images on the same scale
     for myfile in filelist:
 	# get the std dev of the residual image
@@ -386,7 +392,6 @@ def montage_plot( filepattern, imscale=0.65, nup='4x2', plot_resid=True):
 	plot_im( myfile, max_scaling = imscale*max_val, rms = res_vals, rms_scaling=1 )
 	if plot_resid:
 	    plot_im( myfile.replace('image','residual'), max_scaling = 0.1, rms = res_vals, rms_scaling=1 )
-
     # make a montage
     make_montage( filelist, nup=nup )
     if plot_resid:
@@ -419,13 +424,12 @@ def cleanup(vis):
 
     return '%s_output.png'%vis, calfiles
 
-def imaging(vis,niters,threshold):
-    imagr (vis,cellsize='0.05asec',imsize=1024,maxuvl=1000000,\
-	  gain=0.1,mgain=0.85,dostopnegative=True,niter=niters,\
+def imaging(vis,niters,threshold,minuvw,robust):
+    imagr (vis,cellsize='0.05asec',imsize=1024,maxuvl=1000000,robust=robust,\
+	  minuvwm=minuvw,gain=0.1,mgain=0.85,dostopnegative=True,niter=niters,\
 	  autothreshold=threshold,weightingrankfiltersize=256,\
 	  weightingrankfilter=3,domultiscale=True,automask=7.0,\
 	  outname='test',dolocalrms=True)
-
 # Needs an initial model. May be provided as:
 #    model=None        Make an image and use that. (Unlikely to be a good idea)
 #    model='MODEL'     Look in the MODEL_DATA column
@@ -434,10 +438,10 @@ def imaging(vis,niters,threshold):
 #  NOTE: uses bdsf - version 1.8.13 which loads by default has a conflict with
 #  other libraries - may need to unload and use 1.8.10 instead 
 
-def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
+def selfcal(vis,minuvw,robust,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
 	    incol='DATA',outcol='DATA',caltype='P',nchan=0):
     if not model:
-	imaging(vis,1000,10)
+	imaging(vis,1000,10,minuvw,robust)
     # need a predict step to deal with sourcedb here if necessary
     ptant = casatb.table(vis+'/ANTENNA')
     antenna_list = np.array([],dtype='S')
@@ -453,16 +457,18 @@ def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
 	    solint = sol_int_range[i]
 	    outcal_root = outcal_root if len(outcal_root) else vis
 	    outcal = outcal_root+'_c%d.h5'%i
-	    loop3log (vis,'Beginning pass with solint %.1f sec\n' % (solint))
+	    loop3log (vis,'\n--- Beginning pass with solint %.1f sec ---' % (solint))
 	    calib (vis, solint=solint, outcal=outcal, incol=incol, \
 				 outcol=outcol,solmode='P',tsamp=TSAMP,nchan=nchan)
 	    snplt (vis,htab=outcal,outpng=outcal)
 	    coh[i] = coherence_metric (outcal,antenna_list)
-	    loop3log(vis,'Coherences: \n')
+	    loop3log(vis,'\nCoherences by antenna:')
 	    for j in range(nant):
-		loop3log(vis,'%s:%f '%(antenna_list[j],coh[i,j]),cret=False)
-	    if len(coh[i][coh[i]>=CCRIT])==0:
+		loop3log(vis,'%.2f '%(coh[i,j]),cret=not((j+1)%10))
+            loop3log(vis,' ')
+	    if len(coh[i][coh[i]>=CCRIT])==0:  # all coherent
 		break
+
     # For each antenna in the antenna list, find the selfcal table with 
     # the shortest solution interval that contains coherent solutions. If 
     # there is no such table, report -1 in order to signal that they should 
@@ -475,19 +481,32 @@ def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
 		allcoh[i] = coh[:,i][ncoh[i]]
 	    except:
 		pass
+        loop3log(vis,'\nCombined coherences: ')
+        for i in range(nant):
+    	    loop3log(vis,'%.2f '%(allcoh[i]),cret=not((i+1)%10))
+        loop3log(vis,'\nSolution number with first coherence (-1=no coh):')
+        for i in range(nant):
+    	    loop3log(vis,'%d '%(ncoh[i]),cret=not((i+1)%10))
+        loop3log(vis,' ')
+        loop3log(vis,' ----- Starting edit of this solution ------')
     # For each selfcal table containing the shortest solution interval with 
     # coherence on some antennas, replace the entries in the first selfcal 
     # table with the interpolated values from that antenna
 	for i in range(1,coh.shape[0]):
 	    iant = antenna_list[ncoh==i]
+            loop3log(vis,'Editing %d antennas to h5parm number %d'%(len(iant),i))
 	    if len(iant):
-		clcal (outcal_root+'_c0.h5',outcal_root+'_c%d.h5'%i,\
+		clcal (vis,outcal_root+'_c0.h5',outcal_root+'_c%d.h5'%i,\
 				     ant_interp=iant)
     # For each antenna without any coherence at all, zero the phase 
     # solutions for that antenna
 	iant = antenna_list[ncoh==-1]
 	if len(iant):
-	    zerosol (outcal_root+'_c0.h5',iant)
+            loop3log (vis,'Trying to zero antennas: ',cret=False)
+            for i in range(len(iant)):
+                loop3log(vis,'%s '%iant[i],cret=False)
+            loop3log(vis,'\n')
+	    zerosol (vis,outcal_root+'_c0.h5',iant)
     else:    # amplitude selfcal: only one interval
 	outcal_root = outcal_root if len(outcal_root) else vis
 	outcal = outcal_root+'_c0.h5'%i
@@ -495,14 +514,18 @@ def selfcal(vis,model='MODEL',outcal_root='',max_sol=600.0,init_sol=30.0,\
 				 outcol=outcol,solmode='A', nchan=nchan)
 	snplt (vis,htab=outcal,outpng=outcal,soltab='amplitude000')
 	allcoh = coherence_metric (outcal,antenna_list)
-	loop3log(vis,'Coherences: \n')
-	for i in range(nant):
-	    loop3log(vis,'%s:%f '%(antenna_list[i],allcoh[i]),cret=False)
+        loop3log(vis,'Coherences: \n')
+        for i in range(nant):
+    	    loop3log(vis,'%.2f '%(allcoh[i]),cret=not((i+1)%10))
+        loop3log(vis,' ')
     # For each antenna without any coherence at all, zero the amp/phase 
     # solutions for that antenna
-	iant = antenna_list[allcoh<CCRIT]
+    # corrected bug here (Neal) - used to be < so everything was zeroed
+	iant = antenna_list[allcoh>=CCRIT]
+        print ('******',allcoh)
+        print ('******>>> ',iant)
 	if len(iant):
-	    zerosol (outcal_root+'_c0.h5',ant=iant)
+	    zerosol (vis,outcal_root+'_c0.h5',ant=iant)
     # find the maximum baseline length with coherent cal signal
     cohlength = getcoh_baseline (antenna_list,allcoh,CCRIT)
     return allcoh,cohlength
@@ -548,14 +571,153 @@ def applycal_split (vis, visA, solset, parmdb, soltab='phase000',\
     fo.close()
     os.system ('NDPPP split.parset')
 
-def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidth='8MHz',goodness=2.):
+def fits_axzapit (h, k):
+    try:
+        h.remove(k)
+        return False
+    except:
+        return True
 
+def fits_axzap (infile,outfile):
+    hdulist = pyfits.open(infile)
+    hdu = hdulist[0]
+    while hdu.data.ndim>2:
+        shrinkax = np.argwhere(hdu.data.shape==np.min(hdu.data.shape))[0][0]
+        hdu.data = np.take (hdu.data,0,axis=shrinkax)
+    i=2
+    while True:
+        i+=1
+        isit = fits_axzapit (hdu.header,'CRPIX%d'%i)
+        fits_axzapit (hdu.header,'CTYPE%d'%i)
+        fits_axzapit (hdu.header,'CUNIT%d'%i)
+        fits_axzapit (hdu.header,'CRVAL%d'%i)
+        fits_axzapit (hdu.header,'CDELT%d'%i)
+        fits_axzapit (hdu.header,'CRPIX%d'%i)
+        fits_axzapit (hdu.header,'CROTA%d'%i)
+        hdu.header.update()
+        if isit:
+            break
+    os.system ('rm '+outfile)
+    hdu.writeto (outfile)
+
+def make_plots(vis):
+    import glob
+    imgroot = np.sort(glob.glob(vis+'*MFS-image.fits'))
+    nloop = len(imgroot)
+    h5png = glob.glob(vis+'*h5_*.png')
+    npng = 0
+    for i in h5png:
+        npng = max(npng,int(i.split('_')[-1].split('.')[0])+1)
+    cmd = 'montage -tile %dx%d -geometry 600x600 '%(npng+1,nloop)
+    for i in range(nloop):
+        aplpy_plots( imgroot[i] )
+        thisv = imgroot[i].split('-MFS-image.fits')[0]
+        for j in range(npng):
+            this = '%s_c0.h5_%d.png'%(thisv,j)
+            cmd += (this+' ') if os.path.isfile(this) else 'null: '
+        this = thisv+'-MFS-image.png'
+#        print 'trying to add',this,os.path.isfile(this)
+        cmd += (this+' ') if os.path.isfile(this) else 'null: '
+    cmd += '%s_output.png'%vis
+    print cmd
+    os.system(cmd)
+
+def aplpy_plots( infits, docut=2.0, outpng='', nolabel=False,  crms=3.0, noshift=False, margin=1.7 ):
+    sextractor = '/home/jackson/sextractor/usr/bin/sex'
+    with open('default.param','w') as f:
+        f.write('NUMBER\nX_IMAGE\nY_IMAGE\nFLUX_ISO\nFLUX_RADIUS\nFLUX_MAX\nISOAREA_IMAGE\n')
+    f.close()
+    os.system(sextractor+' -d >default.sex')
+    with open('default.conv','w') as f:
+        f.write('CONV NORM\n# 3x3 ``all-ground\'\' convolution mask with FWHM = 2 pixels\n')
+        f.write('1 2 1\n2 4 2\n1 2 1\n')
+    f.close()
+    print 'Plotting ',infits
+    fits_axzap (infits,'temp.fits')
+    a = pyfits.getdata('temp.fits')
+    h = pyfits.getheader('temp.fits')
+    nx,ny = h['NAXIS1'],h['NAXIS2']
+    field_radius = h['CDELT2']*ny/2.0
+    nx,ny = a.shape[1],a.shape[0]
+    trms,tmax = np.array([]), np.array([])
+    for i in range(10):
+        x1,x2 = int(0.1*i*nx),int(0.1*(i+1)*nx-1)
+        for j in range(10):
+            y1,y2 = int(0.1*j*ny),int(0.1*(j+1)*ny-1)
+            trms = np.append(trms,np.std(a[y1:y2,x1:x2]))
+            tmax = np.append(tmax,np.std(a[y1:y2,x1:x2]))
+    rms = np.nanmedian(trms)
+    vmin,vmax = np.nanmin(a),np.nanmax(a)
+    pyfits.writeto('temp.fits',a,h,overwrite=True)
+    os.system(sextractor+' temp.fits')
+    s = np.loadtxt('test.cat')
+    s = np.array([s]) if s.ndim==1 else s
+    reqsig = stats.norm.ppf(1-0.5/float(nx*ny)) + (2.0 if docut<-1.0 else docut)
+    s = s[s[:,5]>reqsig*rms]
+    for i in s:
+        print 'Component at (%.1f,%.1f): %f' % (i[1],i[2],i[5])
+    gc = aplpy.FITSFigure('temp.fits')
+    pixra,pixdec = np.mean(s[:,1]),np.mean(s[:,2])
+    dec = h['CRVAL2']+h['CDELT2']*(pixdec-h['CRPIX2'])
+    cosdec = np.cos(np.deg2rad(dec))
+    ra = h['CRVAL1']+h['CDELT1']*(pixra-h['CRPIX1'])/cosdec
+    deccen = h['CRVAL2']+h['CDELT2']*(0.5*ny-h['CRPIX2'])
+    cosdeccen = np.cos(np.deg2rad(deccen))
+    racen = h['CRVAL1']+h['CDELT1']*(0.5*nx-h['CRPIX1'])/cosdeccen
+    pix_range = max(s[:,1].max()-s[:,1].min(),s[:,2].max()-s[:,2].min())
+    try:
+        deg_range = max(margin*h['CDELT2']*pix_range,0.1*ny*h['CDELT2'])
+    except:
+        deg_range = 1./60.
+        print 'Error on deg_range, pix_range %f'%pix_range
+    if docut<-1.0:
+        deg_range = -2.0*docut/3600.
+    print 'Range is %.1f arcsec, %.1f pix\n'%(1800.0*deg_range,pix_range)
+    if noshift:
+        gc.recenter(racen,deccen,0.5*deg_range)
+    else:
+        gc.recenter(ra,dec,0.5*deg_range)
+    gc.set_tick_color('black')
+    gc.show_colorscale(cmap=matplotlib.cm.gray_r,vmin=vmin,vmax=vmax)
+    levels, tlevels = [vmax], vmax
+    while tlevels > crms*rms:
+        tlevels /= np.sqrt(2)
+        levels.append(tlevels)
+    gc.show_contour(levels=np.sort(levels))
+    if not nolabel:
+        bstr=''
+        for i in range(len(h)):
+            try:
+                if 'BMAJ' in h[i] and 'AIPS' in h[i]:
+                    bmaj = 3600.*float(h[i].split('BMAJ=')[1].split()[0])
+                    bmin = 3600.*float(h[i].split('BMIN=')[1].split()[0])
+                    bstr = 'beam %.1fx%.1f'%(bmaj,bmin)
+            except:
+                pass
+        if rms>0.1:
+            gc.add_label(0.5,0.05,'Peak %.1f, rms %.1f Jy %s'%\
+                    (vmax,rms,bstr),relative=True,size=14)
+        elif rms>1.e-4:
+            gc.add_label(0.5,0.05,'Peak %.1f, rms %.1f mJy %s'%\
+                    (vmax*1000.,rms*1000.,bstr),relative=True,size=14)
+        else:
+            gc.add_label(0.5,0.05,'Peak %.1f, rms %.1f uJy %s'%\
+                    (vmax*1.e6,rms*1.e6,bstr),relative=True,size=14)
+    if outpng=='':
+        outpng=infits.replace('fits','png')
+    gc.save(outpng)
+    os.system('rm default.conv;rm default.sex;rm default.param;rm temp.fits')
+
+
+def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,\
+          bandwidth='8MHz',goodness=2.,minuvw=50.0,robust=-1.0):
     ## format arguments
     strategy = str(strategy)
     startmod = str(startmod)
     ith = float(ith)
     bandwidth = str(bandwidth)
-
+    minuvw = float(minuvw)*1000.0   # convert km -> m
+    robust = float(robust)
     ## process arguments
     vis = vis.rstrip('/')
     vis = vis.split('/')[-1]
@@ -571,7 +733,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
     if bw_unit == 'MHz':
 	bw_val = float(bw_val)*1e6
     ## get bandwidth of vis
-    spec_info = casatb.table( vis + '/SPECTRAL_WINDOW')
+    spec_info = casatb.table( vis + '::SPECTRAL_WINDOW')
     total_bw = spec_info.getcol('TOTAL_BANDWIDTH')[0]
     num_chan = spec_info.getcol('NUM_CHAN')[0]
     spec_info.close()
@@ -583,13 +745,11 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
 	wsclean_chans = int( np.ceil(total_bw/bw_val) )
 	mfs='-MFS'
 	nchan=num_chan/wsclean_chans
-
-    ## make a working directory and go there
+## make a working directory and go there
     tmp_dir = 'loop3_'+vis.rstrip('.ms').rstrip('.MS')
     os.system('mkdir %s'%tmp_dir)
     os.chdir(tmp_dir)
     os.system('mv ../%s .'%vis)
-
     import bdsf
     prevstat = 0.0
     cohlength = 2.0E6
@@ -605,8 +765,8 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         if startmod=='' or iloop:
             pstr = '******* PHASE LOOP %d running wsclean ************'%iloop
             loop3log (vis, pstr+'\n')
-            imagr(vis,cellsize='0.05asec',domultiscale=True,\
-                  outname=vis+'_%02d'%iloop,channelsout=wsclean_chans,robust=-1,\
+            imagr(vis,minuvwm=minuvw,robust=robust,cellsize='0.05asec',domultiscale=True,\
+                  outname=vis+'_%02d'%iloop,channelsout=wsclean_chans,\
                   fitsmask=fitsmask,dolocalrms=True,maxuvwm=cohlength)
         else:
             # Need something here to produce an image from startmod
@@ -633,13 +793,15 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
             break
         else:   
             prevstat = thisstat
-            imagr(vis,dopredict=True,fitsmask=fitsmask,autothreshold=3,dolocalrms=True,\
-                                robust=-1,outname=vis+'_%02d%s'%(iloop,mfs))
+            imagr(vis,minuvwm=minuvw,robust=robust,dopredict=True,fitsmask=fitsmask,\
+                  autothreshold=3,dolocalrms=True,\
+                  outname=vis+'_%02d%s'%(iloop,mfs))
         pstr='******* PHASE LOOP %d making new cal file %s ************' % (iloop,vis+'_%02d'%iloop)
         loop3log (vis, pstr+'\n')
         caltype, sol0 = strategy[iloop][0], float(strategy[iloop][1:])
-        coh, cohlength = selfcal(vis,model='MODEL',incol='DATA',outcol='CORRECTED_DATA',\
-                      outcal_root=vis+'_%02d'%iloop,caltype=caltype,init_sol=sol0,nchan=nchan)
+        coh, cohlength = selfcal(vis,minuvw,robust,model='MODEL',incol='DATA',\
+            outcol='CORRECTED_DATA',outcal_root=vis+'_%02d'%iloop,\
+            caltype=caltype,init_sol=sol0,nchan=nchan)
         snver = iloop
         pstr='******** END PHASE LOOP %d - coherence on %.1f km **********' % \
               (iloop,cohlength/1000.)
@@ -663,8 +825,8 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         fitsmask = init_fitsmask if iloop==ploop else visA+'_%02d-mask.fits'%(iloop-1)
         pstr='******* AMPLITUDE LOOP %d running wsclean ************'%iloop
         loop3log (vis, pstr+'\n')
-        imagr(visA,cellsize='0.05asec',domultiscale=True,\
-                  outname=visA+'_%02d'%iloop,channelsout=wsclean_chans,robust=-1,\
+        imagr(visA,minuvwm=minuvw,robust=robust,cellsize='0.05asec',domultiscale=True,\
+                  outname=visA+'_%02d'%iloop,channelsout=wsclean_chans,\
                   fitsmask=fitsmask,dolocalrms=True,maxuvwm=cohlength)
 	## check if there's a source
         thisstat = measure_statistic2(visA+'_%02d%s-image.fits'%(iloop,mfs))
@@ -676,7 +838,7 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
         image_bdsf = '%s_%02d%s-image.fits'%(visA,iloop,mfs)
         pstr='******* AMPLITUDE LOOP %d making mask %s_%02d%s-image.fits ************'%(iloop,visA,iloop,mfs)
         loop3log (vis, pstr+'\n')
-        img=bdsf.process_image(image_bdsf,atrous_do=True,thresh_isl=5.0)
+        img=bdsf.process_image(image_bdsf,atrous_do=True,thresh_isl=ith)
         img.export_image(img_type='island_mask',outfile='%s_%02d-mask.fits'%(visA,iloop))
         pstr='******* AMPLITUDE LOOP %d goodness stat %f ************' % (iloop,thisstat)
         loop3log (vis, pstr+'\n')
@@ -686,21 +848,23 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
 	    break
         else:   
             prevstat = thisstat
-            imagr(visA,dopredict=True,fitsmask=fitsmask,autothreshold=3,dolocalrms=True,\
-                                robust=-1,outname=visA+'_%02d%s'%(iloop,mfs))
+            imagr(visA,minuvwm=minuvw,dopredict=True,fitsmask=fitsmask,\
+                  autothreshold=3,dolocalrms=True,robust=robust,\
+                  outname=visA+'_%02d%s'%(iloop,mfs))
         pstr='******* AMPLITUDE LOOP %d making new cal file %s ************' % (iloop,visA+'_%02d'%iloop)
         loop3log (vis, pstr+'\n')
         caltype, sol0 = strategy[iloop][0], float(strategy[iloop][1:])
-        coh,cohlength = selfcal(visA,model='MODEL',incol='DATA',outcol='CORRECTED_DATA',\
-                      outcal_root=visA+'_%02d'%iloop,caltype=caltype,init_sol=sol0,nchan=nchan)
+        coh,cohlength = selfcal(visA,minuvw,robust,model='MODEL',incol='DATA',\
+            outcol='CORRECTED_DATA',outcal_root=visA+'_%02d'%iloop,\
+            caltype=caltype,init_sol=sol0,nchan=nchan)
         pstr='******** END AMPLITUDE LOOP %d - coherence on %.1f km **********' % \
                       (iloop,cohlength/1000.)
         loop3log (vis, pstr+'\n')
 
 
     fitsmask = init_fitsmask if iloop==ploop else visA+'_%02d-mask.fits'%(iloop-1)
-    imagr(visA,cellsize='0.05asec',domultiscale=True,\
-          outname=visA+'_final',channelsout=wsclean_chans,robust=-1,\
+    imagr(visA,minuvwm=minuvw,cellsize='0.05asec',domultiscale=True,\
+          outname=visA+'_final',channelsout=wsclean_chans,robust=robust,\
           fitsmask=fitsmask,dolocalrms=True)
 
     ## make a model from the final image
@@ -708,12 +872,16 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,bandwidt
     if len(final_im) > 1:
 	tmp = [ a for a in final_im if 'MFS' in a ]
 	final_im = tmp
-    img = bdsf_process_image( final_im[0], atrous_do=True, thresh_isl=10.0 )
+    img = bdsf.process_image( final_im[0], atrous_do=True, thresh_isl=ith )
     skyfile = final_im[0].replace('fits','skymodel')
     img.write_catalog( outfile=skyfile, bbs_patches='single', catalog_type='gaul', format='bbs' )
     ## convert it to a sourcedb
     ss = "makesourcedb in=%s out=%s format='<'"%(skyfile,skyfile.replace('skymodel','sky'))
     os.system(ss)
+
+    ## plot things like solutions
+    make_plots( vis )
+    make_plots( visA )
 
     ## If we got to this point, self-cal has successfully completed    
     montage_plot( '*MFS-image.fits', imscale=0.65, nup='4x2', plot_resid=True)
@@ -740,9 +908,11 @@ if __name__ == "__main__":
     parser.add_argument('--ith', default=5.0, type=float, help='threshold for pybdsf island detection, default 5.0')
     parser.add_argument('--bandwidth', default='8MHz', type=str, help='max bandwidth before breaking imaging into channels, default 8MHz')
     parser.add_argument('--goodness', default=2.0, type=float, help='cutoff between noise and source' )
+    parser.add_argument('--minuvw', default=50.0, type=float, help='minimum baseline in km' )
+    parser.add_argument('--robust', default=-1, type=float, help='Briggs weighting' )
 
 
     args = parser.parse_args()
 
-    main( vis=args.vis, strategy=args.strategy, ith=args.ith, bandwidth=args.bandwidth, goodness=args.goodness )
+    main( vis=args.vis, strategy=args.strategy, ith=args.ith, bandwidth=args.bandwidth, goodness=args.goodness, minuvw=args.minuvw, robust = args.robust )
 
