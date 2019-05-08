@@ -648,7 +648,7 @@ def aplpy_plots( infits, docut=2.0, outpng='', nolabel=False,  crms=3.0, noshift
             tmax = np.append(tmax,np.std(a[y1:y2,x1:x2]))
     rms = np.nanmedian(trms)
     vmin,vmax = np.nanmin(a),np.nanmax(a)
-    pyfits.writeto('temp.fits',a,h,overwrite=True)
+    pyfits.writeto('temp.fits',a,h,clobber=True)
     os.system(sextractor+' temp.fits')
     s = np.loadtxt('test.cat')
     s = np.array([s]) if s.ndim==1 else s
