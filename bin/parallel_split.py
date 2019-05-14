@@ -86,8 +86,6 @@ def combine_subbands (in1array, nameout, datacol, phasecenter, fstep, tstep, phs
 def lotss2coords (lotssfile):
 
     a = ascii.read(lotssfile)
-    if len(a) == 1:
-	a = ','.join([str(a['LOTSS_RA']),str(a['LOTSS_DEC']),a['Source_id']])
     coords=np.array([],dtype='S')
     for xx in range(len(a)):
 	tmp = a[xx]
@@ -189,6 +187,7 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*'
         for cal_name in cal_names:
 	    cal_bands = glob.glob(cal_name+'*phasecal_band*MS')
 	    cal_bands = natural_sort(cal_bands)
+	    cal_bands = addghost( cal_bands )
 	    tmp = cal_bands[0].split('_')
 	    nameout = '_'.join([tmp[0],tmp[1],tmp[2]])
 	    nameout = nameout + '.MS'
