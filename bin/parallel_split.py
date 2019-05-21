@@ -91,8 +91,6 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
 def lotss2coords (lotssfile):
 
     a = ascii.read(lotssfile)
-    if len(a) == 1:
-	a = ','.join([str(a['LOTSS_RA']),str(a['LOTSS_DEC']),a['Source_id']])
     coords=np.array([],dtype='S')
     for xx in range(len(a)):
 	tmp = a[xx]
@@ -168,7 +166,6 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*'
     if nsbs < len(mslist):
 	## need to split into bands
 	print('YOU HAVE CHOSEN POORLY')
-
     else:
 	print('SUCCESSFULLY ENTERED ELSE STATEMENT')
 	# define an empty dictionary
