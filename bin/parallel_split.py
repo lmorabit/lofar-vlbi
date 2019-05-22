@@ -72,7 +72,7 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
         if ismissing:
             fo.write('msin.missingdata=True\n')
             fo.write('msin.orderms=False\n')
-        fo.write('numthreads=8\n')
+        fo.write('numthreads=4\n')
         fo.write('steps = [shift,avg,sadder,filter]\n')
         fo.write('shift.phasecenter = [%s]\n'%phasecenter)
         fo.write('shift.type = phaseshift\n')
@@ -139,7 +139,7 @@ def source (coords,ncpu):
     source_thread.parallel = parallel_function(source_thread,ncpu)
     parallel_result = source_thread.parallel(coords)
 
-def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=10 ):
+def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=999 ):
 
     phaseup_cmd = str(phaseup_cmd)
     filter_cmd = str(filter_cmd)
@@ -167,7 +167,7 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*'
 	## need to split into bands
 	print('YOU HAVE CHOSEN POORLY')
     else:
-	print('SUCCESSFULLY ENTERED ELSE STATEMENT')
+	print('COMBINING ALL SUBBANDS')
 	# define an empty dictionary
 	cal_dict = {}
 	# add the mslist
@@ -195,6 +195,10 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*'
 	    tmp_dict['outname'] = coord_tmp[2]+'_'+obsid+'_phasecal.MS'
 	    tmp.append(tmp_dict)
         coords = tmp
+	## find number of sources to set right number of cpus
+	## each ndppp process will use 4 threads (this is hardcoded atm)
+	ncpu = int( np.min([len(coords),ncpu/4]) )
+
         #print( coords )
         starttime = datetime.datetime.now()
         source( coords, ncpu )
@@ -215,7 +219,7 @@ if __name__ == "__main__":
     parser.add_argument('--datacol',type=str,help='datacolumn to use (default CORRECTED_DATA)',default='CORRECTED_DATA')
     parser.add_argument('--timestep',type=int,default=8)
     parser.add_argument('--freqstep',type=int,default=8)
-    parser.add_argument('--nsbs',type=int,help='number of subbands to combine before combining all (default 10)',default=10)
+    parser.add_argument('--nsbs',type=int,help='number of subbands to combine before combining all (default 999=all)',default=999)
     args = parser.parse_args()
 
     MS_input = glob.glob( args.MS_pattern )
