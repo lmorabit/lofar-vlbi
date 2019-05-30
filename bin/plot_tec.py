@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import os
 import glob
+import argparse
 
-def main( ms_input ):
+def main( ms_input, h5pattern='S*_tec.h5' ):
 
-    tec_h5parms = glob.glob('S*_tec.h5')
+    tec_h5parms = glob.glob(h5pattern)
 
     for tec_h5parm in tec_h5parms:
 
@@ -30,8 +31,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='plot tec solutions for all existing h5parms')
     parser.add_argument('MS_pattern',type=str, help='pattern to search for MS')
+    parser.add_argument('--h5_pattern',type=str, default='S*_tec.h5', help='pattern to search for h5parms')
     args = parser.parse_args()
 
-    MS_input = glob.glob( args.MS_pattern )
-
-    main( MS_input )
+    main( args.MS_pattern, h5pattern=args.h5_pattern )
