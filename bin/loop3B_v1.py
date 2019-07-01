@@ -19,6 +19,9 @@ import astropy
 from matplotlib import pyplot as plt
 import h5py
 import aplpy
+import bdsf
+from astropy.io import ascii
+
 
 CCRIT=1.6 
 TSAMP=4.0    # time per sample. All times are in seconds. TSAMP is passed to NDPPP for writing
@@ -623,22 +626,14 @@ def make_plots(vis):
     os.system(cmd)
 
 def aplpy_plots( infits, docut=2.0, outpng='', nolabel=False,  crms=3.0, noshift=False, margin=1.7 ):
-    sextractor = '/home/jackson/sextractor/usr/bin/sex'
-    with open('default.param','w') as f:
-        f.write('NUMBER\nX_IMAGE\nY_IMAGE\nFLUX_ISO\nFLUX_RADIUS\nFLUX_MAX\nISOAREA_IMAGE\n')
-    f.close()
-    os.system(sextractor+' -d >default.sex')
-    with open('default.conv','w') as f:
-        f.write('CONV NORM\n# 3x3 ``all-ground\'\' convolution mask with FWHM = 2 pixels\n')
-        f.write('1 2 1\n2 4 2\n1 2 1\n')
-    f.close()
+
+    ## open the file to get the data and the header information
     print 'Plotting ',infits
-    fits_axzap (infits,'temp.fits')
-    a = pyfits.getdata('temp.fits')
-    h = pyfits.getheader('temp.fits')
+    hdul = pyfits.open( infits )
+    a = hdul[0].data.squeeze()
+    h = hdul[0].header
     nx,ny = h['NAXIS1'],h['NAXIS2']
     field_radius = h['CDELT2']*ny/2.0
-    nx,ny = a.shape[1],a.shape[0]
     trms,tmax = np.array([]), np.array([])
     for i in range(10):
         x1,x2 = int(0.1*i*nx),int(0.1*(i+1)*nx-1)
@@ -648,23 +643,28 @@ def aplpy_plots( infits, docut=2.0, outpng='', nolabel=False,  crms=3.0, noshift
             tmax = np.append(tmax,np.std(a[y1:y2,x1:x2]))
     rms = np.nanmedian(trms)
     vmin,vmax = np.nanmin(a),np.nanmax(a)
-    pyfits.writeto('temp.fits',a,h,clobber=True)
-    os.system(sextractor+' temp.fits')
-    s = np.loadtxt('test.cat')
-    s = np.array([s]) if s.ndim==1 else s
+
+    ## calculate the required sigma
     reqsig = stats.norm.ppf(1-0.5/float(nx*ny)) + (2.0 if docut<-1.0 else docut)
-    s = s[s[:,5]>reqsig*rms]
-    for i in s:
-        print 'Component at (%.1f,%.1f): %f' % (i[1],i[2],i[5])
-    gc = aplpy.FITSFigure('temp.fits')
-    pixra,pixdec = np.mean(s[:,1]),np.mean(s[:,2])
+
+    ## run bdsf to get a gaussian list
+    img = bdsf.process_image( infits, thresh_isl=reqsig )
+    img.write_catalog( outfile='temp.gaul', catalog_type='gaul', format='ascii', clobber=True )
+
+    ## read in the file
+    s = ascii.read('temp.gaul',format='commented_header', header_start=4)
+    print s
+   
+    ## make a plot
+    gc = aplpy.FITSFigure(infits)
+    pixra,pixdec = np.mean(s['Xposn']),np.mean(s['Yposn'])
     dec = h['CRVAL2']+h['CDELT2']*(pixdec-h['CRPIX2'])
     cosdec = np.cos(np.deg2rad(dec))
     ra = h['CRVAL1']+h['CDELT1']*(pixra-h['CRPIX1'])/cosdec
     deccen = h['CRVAL2']+h['CDELT2']*(0.5*ny-h['CRPIX2'])
     cosdeccen = np.cos(np.deg2rad(deccen))
     racen = h['CRVAL1']+h['CDELT1']*(0.5*nx-h['CRPIX1'])/cosdeccen
-    pix_range = max(s[:,1].max()-s[:,1].min(),s[:,2].max()-s[:,2].min())
+    pix_range = max(s['Xposn'].max()-s['Xposn'].min(), s['Yposn'].max()-s['Yposn'].min())
     try:
         deg_range = max(margin*h['CDELT2']*pix_range,0.1*ny*h['CDELT2'])
     except:
