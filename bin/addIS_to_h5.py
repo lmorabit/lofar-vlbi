@@ -42,7 +42,7 @@ def makesolset(MS, data, solset_name):
 
     return antennaNames
 
-def main(h5parmfile, MSfiles, cal_solset='calibrator', solset_in='target', solset_out='targetIS', do_int_stations=False ):
+def main(h5parmfile, MSfiles, cal_solset=None, solset_in='target', solset_out='targetIS', do_int_stations=False ):
 
     mslist = MSfiles.lstrip('[').rstrip(']').replace(' ','').replace("'","").split(',')
 
@@ -92,62 +92,63 @@ def main(h5parmfile, MSfiles, cal_solset='calibrator', solset_in='target', solse
             tmp = solset.getSoltab('RMextract')
         new_times = tmp.time
         tmp = 0
-
-	calsols = data.getSolset(cal_solset)
-	cal_soltabNames = ['polalign', 'clock', 'bandpass']
 	
-	logging.info('Finding median values for calibrator and interpolating to target times')
-        for cal_soltab_name in cal_soltabNames:
-            logging.info('Interpolating solution table %s'%(cal_soltab_name))
-            soltab = calsols.getSoltab(cal_soltab_name)
-            soltab_axes = soltab.getAxesNames()
-            soltab_type = ''.join([i for i in cal_soltab_name if not i.isdigit()])
-            if soltab_type == 'RMextract':
-                soltab_type = 'rotationmeasure'
-            if soltab_type == 'bandpass':
-                soltab_type = 'amplitude'
-            if soltab_type == 'polalign':
-                soltab_type = 'phase'
-	    # format output axes
-            if len(soltab_axes) == 2:
-                out_axes = ['time','ant']
-		out_axes_vals = [new_times, soltab.ant]
-		out_lens = (len(new_times),len(soltab.ant))
-	    elif len(soltab_axes) == 4:
-                out_axes = ['time','ant','freq','pol']
-		out_axes_vals = [new_times, soltab.ant, soltab.freq, soltab.pol]
-		out_lens = (len(new_times),len(soltab.ant),len(soltab.freq),len(soltab.pol))
-	    elif len(soltab_axes) == 5:
-		out_axes = ['time','freq','ant','dir','pol']
-                out_axes_vals = [new_times, soltab.freq, soltab.ant, soltab.dir, soltab.pol]
-		out_lens = (len(new_times),len(soltab.freq),len(soltab.ant),len(soltab.dir),len(soltab.pol))
+	if cal_solset is not None:
+		calsols = data.getSolset(cal_solset)
+		cal_soltabNames = ['polalign', 'clock', 'bandpass']
 
-	    # get the values, weights, etc.
-            for vals, weights, coord, selection in soltab.getValuesIter(returnAxes=soltab_axes, weight=True ):
-		vals = reorderAxes( vals, soltab_axes, out_axes )
-		weights = reorderAxes( weights, soltab_axes, out_axes )
-                pass
-	    # find the time axis
-	    time_axis_len = soltab.getAxisLen('time')
-	    # get the median values for the antennas
-	    med_vals = np.nanmedian(vals, axis=0)
-	    # replace vals, weights with the medians
-	    new_vals = np.ndarray(shape=out_lens)
-	    new_weights = np.ones(shape=out_lens)
-	    # make an index array
-	    for x in np.arange(len(new_times)):
-                if len(soltab_axes) == 2:
-		    new_vals[x,:] = med_vals
-                elif len(soltab_axes) == 4:
-		    new_vals[x,:,:,:] = med_vals
-                elif len(soltab_axes) == 5:
-		    new_vals[x,:,:,:,:] = med_vals
-            new_soltab = OutSolset.makeSoltab(soltype=soltab_type, soltabName=cal_soltab_name,
-                                    axesNames=out_axes, axesVals=out_axes_vals, vals=new_vals, weights=new_weights)
+		logging.info('Finding median values for calibrator and interpolating to target times')
+		for cal_soltab_name in cal_soltabNames:
+		    logging.info('Interpolating solution table %s'%(cal_soltab_name))
+		    soltab = calsols.getSoltab(cal_soltab_name)
+		    soltab_axes = soltab.getAxesNames()
+		    soltab_type = ''.join([i for i in cal_soltab_name if not i.isdigit()])
+		    if soltab_type == 'RMextract':
+			soltab_type = 'rotationmeasure'
+		    if soltab_type == 'bandpass':
+			soltab_type = 'amplitude'
+		    if soltab_type == 'polalign':
+			soltab_type = 'phase'
+		    # format output axes
+		    if len(soltab_axes) == 2:
+			out_axes = ['time','ant']
+			out_axes_vals = [new_times, soltab.ant]
+			out_lens = (len(new_times),len(soltab.ant))
+		    elif len(soltab_axes) == 4:
+			out_axes = ['time','ant','freq','pol']
+			out_axes_vals = [new_times, soltab.ant, soltab.freq, soltab.pol]
+			out_lens = (len(new_times),len(soltab.ant),len(soltab.freq),len(soltab.pol))
+		    elif len(soltab_axes) == 5:
+			out_axes = ['time','freq','ant','dir','pol']
+			out_axes_vals = [new_times, soltab.freq, soltab.ant, soltab.dir, soltab.pol]
+			out_lens = (len(new_times),len(soltab.freq),len(soltab.ant),len(soltab.dir),len(soltab.pol))
+
+		    # get the values, weights, etc.
+		    for vals, weights, coord, selection in soltab.getValuesIter(returnAxes=soltab_axes, weight=True ):
+			vals = reorderAxes( vals, soltab_axes, out_axes )
+			weights = reorderAxes( weights, soltab_axes, out_axes )
+			pass
+		    # find the time axis
+		    time_axis_len = soltab.getAxisLen('time')
+		    # get the median values for the antennas
+		    med_vals = np.nanmedian(vals, axis=0)
+		    # replace vals, weights with the medians
+		    new_vals = np.ndarray(shape=out_lens)
+		    new_weights = np.ones(shape=out_lens)
+		    # make an index array
+		    for x in np.arange(len(new_times)):
+			if len(soltab_axes) == 2:
+			    new_vals[x,:] = med_vals
+			elif len(soltab_axes) == 4:
+			    new_vals[x,:,:,:] = med_vals
+			elif len(soltab_axes) == 5:
+			    new_vals[x,:,:,:,:] = med_vals
+		    new_soltab = OutSolset.makeSoltab(soltype=soltab_type, soltabName=cal_soltab_name,
+					    axesNames=out_axes, axesVals=out_axes_vals, vals=new_vals, weights=new_weights)
 
 
-	    soltab = 0
-            pass
+		    soltab = 0
+		    pass
 
         if do_int_stations:
             # copy existing information for the tables
