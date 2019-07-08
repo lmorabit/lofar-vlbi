@@ -93,7 +93,7 @@ def main(h5parmfile, MSfiles, cal_solset=None, solset_in='target', solset_out='t
         new_times = tmp.time
         tmp = 0
 	
-	if cal_solset is not None
+	if cal_solset is not None:
 		calsols = data.getSolset(cal_solset)
 		cal_soltabNames = ['polalign', 'clock', 'bandpass']
 
