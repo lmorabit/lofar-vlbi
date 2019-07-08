@@ -235,7 +235,13 @@ def lotss2coords (lotssfile):
 
     a = ascii.read(lotssfile)
     if len(a) == 1:
-        if type(src) != str:
+	src = a['Source_id']
+	try:
+            basestring
+	except NameError:
+            # Python3, basestring is not longer there.
+            basestring = str
+	if not isinstance(src, basestring):
             src = 'S' + str(src)
             a = ','.join([str(a['LOTSS_RA']), a(tmp['LOTSS_DEC']), src])
     coords=np.array([],dtype='S')
