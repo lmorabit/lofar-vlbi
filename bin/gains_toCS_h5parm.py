@@ -122,8 +122,12 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                     new_vals[:, i] = vals[:, ant_index]
                     new_weights[:, i] = weights[:, ant_index]
                 if 'amplitude' in soltab_name or 'phase' in soltab_name:
-                    new_vals[:, i, :, :] = vals[:, ant_index, :, :]
-                    new_weights[:, i, :, :] = weights[:, ant_index, :, :]
+                    if 'pol' in soltab.getAxesNames():
+                        new_vals[:, i, :, :] = vals[:, ant_index, :, :]
+                        new_weights[:, i, :, :] = weights[:, ant_index, :, :]
+                    else:
+                        new_vals[:, i, :]    = vals[:, ant_index, :]
+                        new_weights[:, i, :] = weights[:, ant_index, :]
             else:
                 if restrictToCS and 'CS' not in new_station:
                     logging.info('RestrictToCS: Omitting station ' + new_station)
@@ -133,8 +137,12 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                     new_vals[:, i] = vals[:, STindex]
                     new_weights[:, i] = weights[:, STindex]
                 if 'amplitude' in soltab_name or 'phase' in soltab_name:
-                    new_vals[:, i, :, :] = vals[:, STindex, :, :]
-                    new_weights[:, i, :, :] = weights[:, STindex, :, :]
+                    if 'pol' in soltab.getAxesNames():
+                        new_vals[:, i, :, :] = vals[:, STindex, :, :]
+                        new_weights[:, i, :, :] = weights[:, STindex, :, :]
+                    else:
+                        new_vals[:, i, :]    = vals[:, STindex, :]
+                        new_weights[:, i, :] = weights[:, STindex, :]
 
         if 'clock' in soltab_name:
             new_soltab = OutSolset.makeSoltab(soltype='clock', soltabName=soltab_name,
@@ -148,15 +156,29 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                                               axesVals=[soltab.time, new_station_names],
                                               vals=new_vals, weights=new_weights)
         elif 'amplitude' in soltab_name:
-            new_soltab = OutSolset.makeSoltab(soltype='amplitude', soltabName=soltab_name,
-                                              axesNames=['time', 'ant', 'freq', 'pol'],
-                                              axesVals=[soltab.time, new_station_names, soltab.freq, soltab.pol],
-                                              vals=new_vals, weights=new_weights)
+            if 'pol' in soltab.getAxesNames():
+                new_soltab = OutSolset.makeSoltab(soltype='amplitude', soltabName=soltab_name,
+                                                  axesNames=['time', 'ant', 'freq', 'pol'],
+                                                  axesVals=[soltab.time, new_station_names, soltab.freq, soltab.pol],
+                                                  vals=new_vals, weights=new_weights)
+            else:
+                new_soltab = OutSolset.makeSoltab(soltype='amplitude', soltabName=soltab_name,
+                                                  axesNames=['time', 'ant', 'freq'],
+                                                  axesVals=[soltab.time, new_station_names, soltab.freq],
+                                                  vals=new_vals, weights=new_weights)
+
         elif 'phase' in soltab_name:
-            new_soltab = OutSolset.makeSoltab(soltype='phase', soltabName=soltab_name,
-                                              axesNames=['time', 'ant', 'freq', 'pol'],
-                                              axesVals=[soltab.time, new_station_names, soltab.freq, soltab.pol],
-                                              vals=new_vals, weights=new_weights)
+            if 'pol' in soltab.getAxesNames():
+                new_soltab = OutSolset.makeSoltab(soltype='phase', soltabName=soltab_name,
+                                                  axesNames=['time', 'ant', 'freq', 'pol'],
+                                                  axesVals=[soltab.time, new_station_names, soltab.freq, soltab.pol],
+                                                  vals=new_vals, weights=new_weights)
+            else:
+                new_soltab = OutSolset.makeSoltab(soltype='phase', soltabName=soltab_name,
+                                                  axesNames=['time', 'ant', 'freq'],
+                                                  axesVals=[soltab.time, new_station_names, soltab.freq],
+                                                  vals=new_vals, weights=new_weights)
+
         soltab = 0
     return 0
 
