@@ -16,7 +16,7 @@ with
 
 ! process_baselines_cal = * 
 
-2. Run Pre-Facet-Calibrator.parset with the default settings.
+2. Run Pre-Facet-Target.parset with the default settings.
 
 For both of these steps, you will have to modify things like the path to your data, etc.  Please see the prefactor repository for instructions (https://github.com/lofar-astron/prefactor).
 
