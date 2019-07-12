@@ -21,6 +21,16 @@ import pyrap.tables as pt
 
 
 def makesolset(MS, data, solset_name):
+    ''' Create a new solset.
+
+    Args:
+        MS (str): name of the input measurement set.
+        data (h5parm): h5parm object to add the solset to.
+        solset_name (str): name of the new solset.
+    Returns:
+        antennaNames (ndarray): array containing the names of antennas in the measurement set.
+    '''
+
     solset = data.makeSolset(solset_name)
 
     antennaFile = MS + "/ANTENNA"
@@ -47,6 +57,20 @@ def makesolset(MS, data, solset_name):
 
 
 def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_list=['phase000', 'amplitude000'], superstation='ST001', restrictToCS=True):
+    ''' Copy the gains from the phased up core back to all core stations.
+
+    Args:
+        h5parmfile (str): input H5Parm
+        MSfiles (list): list of (a) measurement set(s) from which the stations are read.
+        solset_in (str): input solset to process.
+        solset_out (str): output solset with the core stations added.
+        soltab_list (list): list of strings, containing the soltabs to be processed.
+        superstation (str): name of the phased up station.
+        restrictToCS (bool): only do this operation for stations starting with CS. Default: True
+
+    Returns:
+        0 or 1 (int): 0 if succesfull, 1 if an error occured.
+    '''
 
     mslist = MSfiles.lstrip('[').rstrip(']').replace(' ', '').replace("'", "").split(',')
 
@@ -126,7 +150,7 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                         new_vals[:, i, :, :] = vals[:, ant_index, :, :]
                         new_weights[:, i, :, :] = weights[:, ant_index, :, :]
                     else:
-                        new_vals[:, i, :]    = vals[:, ant_index, :]
+                        new_vals[:, i, :] = vals[:, ant_index, :]
                         new_weights[:, i, :] = weights[:, ant_index, :]
             else:
                 if restrictToCS and 'CS' not in new_station:
@@ -141,7 +165,7 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                         new_vals[:, i, :, :] = vals[:, STindex, :, :]
                         new_weights[:, i, :, :] = weights[:, STindex, :, :]
                     else:
-                        new_vals[:, i, :]    = vals[:, STindex, :]
+                        new_vals[:, i, :] = vals[:, STindex, :]
                         new_weights[:, i, :] = weights[:, STindex, :]
 
         if 'clock' in soltab_name:

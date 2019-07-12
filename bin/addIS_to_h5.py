@@ -20,7 +20,7 @@ import logging
 
 def makesolset(MS, data, solset_name):
     ''' Create a new solset.
-    
+
     Args:
         MS (str): name of the input measurement set.
         data (h5parm): h5parm object to add the solset to.
@@ -28,6 +28,7 @@ def makesolset(MS, data, solset_name):
     Returns:
         antennaNames (ndarray): array containing the names of antennas in the measurement set.
     '''
+
     solset = data.makeSolset(solset_name)
 
     antennaFile = MS + "/ANTENNA"
