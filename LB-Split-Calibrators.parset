@@ -2,7 +2,7 @@
 ## LOFAR long baseline calibration pipeline parset     		##
 ##  - This pipeline requires prefactor V3 	       		##
 ##    to have already been run on both calibrator      		##
-##    and target. 				       		##
+##    and target, and LB-Delay-Calibration on the target data	##
 ##  - The working and runtime directory are expected   		##
 ##    to be the same.			               		##
 ##  - Please report any issues at 				##
@@ -15,27 +15,30 @@
 ##########################################################
 
 # software paths
-! long_baseline_pipeline_dir            = /home/lmorabit/long_baseline_pipeline_new
-! prefactor_dir                         = /home/lmorabit/prefactor
-! losoto_directory                     = /home/lmorabit/losoto
-! rmextract_directory			= /home/lmorabit/RMextract
-! aoflagger				= /opt/cep/aoflagger/aoflagger-2.10.0/build/bin/aoflagger ## path to your aoflagger executable
-! lofar_directory 			= $LOFARROOT
+! long_baseline_pipeline_dir            = /home/morabito/software/long_baseline_pipeline_new
+! prefactor_dir                         = /home/morabito/software/prefactorV3
+! losoto_directory                      = /home/morabito/software/losotoV2
+! aoflagger                             = /soft/aoflagger-new/aoflagger/bin/aoflagger
+! lofar_directory                       = $LOFARROOT
+
+##########################################################
+## Optional DDF parameters				##
+##########################################################
+
+! data_col = DATA ## set to CORRECTED_DATA to use DDF solutions
 
 ##########################################################
 ## These parameters may need to be updated.		##
 ##########################################################
 
-## Output directories
-! job_directory                 = input.output.job_directory ## directory of the prefactor outputs
-! results_directory             = {{ job_directory }}/results
-! inspection_directory          = {{ results_directory }}/inspection/
-! cal_values_directory          = {{ results_directory }}/calibrator_results/
-
 ## catalogue information
-! image_cat  = {{ job_directory }}/lotss_catalogue.csv
-! delay_cat  = {{ job_directory }}/delay_calibrators.csv
-! subtract_cat  = {{ job_directory }}/subtract_sources.csv
+! image_cat  = {{ job_directory }}/../LB-Delay-Calibration/lotss_catalogue.csv
+! delay_cat  = {{ job_directory }}/../LB-Delay-Calibration/delay_calibrators.csv
+! subtract_cat  = {{ job_directory }}/../LB-Delay-Calibration/subtract_sources.csv
+
+## global information -- do not change
+! base_directory                        = input.output.working_directory
+! job_directory                         = input.output.job_directory
 
 ## Runtime setup -- will depend on your computing cluster
 ! num_proc_per_node             = input.output.max_per_node    ## number of processes to use per step per node
@@ -48,8 +51,7 @@
 ##########################################################
 
 ## global information
-! base_directory                        = input.output.working_directory  
-! job_directory                         = input.output.job_directory      
+! lb_delaycal_directory         	= {{ job_directory }}/../LB-Delay-Calibration/
 ! scripts			 	= {{ long_baseline_pipeline_dir }}/bin
 ! prefactor_scripts			= {{ prefactor_dir }}/scripts
 
@@ -82,10 +84,10 @@
 ## Steps to run.					##
 ##########################################################
 
-pipeline.steps = [ setup ]
-
-pipeline.steps.setup = [ createmap_delaycal, createmap_delaycal_list ]
-
+pipeline.steps = [ setup, selfcal ]
+ 
+pipeline.steps.setup = [ targetdata_map, targetdata_map_list, parallel_split, caldata_map, cal_model, h5parm_map, sourcedb_map ]
+pipeline.steps.selfcal = [ tecsolve, plot_tec, apply_tec, cal_loop3 ]
 
 ###########################################################################
 
@@ -97,39 +99,118 @@ pipeline.steps.setup = [ createmap_delaycal, createmap_delaycal_list ]
 ##################################################################################################################
 
 # generate a mapfile of the delay-calibrated subbands
-createmap_delaycal.control.kind             = plugin
-createmap_delaycal.control.type             = createMapfile
-createmap_delaycal.control.method           = mapfile_from_folder
-createmap_delaycal.control.mapfile_dir      = input.output.mapfile_dir
-createmap_delaycal.control.filename         = createmap_delaycal.mapfile
-createmap_delaycal.control.folder           = {{ job_directory }}
-createmap_delaycal.control.pattern          = L*ndppp_prep_target
+targetdata_map.control.kind             = plugin
+targetdata_map.control.type             = createMapfile
+targetdata_map.control.method           = mapfile_from_folder
+targetdata_map.control.mapfile_dir      = input.output.mapfile_dir
+targetdata_map.control.filename         = targetdata_map.mapfile
+targetdata_map.control.folder           = {{ lb_delaycal_directory }}
+targetdata_map.control.pattern          = L*ndppp_prep_target
 
 # convert to a mapfile with all subbands in one list
-createmap_delaycal_list.control.kind            =   plugin
-createmap_delaycal_list.control.type            =   createMapfile
-createmap_delaycal_list.control.method          =   mapfile_all_to_one
-createmap_delaycal_list.control.mapfile_dir     =   input.output.mapfile_dir
-createmap_delaycal_list.control.filename        =   combine_data_tar_map.mapfile
-createmap_delaycal_list.control.mapfile_in      =   createmap_delaycal.output.mapfile
+targetdata_map_list.control.kind            =   plugin
+targetdata_map_list.control.type            =   createMapfile
+targetdata_map_list.control.method          =   mapfile_all_to_one
+targetdata_map_list.control.mapfile_dir     =   input.output.mapfile_dir
+targetdata_map_list.control.filename        =   combine_data_tar_map.mapfile
+targetdata_map_list.control.mapfile_in      =   targetdata_map.output.mapfile
 
-# create the NDPPP parset to explode-split the lbcs calibrators
+# parallel split the lbcs calibrators
+parallel_split.control.type		= pythonplugin
+parallel_split.control.max_per_node	= {{ num_proc_per_node }}
+parallel_split.control.executable	= {{ scripts }}/parallel_split.py
+parallel_split.argument.flags           = [targetdata_map_list.output.mapfile,{{ delay_cat }}]
+parallel_split.argument.phaseup_cmd	= {{ phaseup_command }}
+parallel_split.argument.filter_cmd	= {{ filter_command }}
+parallel_split.argument.ncpu		= {{ num_proc_per_node }}
+parallel_split.argument.datacol		= {{ data_col }}
+parallel_split.argument.timestep	= {{ cal_shift_avg_timestep }}
+parallel_split.argument.freqstep	= {{ cal_shift_avg_freqstep }}
+parallel_split.argument.nsbs		= 999
 
-# run NDPPP
+# calibrator mapfile
+caldata_map.control.kind		= plugin
+caldata_map.control.type		= createMapfile
+caldata_map.control.method		= mapfile_from_folder
+caldata_map.control.mapfile_dir		= input.output.mapfile_dir
+caldata_map.control.filename		= caldata_map.mapfile
+caldata_map.control.folder		= {{ job_directory }}
+caldata_map.control.pattern		= S*phasecal.MS
 
-# get a list of the calibrator measurement sets
+# generate point source models with skynet
+cal_model.control.type			= pythonplugin
+cal_model.control.executable	  	= {{ scripts }}/skynet.py
+cal_model.control.mapfile_in	  	= caldata_map.output.mapfile
+cal_model.control.inputkey	  	= msin
+cal_model.argument.flags		= [msin]
+cal_model.argument.delayCalFile 	= {{ delay_cat }}
 
-# run loop3 on them independently
+# parmdb mapfile
+h5parm_map.control.kind			= plugin
+h5parm_map.control.type			= createMapfile
+h5parm_map.control.method		= add_suffix_to_file
+h5parm_map.control.mapfile_in		= caldata_map.output.mapfile
+h5parm_map.control.add_suffix_to_file	= _tec.h5
+h5parm_map.control.mapfile_dir		= input.output.mapfile_dir
+h5parm_map.control.filename 		= h5parm_map.mapfile
 
-# subtract LBCS calibrators
+# sourcedb mapfile
+sourcedb_map.control.kind             = plugin
+sourcedb_map.control.type             = createMapfile
+sourcedb_map.control.method           = add_suffix_to_file
+sourcedb_map.control.mapfile_in       = caldata_map.output.mapfile
+sourcedb_map.control.add_suffix_to_file  = /sky
+sourcedb_map.control.mapfile_dir      = input.output.mapfile_dir
+sourcedb_map.control.filename         = sourcedb_map.mapfile
 
-# optional: make a DE-resolution map?
+# run the tecsolve on them 
+tecsolve.control.type			= dppp
+tecsolve.control.inplace		= True
+tecsolve.control.max_per_node		= {{ num_proc_per_node_limit }}
+tecsolve.control.error_tolerance	= {{ error_tolerance }}
+tecsolve.control.mapfiles_in		= [caldata_map.output.mapfile,h5parm_map.output.mapfile,sourcedb_map.output.mapfile]
+tecsolve.control.inputkeys		= [msfiles,h5parms,skymodels]
+tecsolve.argument.numthreads		= {{ max_dppp_threads }}
+tecsolve.argument.msin			= msfiles
+tecsolve.argument.msin.datacolumn	= DATA
+tecsolve.argument.steps			= [gaincal]
+tecsolve.argument.gaincal.caltype	= tec
+tecsolve.argument.gaincal.solint	= 5
+tecsolve.argument.gaincal.nchan		= 10
+tecsolve.argument.gaincal.directions	= [ME0]
+tecsolve.argument.gaincal.parmdb	= h5parms
+tecsolve.argument.gaincal.sourcedb	= skymodels 
 
-# starting from a flux-sorted list (brightest to faintest), run loop2/3 on all sources - or only above a certain flux limit?
-# can we pre-divide the sky into patches?
+# plot the tec solutions
+plot_tec.control.type			= pythonplugin
+plot_tec.control.max_per_node		= 1
+plot_tec.control.executable		= {{ scripts }}/plot_tec.py
+plot_tec.argument.flags			= [targetdata_map_list.output.mapfile]
 
-# make images (no self-cal) at all other interesting positions (source positions or chess-boarding ... )
+# apply the solutions
+apply_tec.control.type			= dppp
+apply_tec.control.max_per_node		= {{ num_proc_per_node_limit }}
+apply_tec.control.error_tolerance	= {{ error_tolerance }}
+apply_tec.control.mapfiles_in		= [caldata_map.output.mapfile,h5parm_map.output.mapfile]
+apply_tec.control.inputkeys		= [msfiles,h5parms]
+apply_tec.argument.msin			= msfiles
+apply_tec.argument.numthreads		= {{ max_dppp_threads }}
+apply_tec.argument.msin.datacolumn	= DATA
+apply_tec.argument.msout.datacolumn	= DATA
+apply_tec.argument.steps		= [applycal]
+apply_tec.argument.applycal.type	= applycal
+apply_tec.argument.applycal.correction	= tec000
+apply_tec.argument.applycal.parmdb	= h5parms
 
+# run loop3
+cal_loop3.control.type			= pythonplugin
+cal_loop3.control.max_per_node		= {{ num_proc_per_node }}
+cal_loop3.control.executable		= {{ scripts }}/loop3B_v1.py
+cal_loop3.argument.flags		= [apply_tec.output.mapfile]
+cal_loop3.argument.strategy		= 'P30,P30,P30,A500,A450,A400'
+cal_loop3.argument.startmod		= 
+cal_loop3.argument.ith			= 5.0
+cal_loop3.argument.bandwidth		= '8MHz'
 
 ##################################################################
 #                                                               ##
