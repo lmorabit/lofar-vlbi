@@ -12,7 +12,7 @@ Before running this pipeline, you should have already prefactor on your calibrat
 
 **Getting help**
 * If you have issues with the installation or running of the software requirements, please address these externally from this repository, e.g., if you have a problem with prefactor please open an issue on the prefactor repository.
-* If you have trouble running any of the parsets from this repostiory, please _open an issue_ rather than emailing! If you are going to submit an issue, please check those already open -- someone else may have already had the same problem.
+* If you have trouble running any of the parsets from this repository, please _open an issue_ rather than emailing! If you are going to submit an issue, please check those already open -- someone else may have already had the same problem.
 * For members of the Long Baseline Working Group, there is a private slack channel. Please email the working group for details.
 
 **INSTRUCTIONS FOR PREFACTOR**
@@ -21,7 +21,9 @@ Before running this pipeline, you should have already prefactor on your calibrat
 
 Replace  
 > ! process_baselines_cal = [CR]S*&   
+
 with  
+
 > ! process_baselines_cal = * 
 
 2. Run Pre-Facet-Target.parset with the default settings.
@@ -49,7 +51,7 @@ After this step, the data will have all the prefactor solutions applied, in the 
 
 2. Run LB-Split-Calibrators.parset 
 
-Please update the necessary parameters in the "Please update these parameters" section of the parset.
+Please update the necessary parameters in the "Please update these parameters" section of the parset.  
 _optional_: If you have run the ddf-pipeline, please update the DDF options section as well.
 
 *If you have used a non-standard catalogue, please either name it the same as in the "These parameters may need to be updated" section of the parset, or change the name of the delay_cat there.*
