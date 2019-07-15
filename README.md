@@ -40,6 +40,8 @@ For both of these steps, you will have to modify things like the path to your da
 
 ___Notes:___ The pipeline solves for TEC, which is a frequency dependent effect. You need to process an absolute minimum of 10 MHz of bandwidth (30 subbands is safe) for the pipeline to run. 
 
+Before you run anything, please make sure you are using the ___new___ branch of the long_baseline_pipeline. The configuration file example (pipeline.cfg) is set up for use on CEP3, and will need to be adjusted to your own computing resources. In particular, the _recipe_directories_ line will have to be updated to point to where you have prefactor and the long_baseline_pipeline cloned on your system.
+
 1. Run LB-Delay-Calibrator.parset  
 
 Please update the necessary parameters in the "Please update these parameters" section of the parset.  
