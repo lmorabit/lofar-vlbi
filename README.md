@@ -12,7 +12,7 @@ Before running this pipeline, you should have already prefactor on your calibrat
 
 **Getting help**
 * If you have issues with the installation or running of the software requirements, please address these externally from this repository, e.g., if you have a problem with prefactor please open an issue on the prefactor repository.
-* If you have trouble running any of the parsets from this repostiory, please _open an issue_ rather than emailing! If you are going to submit an issue, please check those already open -- someone else may have already had the same problem.
+* If you have trouble running any of the parsets from this repository, please _open an issue_ rather than emailing! If you are going to submit an issue, please check those already open -- someone else may have already had the same problem.
 * For members of the Long Baseline Working Group, there is a private slack channel. Please email the working group for details.
 
 **INSTRUCTIONS FOR PREFACTOR**
