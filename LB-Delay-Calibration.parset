@@ -693,9 +693,6 @@ ndppp_apply_delay.argument.applyDelayPhase.correction    = phase000
 ndppp_apply_delay.argument.applyDelayPhase.solset        = sol001
 ndppp_apply_delay.argument.applyDelayPhase.updateweights = false
 
-
-
-
 ##################################################################
 #                                                               ##
 #                   END OF PIPELINE	                        ##
