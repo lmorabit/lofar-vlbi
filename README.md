@@ -51,7 +51,7 @@ After this step, the data will have all the prefactor solutions applied, in the 
 
 2. Run LB-Split-Calibrators.parset 
 
-Please update the necessary parameters in the "Please update these parameters" section of the parset.
+Please update the necessary parameters in the "Please update these parameters" section of the parset.  
 _optional_: If you have run the ddf-pipeline, please update the DDF options section as well.
 
 *If you have used a non-standard catalogue, please either name it the same as in the "These parameters may need to be updated" section of the parset, or change the name of the delay_cat there.*
