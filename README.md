@@ -44,8 +44,8 @@ Before you run anything, please make sure you are using the ___new___ branch of 
 
 1. Run LB-Delay-Calibrator.parset  
 
-Please update the necessary parameters in the "Please update these parameters" section of the parset.  
-_optional_: If you have run the ddf-pipeline, please update the DDF options section as well.
+Please update the necessary parameters in the "Please update these parameters" section of the parset. Comments in the parset describe what these parameters are.  
+_optional_: If you have run the ddf-pipeline, please update the DDF options section as well.  
 
 *This will work out of the box if your field is already covered by both LBCS and LoTSS. If this is not the case, the aumatic catalogue generation step will fail. This can be fixed by providing (a) manual catalogue(s) with the right format.*
 
@@ -53,7 +53,7 @@ After this step, the data will have all the prefactor solutions applied, in the 
 
 2. Run LB-Split-Calibrators.parset 
 
-Please update the necessary parameters in the "Please update these parameters" section of the parset.  
+Please update the necessary parameters in the "Please update these parameters" section of the parset. Comments in the parset describe what these parameters are.   
 _optional_: If you have run the ddf-pipeline, please update the DDF options section as well.
 
 *If you have used a non-standard catalogue, please either name it the same as in the "These parameters may need to be updated" section of the parset, or change the name of the delay_cat there.*
