@@ -21,7 +21,9 @@ Before running this pipeline, you should have already prefactor on your calibrat
 
 Replace  
 > ! process_baselines_cal = [CR]S*&   
+
 with  
+
 > ! process_baselines_cal = * 
 
 2. Run Pre-Facet-Target.parset with the default settings.
