@@ -5,7 +5,7 @@ This pipeline is designed to be fully compatible with prefactor V3.0.  It uses a
 Before running this pipeline, you should have already prefactor on your calibrator and target. The prefactor repository, along with the relevant parsets, can be found here: https://github.com/lofar-astron/prefactor . Please be advised that you should only use 3C 147 or 3C 48 as your standard flux calibrators. If this is not the case, you can copy bandpass solutions from a reference 3C 48 observation (but this is still experimental, and not yet built into this pipeline). 
 
 **Software requirements**
-* Prefactor: https://github.com/lofar-astron/prefactor
+* Prefactor: https://www.astron.nl/citt/prefactor/
 * LoSoTo: https://github.com/revoltek/losoto
 * aoflagger: https://sourceforge.net/p/aoflagger/wiki/Home/
 * **_Optional_**: ddf-pipeline: https://github.com/mhardcastle/ddf-pipeline
@@ -42,12 +42,12 @@ ___Notes:___ The pipeline solves for TEC, which is a frequency dependent effect.
 
 Before you run anything, please make sure you are using the ___new___ branch of the long_baseline_pipeline. The configuration file example (pipeline.cfg) is set up for use on CEP3, and will need to be adjusted to your own computing resources. In particular, the _recipe_directories_ line will have to be updated to point to where you have prefactor and the long_baseline_pipeline cloned on your system.
 
-1. Run LB-Delay-Calibrator.parset  
+1. Run LB-Delay-Calibration.parset  
 
 Please update the necessary parameters in the "Please update these parameters" section of the parset. Comments in the parset describe what these parameters are.  
 _optional_: If you have run the ddf-pipeline, please update the DDF options section as well.  
 
-*This will work out of the box if your field is already covered by both LBCS and LoTSS. If this is not the case, the aumatic catalogue generation step will fail. This can be fixed by providing (a) manual catalogue(s) with the right format.*
+*This will work out of the box if your field is already covered by both LBCS and LoTSS. If this is not the case, the automatic catalogue generation step will fail. This can be fixed by providing (a) manual catalogue(s) with the right format.*
 
 After this step, the data will have all the prefactor solutions applied, in the DATA column. If you have applied ddf-pipeline solutions, they will be in the CORRECTED_DATA column. If you optionally choose to run the delay calibration and apply steps (not necessary for the next step) then you will also have new measurement sets with those corrections applied.
 
