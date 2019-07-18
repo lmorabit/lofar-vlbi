@@ -706,7 +706,7 @@ def aplpy_plots( infits, docut=2.0, outpng='', nolabel=False,  crms=3.0, noshift
     if outpng=='':
         outpng=infits.replace('fits','png')
     gc.save(outpng)
-    os.system('rm default.conv;rm default.sex;rm default.param;rm temp.fits')
+    #os.system('rm default.conv;rm default.sex;rm default.param;rm temp.fits')
 
 
 def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,\
@@ -897,7 +897,8 @@ def main (vis,strategy='P30,P30,P30,A500,A450,A400',startmod='',ith=5.0,\
     os.system('mv %s ../'%vis )
     
     print 'Output calibration tables',h5files
-    return pngfile,h5files
+    #return pngfile,h5files
+    return 0
 
 if __name__ == "__main__":
 
