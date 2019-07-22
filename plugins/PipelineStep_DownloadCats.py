@@ -178,7 +178,7 @@ def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
         ## keep only some columns
         tb_out = tb_sorted['raj2000','decj2000','ObsID']
 
-        return tb_out
+    return tb_out
 
 def find_close_objs(lo, lb, tolerance=5.):
 
@@ -293,6 +293,8 @@ def plugin_main( args, **kwargs ):
     lbcs_radius  = kwargs['lbcs_radius']
     bright_limit_Jy = float(kwargs['bright_limit_Jy'])
     lotss_result_file = kwargs['lotss_result_file']
+    lotss_catalogue = kwargs['lotss_catalogue']
+    lbcs_catalogue = kwargs['lbcs_catalogue']
     delay_cals_file = kwargs['delay_cals_file']
     subtract_file = kwargs['subtract_file']
     match_tolerance = float(kwargs['match_tolerance'])
@@ -306,8 +308,8 @@ def plugin_main( args, **kwargs ):
 
     
     if doDownload.capitalize() == 'True':
-        lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_result_file ) 
-        lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius ) 
+        lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue ) 
+        lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius, outfile=lbcs_catalogue ) 
         if len(lotss_catalogue) == 0:
 	    print('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
 	    lbcs_catalogue.write(delay_cals_file, format='csv')
@@ -394,7 +396,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument( '--lotss_radius', dest='lotss_radius', type=float, help='Radius to search LoTSS', default=5. )
     parser.add_argument( '--lbcs_radius', dest='lbcs_radius', type=float, help='Radius to search LBCS', default=5. )
-    parser.add_argument( '--lotss_result_file', dest='lotss_result_file', type=str, help='output file of sources to image', default='lotss_catalogue.csv' )
+    parser.add_argument( '--lotss_catalogue', dest='lotss_catalogue', type=str, help='input file for LoTSS catalogue [will be downloaded if does not exist]', default='lotss_catalogue.csv' )
+    parser.add_argument( '--lbcs_catalogue', dest='lbcs_catalogue', type=str, help='input file for LBCS catalogue [will be downloaded if does not exist]', default='lbcs_catalogue.csv' )
+    parser.add_argument( '--lotss_result_file', dest='lotss_result_file', type=str, help='output file of sources to image', default='image_catalogue.csv' )
     parser.add_argument( '--delay_cals_file', dest='delay_cals_file', type=str, help='output file of delay calibrators', default='delay_calibrators.csv' )
     parser.add_argument( '--subtract_file', dest='subtract_file', type=str, help='output file of sources to subtract', default='subtract_sources.csv' )
     parser.add_argument( '--match_tolerance', dest='match_tolerance', type=float, help='radius for matching LBCS to LoTSS [arcsec]', default=5. )
@@ -406,5 +410,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    plugin_main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy, continue_no_lotss = str(args.continue_no_lotss) )
+    plugin_main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_catalogue=args.lotss_catalogue, lbcs_catalogue=args.lbcs_catalogue, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy, continue_no_lotss = str(args.continue_no_lotss) )
 

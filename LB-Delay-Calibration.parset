@@ -57,7 +57,9 @@
 ! cal_values_directory          = {{ results_directory }}/calibrator_results/
 
 ## catalogue information
-! image_cat  = {{ job_directory }}/lotss_catalogue.csv
+! lotss_catalogue = {{ job_directory }}/lotss_catalogue.csv
+! lbcs_catalogue = {{ job_directory }}/lbcs_catalogue.csv
+! image_cat  = {{ job_directory }}/image_catalogue.csv
 ! delay_cat  = {{ job_directory }}/delay_calibrators.csv
 ! subtract_cat  = {{ job_directory }}/subtract_sources.csv
 ! do_download = True
@@ -173,6 +175,8 @@ download_cats.control.mapfile_in                = createmap_target_list.output.m
 download_cats.control.lotss_radius              = 2.
 download_cats.control.lbcs_radius               = 2.
 download_cats.control.bright_limit_Jy           = 5.
+download_cats.control.lotss_catalogue		= {{ lotss_skymodel }}
+download_cats.control.lbcs_catalogue		= {{ lbcs_skymodel }}
 download_cats.control.lotss_result_file         = {{ image_cat }}
 download_cats.control.delay_cals_file           = {{ delay_cat }}
 download_cats.control.subtract_file             = {{ subtract_cat }}
