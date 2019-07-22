@@ -61,7 +61,7 @@ def input2strlist_nomapfile(invar):
         raise TypeError('input2strlist: Type '+str(type(invar))+' unknown!')
     return str_list
 
-def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5. ):
+def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
 
     """
     Download the LoTSS skymodel for the target field
@@ -73,40 +73,45 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5. ):
         Radius for the LOTSS cone search in degrees
     
     """
-    print "DOWNLOADING LOTSS Skymodel for the target field"
+    ## first check if the file already exists
+    if os.path.isfile( outfile ):
+	print "LOTSS Skymodel for the target field exists on disk, reading in."
+	tb_final = Table.read( outfile, format='csv' )
+    else:
+        print "DOWNLOADING LOTSS Skymodel for the target field"
 
-    # Reading a MS to find the coordinate (pyrap)
-    RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+        # Reading a MS to find the coordinate (pyrap)
+        RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
-    ## this is the tier 1 database to query
-    #url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
-    # HETDEX database.
-    url = 'https://vo.astron.nl/hetdex/lotss-dr1/cone/scs.xml'
+	## this is the tier 1 database to query
+        #url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
+        # HETDEX database.
+        url = 'https://vo.astron.nl/hetdex/lotss-dr1/cone/scs.xml'
 
-    ## query the database
-    query = vo.dal.scs.SCSQuery( url )
-    query['RA'] = float( RATar )
-    query['DEC'] = float( DECTar )
-    query.radius = float( Radius )
-    t = query.execute()
+        ## query the database
+        query = vo.dal.scs.SCSQuery( url )
+        query['RA'] = float( RATar )
+        query['DEC'] = float( DECTar )
+        query.radius = float( Radius )
+        t = query.execute()
 
-    ## convert to VO table
-    try:
-        tb = t.votable.to_table()
-    except AttributeError:
-        # Above statement didn't work, try the alternative.
-        tb = t.to_table()
-    flux_sort = tb.argsort('Total_flux')
-    tb_sorted = tb[flux_sort[::-1]]
-    ## and keep only some of the columns
-    tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'Isl_rms']
-    resolved = np.where(is_resolved(tb_final['Total_flux'], tb_final['Peak_flux'], tb_final['Isl_rms']), 'R', 'U')
-    tb_final['Resolved'] = resolved
-    tb_final.rename_column('Source_Name', 'Source_id')
+        ## convert to VO table
+        try:
+            tb = t.votable.to_table()
+        except AttributeError:
+            # Above statement didn't work, try the alternative.
+            tb = t.to_table()
+        flux_sort = tb.argsort('Total_flux')
+        tb_sorted = tb[flux_sort[::-1]]
+        ## and keep only some of the columns
+        tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'Isl_rms']
+        resolved = np.where(is_resolved(tb_final['Total_flux'], tb_final['Peak_flux'], tb_final['Isl_rms']), 'R', 'U')
+        tb_final['Resolved'] = resolved
+        tb_final.rename_column('Source_Name', 'Source_id')
 
     return tb_final
 
-def my_lbcs_catalogue( ms_input, Radius=1.5 ):
+def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
 
     """
     Download the LBCS skymodel for the target field
@@ -118,57 +123,62 @@ def my_lbcs_catalogue( ms_input, Radius=1.5 ):
         Radius for the LOTSS cone search in degrees
     
     """
-    print "DOWNLOADING LBCS Skymodel for the target field"
+    ## first check if the file already exists
+    if os.path.isfile( outfile ):
+        print "LBCS Skymodel for the target field exists on disk, reading in."
+        tb_out = Table.read( outfile, format='csv' )
+    else:
+        print "DOWNLOADING LBCS Skymodel for the target field"
 
-    # Reading a MS to find the coordinate (pyrap)
-    RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+        # Reading a MS to find the coordinate (pyrap)
+        RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+ 
+        ## this is the tier 1 database to query
+        url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
 
-    ## this is the tier 1 database to query
-    url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
+        ## query the database
+        query = vo.dal.scs.SCSQuery( url )
+        query['RA'] = float( RATar )
+        query['DEC'] = float( DECTar )
+        query.radius = float( Radius )
+        t = query.execute()
 
-    ## query the database
-    query = vo.dal.scs.SCSQuery( url )
-    query['RA'] = float( RATar )
-    query['DEC'] = float( DECTar )
-    query.radius = float( Radius )
-    t = query.execute()
+        ## convert to VO table
+        try:
+            tb = t.votable.to_table()
+        except AttributeError:
+            # Above statement didn't work, try the alternative.
+            tb = t.to_table()
 
-    ## convert to VO table
-    try:
-        tb = t.votable.to_table()
-    except AttributeError:
-        # Above statement didn't work, try the alternative.
-        tb = t.to_table()
+        #### Workaround to sort and pick good calibrator info from tb array ###########
+        counts=[]
+        P_count  = 0
+        for i in tb:
+            b = i[5].count('P')      #### Count of 'P' - good baselines       
+            counts.append(b)
+            if b >=2:
+                P_count = P_count + 1    #### To determine how many sources to take 
+        print 'Good sources - ' + str(P_count)
+        if P_count == 0:
+            logging.critical('There are no good LBCS sources within the given radius. Check your source is within the LBCS footprint and increase the search radius. Exiting...')
+            return
 
-    #### Workaround to sort and pick good calibrator info from tb array ###########
-    counts=[]
-    P_count  = 0
-    for i in tb:
-        b = i[5].count('P')      #### Count of 'P' - good baselines       
-        counts.append(b)
-        if b >=2:
-            P_count = P_count + 1    #### To determine how many sources to take 
-    print 'Good sources - ' + str(P_count)
-    if P_count == 0:
-        logging.critical('There are no good LBCS sources within the given radius. Check your source is within the LBCS footprint and increase the search radius. Exiting...')
-        return
+        inds = np.argsort(counts)
+        tb_sorted =tb[inds[::-1]]
+        len_array = len(tb_sorted)
+        for i in range ((len_array-P_count)):
+            len_array-=1
+            tb_sorted.remove_row(len_array)
 
-    inds = np.argsort(counts)
-    tb_sorted =tb[inds[::-1]]
-    len_array = len(tb_sorted)
-    for i in range ((len_array-P_count)):
-        len_array-=1
-        tb_sorted.remove_row(len_array)
+        ## remove duplicates
+        tb_tmp = np.array( tb_sorted['raj2000','decj2000'] )
+        result = [ idx for idx, item in enumerate( tb_tmp ) if item in tb_tmp[:idx] ]
+        tb_sorted.remove_rows(result)
 
-    ## remove duplicates
-    tb_tmp = np.array( tb_sorted['raj2000','decj2000'] )
-    result = [ idx for idx, item in enumerate( tb_tmp ) if item in tb_tmp[:idx] ]
-    tb_sorted.remove_rows(result)
+        ## keep only some columns
+        tb_out = tb_sorted['raj2000','decj2000','ObsID']
 
-    ## keep only some columns
-    tb_out = tb_sorted['raj2000','decj2000','ObsID']
-
-    return tb_out
+        return tb_out
 
 def find_close_objs(lo, lb, tolerance=5.):
 
@@ -296,7 +306,7 @@ def plugin_main( args, **kwargs ):
 
     
     if doDownload.capitalize() == 'True':
-        lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy ) 
+        lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_result_file ) 
         lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius ) 
         if len(lotss_catalogue) == 0:
 	    print('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
