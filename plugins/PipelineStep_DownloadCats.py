@@ -9,7 +9,7 @@ import numpy as np
 #from lmfit import SkewedGaussianModel
 import pyvo as vo
 import pyrap.tables as pt
-from astropy.table import Table, Column, vstack, unique
+from astropy.table import Table, Column, vstack, unique, join
 import argparse
 from lofarpipe.support.data_map import DataMap
 from lofarpipe.support.data_map import DataProduct
@@ -340,11 +340,11 @@ def plugin_main( args, **kwargs ):
         ## convert Jy to milliJy
         bright_index = np.where( lotss_catalogue['Total_flux'] >= bright_limit_Jy*1e3 )[0]
         subtract_bright = lotss_catalogue[['Source_id','RA','DEC']][bright_index]
-	subtract_bright['Source_id'] = subtract_bright['Source_id'].astype(str)
+	#subtract_bright['Source_id'] = subtract_bright['Source_id'].astype(str)
 	## change the data type of the source_id column
-	subtract_bright['tmp'] = subtract_bright['Source_id'].astype(str)
-	subtract_bright.remove_column('Source_id')
-	subtract_bright.rename_column('tmp','Source_id')
+	#subtract_bright['tmp'] = subtract_bright['Source_id'].astype(str)
+	#subtract_bright.remove_column('Source_id')
+	#subtract_bright.rename_column('tmp','Source_id')
 	
 	subtract_sources = vstack( [subtract_cals, subtract_bright])
 	subtract_sources = unique( subtract_sources )
