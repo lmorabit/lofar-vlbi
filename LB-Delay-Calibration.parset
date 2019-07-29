@@ -42,7 +42,7 @@
 ### DDF Options -- please check even if not using        ##
 ###########################################################
 
-! substep_ddf 			= # apply_ddf   ## set to apply_ddf to use, leave blank otherwise
+! substep_ddf 			= # ,apply_ddf   ## set to apply_ddf to use, leave blank otherwise
 ! ddf_soldir			= /data/scratch/lb_bw/targetddf/L602888/SOLSDIR	 ## path to 'SOLSDIR' from ddf-pipeline run
 ! delaycal_col		 	= DATA ## set to CORRECTED_DATA if applying ddf solutions
 
@@ -100,7 +100,7 @@
 ## Steps to run.					##
 ##########################################################
 
-pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} concat, {{ substep_ddf }} {{ substep_delay }} {{ substep_apply }} ]
+pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} concat {{ substep_ddf }} {{ substep_delay }} {{ substep_apply }} ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, createmap_target, createmap_target_list, cp_cal_solutions, download_cats ]
 pipeline.steps.prep = [ h5parm_add_IS, ndppp_prep_target, ndppp_prep_target_list ]
