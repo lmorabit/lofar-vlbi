@@ -57,8 +57,8 @@
 ! cal_values_directory          = {{ results_directory }}/calibrator_results/
 
 ## catalogue information
-! lotss_catalogue = {{ job_directory }}/lotss_catalogue.csv
-! lbcs_catalogue = {{ job_directory }}/lbcs_catalogue.csv
+! lotss_skymodel = {{ job_directory }}/lotss_catalogue.csv
+! lbcs_skymodel = {{ job_directory }}/lbcs_catalogue.csv
 ! image_cat  = {{ job_directory }}/image_catalogue.csv
 ! delay_cat  = {{ job_directory }}/delay_calibrators.csv
 ! subtract_cat  = {{ job_directory }}/subtract_sources.csv
