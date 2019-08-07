@@ -438,9 +438,9 @@ addIS.control.executable			= {{ long_baseline_dir }}/bin/addIS_to_h5.py
 addIS.control.max_per_node			= {{ num_proc_per_node }}
 addIS.control.mapfiles_in			= [dpppconcat.output.mapfile,ddf_h5parms.output.mapfile]
 addIS.control.inputkeys				= [msin,h5parms]
-addIS.control.solset_in				= sol000
-addIS.control.solset_out			= sol001
-addIS.control.do_int_stations			= True
+addIS.argument.solset_in				= sol000
+addIS.argument.solset_out			= sol001
+addIS.argument.do_int_stations			= True
 addIS.argument.flags				= [h5parms,msin]
 
 # apply the solutions
