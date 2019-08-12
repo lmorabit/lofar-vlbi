@@ -18,7 +18,17 @@ import pyrap.tables as pt
 import logging
 
 
-def makesolset(MS, data, solset_name):
+def makesolset(MS, data, solset_name, solset_in, copy_sources=True):
+    ''' Create a new solset.
+
+    Args:
+        MS (str): name of the input measurement set.
+        data (h5parm): h5parm object to add the solset to.
+        solset_name (str): name of the new solset.
+    Returns:
+        antennaNames (ndarray): array containing the names of antennas in the measurement set.
+    '''
+
     solset = data.makeSolset(solset_name)
 
     antennaFile = MS + "/ANTENNA"
@@ -39,12 +49,29 @@ def makesolset(MS, data, solset_name):
 
     sourceTable = solset.obj._f_get_child('source')
     # add the field centre, that is also the direction for Gain and Common*
-    sourceTable.append([('pointing', pointing)])
+    sourceTable = solset.obj._f_get_child('source')
+    if not copy_sources:
+        # add the field centre, that is also the direction for Gain and Common*
+        sourceTable.append([('pointing',pointing)])
+    else:
+        sourceTable.append(solset_in.obj._f_get_child('source')[:])
 
     return antennaNames
 
 
 def main(h5parmfile, MSfiles, cal_solset=None, solset_in='target', solset_out='targetIS', do_int_stations=False):
+    ''' Add international stations to the h5parm.
+
+    Args:
+        h5parmfile (str): input H5Parm
+        MSfiles (list): list of (a) measurement set(s) from which the stations are read.
+        cal_solset (str): name of the solset containing the calibrator solutions.
+        solset_in (str): input solset to process.
+        solset_out (str): output solset with the international stations added.
+
+    Returns:
+        0 or 1 (int): 0 if succesfull, 1 if an error occured.
+    '''
 
     mslist = MSfiles.lstrip('[').rstrip(']').replace(' ', '').replace("'", "").split(',')
 
@@ -71,7 +98,7 @@ def main(h5parmfile, MSfiles, cal_solset=None, solset_in='target', solset_out='t
 
     # Create a new solset for the data
     if solset_out not in data.getSolsetNames():
-        new_station_names = makesolset(MSfile, data, solset_out)
+        new_station_names = makesolset(MSfile, data, solset_out, data.getSolset(solset_in))
 
         # loading solset
         solset = data.getSolset(solset_in)
@@ -87,7 +114,7 @@ def main(h5parmfile, MSfiles, cal_solset=None, solset_in='target', solset_out='t
                 tmp = solset.getSoltab(phase_soltab)
             else:
                 logging.error('Phase solutions do not exist in target solset')
-                return(1)
+                return 1
         else:
             tmp = solset.getSoltab('RMextract')
         new_times = tmp.time
