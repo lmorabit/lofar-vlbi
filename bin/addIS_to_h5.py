@@ -18,7 +18,7 @@ import pyrap.tables as pt
 import logging
 
 
-def makesolset(MS, data, solset_name):
+def makesolset(MS, data, solset_name, solset_in, copy_sources=True):
     ''' Create a new solset.
 
     Args:
@@ -49,7 +49,12 @@ def makesolset(MS, data, solset_name):
 
     sourceTable = solset.obj._f_get_child('source')
     # add the field centre, that is also the direction for Gain and Common*
-    sourceTable.append([('pointing', pointing)])
+    sourceTable = solset.obj._f_get_child('source')
+    if not copy_sources:
+        # add the field centre, that is also the direction for Gain and Common*
+        sourceTable.append([('pointing',pointing)])
+    else:
+        sourceTable.append(solset_in.obj._f_get_child('source')[:])
 
     return antennaNames
 
@@ -93,7 +98,7 @@ def main(h5parmfile, MSfiles, cal_solset=None, solset_in='target', solset_out='t
 
     # Create a new solset for the data
     if solset_out not in data.getSolsetNames():
-        new_station_names = makesolset(MSfile, data, solset_out)
+        new_station_names = makesolset(MSfile, data, solset_out, data.getSolset(solset_in))
 
         # loading solset
         solset = data.getSolset(solset_in)
