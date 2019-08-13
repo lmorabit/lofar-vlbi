@@ -105,7 +105,7 @@ targetdata_map.control.method           = mapfile_from_folder
 targetdata_map.control.mapfile_dir      = input.output.mapfile_dir
 targetdata_map.control.filename         = targetdata_map.mapfile
 targetdata_map.control.folder           = {{ lb_delaycal_directory }}
-targetdata_map.control.pattern          = L*ndppp_prep_target
+targetdata_map.control.pattern          = L*msdpppconcat
 
 # convert to a mapfile with all subbands in one list
 targetdata_map_list.control.kind            =   plugin
