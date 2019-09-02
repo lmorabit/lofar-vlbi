@@ -418,7 +418,7 @@ ddf_h5parms.control.kind		= plugin
 ddf_h5parms.control.type		= makeResultsMapfile
 ddf_h5parms.control.mapfile_dir		= input.output.mapfile_dir
 ddf_h5parms.control.filename		= ddf_h5parms.mapfile
-ddf_h5parms.control.mapfile_in		= dpppconcat.output.mapfile
+ddf_h5parms.control.mapfile_in		= createmap_ddf.output.mapfile
 ddf_h5parms.control.target_dir		= {{ job_directory }}
 ddf_h5parms.control.new_suffix		= _ddf.h5
 
@@ -431,23 +431,49 @@ convert_to_h5.control.mapfiles_in		= [ddf_h5parms.output.mapfile,ddf_solutions.o
 convert_to_h5.control.inputkeys			= [outputh5,inputnpz]
 convert_to_h5.argument.flags			= [outputh5,inputnpz,--nofulljones]
 
+expand_concat_map.control.kind                      = plugin
+expand_concat_map.control.type                      = expandMapfile
+expand_concat_map.control.mapfile_in                = dpppconcat.output.mapfile
+expand_concat_map.control.mapfile_to_match          = ddf_h5parms.output.mapfile
+expand_concat_map.control.mapfile_dir               = input.output.mapfile_dir
+expand_concat_map.control.filename                  = expand_concat_map.mapfile
+
 # add the international stations
+# addIS.control.kind				= recipe
 addIS.control.type				= pythonplugin
 addIS.control.executable			= {{ long_baseline_pipeline_dir }}/bin/addIS_to_h5.py
 addIS.control.max_per_node			= {{ num_proc_per_node }}
-addIS.control.mapfiles_in			= [dpppconcat.output.mapfile,ddf_h5parms.output.mapfile]
+addIS.control.mapfiles_in			= [expand_concat_map.output.mapfile,ddf_h5parms.output.mapfile]
 addIS.control.inputkeys				= [msin,h5parms]
-addIS.argument.solset_in				= sol000
+addIS.argument.solset_in			= sol000
 addIS.argument.solset_out			= sol001
 addIS.argument.do_int_stations			= True
 addIS.argument.flags				= [h5parms,msin]
+
+# generate a mapfile with all files in a single entry
+h5imp_ddf_map.control.kind              =   plugin
+h5imp_ddf_map.control.type              =   compressMapfile
+h5imp_ddf_map.control.mapfile_in        =   ddf_h5parms.output.mapfile
+h5imp_ddf_map.control.mapfile_dir       =   input.output.mapfile_dir
+h5imp_ddf_map.control.filename          =   h5imp_ddf_map
+
+# collect all instrument tables into one h5parm
+h5imp_ddf.control.kind                  =   recipe
+h5imp_ddf.control.type                  =   executable_args
+h5imp_ddf.control.executable            =   {{ losoto_directory }}/bin/H5parm_collector.py
+h5imp_ddf.control.error_tolerance       =   {{ error_tolerance }}
+h5imp_ddf.control.mapfile_in            =   h5imp_ddf_map.output.mapfile
+h5imp_ddf.control.inputkey              =   h5parm
+h5imp_ddf.argument.flags                =   [-v,-c,h5parm]
+h5imp_ddf.argument.outh5parm            =   {{ job_directory }}/ddf_solutions.h5
+h5imp_ddf.argument.insolset             =   sol001
 
 # apply the solutions
 ndppp_applycal.control.type                    = dppp
 ndppp_applycal.control.max_per_node            = {{ num_proc_per_node }}
 ndppp_applycal.control.error_tolerance         = {{ error_tolerance }}
-ndppp_applycal.control.mapfiles_in              = [dpppconcat.output.mapfile,ddf_h5parms.output.mapfile]
-ndppp_applycal.control.inputkeys                = [msfiles,h5parms]
+ndppp_applycal.control.mapfile_in              = dpppconcat.output.mapfile
+ndppp_applycal.control.inputkey                = msfiles
 ndppp_applycal.control.inplace			= True
 ndppp_applycal.argument.numthreads             = {{ max_dppp_threads }}
 ndppp_applycal.argument.msin                   = msfiles
@@ -457,13 +483,13 @@ ndppp_applycal.argument.msout.datacolumn       = CORRECTED_DATA
 ndppp_applycal.argument.msout.writefullresflag = False
 ndppp_applycal.argument.steps                  = [applyphase,applyamp]
 ndppp_applycal.argument.applyphase.type           = applycal
-ndppp_applycal.argument.applyphase.parmdb         = h5parms
+ndppp_applycal.argument.applyphase.parmdb         = {{ job_directory }}/ddf_solutions.h5
 ndppp_applycal.argument.applyphase.correction     = phase000
-ndppp_applycal.argument.applyphase.solset         = sol001
+ndppp_applycal.argument.applyphase.solset         = sol000
 ndppp_applycal.argument.applyamp.type           = applycal
-ndppp_applycal.argument.applyamp.parmdb         = h5parms
+ndppp_applycal.argument.applyamp.parmdb         = {{ job_directory }}/ddf_solutions.h5
 ndppp_applycal.argument.applyamp.correction     = amplitude000
-ndppp_applycal.argument.applyamp.solset         = sol001
+ndppp_applycal.argument.applyamp.solset         = sol000
 
 ###################################################################
 ##                                                               ##
