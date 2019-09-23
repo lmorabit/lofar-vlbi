@@ -522,7 +522,7 @@ dppp_phaseup.argument.numthreads          = {{ max_dppp_threads }}
 # generate the calibrator model with skynet
 delay_cal_model.control.type                  = pythonplugin
 delay_cal_model.control.executable            = {{ scripts }}/skynet.py
-delay_cal_model.control.mapfile_in            = dpppconcat.output.mapfile
+delay_cal_model.control.mapfile_in            = dppp_phaseup.output.mapfile
 delay_cal_model.control.inputkey              = msin
 delay_cal_model.argument.flags                = [msin]
 delay_cal_model.argument.delayCalFile         = {{ delay_cat }}
