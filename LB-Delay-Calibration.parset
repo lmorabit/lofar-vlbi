@@ -668,21 +668,22 @@ copyST_gains.argument.flags                          = [h5_imp_delaysol_map.outp
 expand_h5_map.control.kind                      = plugin
 expand_h5_map.control.type                      = expandMapfile
 expand_h5_map.control.mapfile_in                = h5_imp_delaysol_map.output.mapfile
-expand_h5_map.control.mapfile_to_match          = ndppp_prep_target.output.mapfile
+expand_h5_map.control.mapfile_to_match          = dpppconcat.output.mapfile
 expand_h5_map.control.mapfile_dir               = input.output.mapfile_dir
 expand_h5_map.control.filename                  = expand_h5_map.mapfile
 
 # Apply the gain solutions directly to the data -- no need to remove time dependence
 ndppp_apply_delay.control.type                           = dppp
+ndppp_apply_delay.control.inplace                        = True
 ndppp_apply_delay.control.max_per_node                   = {{ num_proc_per_node }}
 ndppp_apply_delay.control.error_tolerance                = {{ error_tolerance }}
 ndppp_apply_delay.control.mapfiles_in                    = [dpppconcat.output.mapfile,expand_h5_map.output.mapfile]
 ndppp_apply_delay.control.inputkeys                      = [inputms,h5parm]
 ndppp_apply_delay.argument.numthreads                    = {{ max_dppp_threads }}
 ndppp_apply_delay.argument.msin                          = inputms
-ndppp_apply_delay.argument.msin.datacolumn               = {{ delaycal_col }}
+ndppp_apply_delay.argument.msin.datacolumn               = DATA
 ndppp_apply_delay.argument.msin.baseline                 = *&
-ndppp_apply_delay.argument.msout.datacolumn              = DATA
+ndppp_apply_delay.argument.msout.datacolumn              = CORRECTED_DATA
 ndppp_apply_delay.argument.msout.writefullresflag        = False
 ndppp_apply_delay.argument.steps                         = [applyDelayAmp,applyDelayPhase,count]
 ndppp_apply_delay.argument.applyDelayAmp.type            = applycal
