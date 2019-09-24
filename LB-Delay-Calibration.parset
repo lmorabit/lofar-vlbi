@@ -50,6 +50,10 @@
 ## These parameters may need to be updated.		##
 ##########################################################
 
+## Station combination
+! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
+! filter_command = '!CS*&*' ## remove the core stations after combination
+
 ## Output directories
 ! job_directory                 = input.output.job_directory ## directory of the prefactor outputs
 ! results_directory             = {{ job_directory }}/results
