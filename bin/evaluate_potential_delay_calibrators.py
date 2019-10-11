@@ -205,6 +205,7 @@ def combine_subbands (in1array, nameout, phasecenter, fstep, tstep):
         fo.write(']' if i==len(in2array)-1 else ',')
     fo.write('\n')
     fo.write('msout = '+nameout+'\n')
+    fo.write('msout.storagemanager=dysco\n')	
     fo.write('msin.datacolumn = %s\n'%datacol)
     if ismissing:
         fo.write('msin.missingdata=True\n')
