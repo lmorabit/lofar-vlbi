@@ -110,7 +110,7 @@ pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, crea
 pipeline.steps.prep = [ h5parm_add_IS, ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
-pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat ]
+pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconcat_list ]
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, addIS, ndppp_applycal ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto, copy_h5imp_cal ]
 pipeline.steps.applydelay = [ copyST_gains, expand_h5_map, ndppp_apply_delay ]
@@ -393,6 +393,14 @@ dpppconcat.argument.msout.overwrite      = True
 dpppconcat.argument.steps                = [count]
 dpppconcat.argument.numthreads           = {{ max_dppp_threads }}
 
+# make a mapfile with all blocks in one list
+dpppconcat_list.control.kind              = plugin
+dpppconcat_list.control.type            =   createMapfile
+dpppconcat_list.control.method          =   mapfile_all_to_one
+dpppconcat_list.control.mapfile_dir     =   input.output.mapfile_dir
+dpppconcat_list.control.filename        =  dpppconcat_list.mapfile
+dpppconcat_list.control.mapfile_in      =  dpppconcat.output.mapfile
+
 ###################################################################
 ##                                                               ##
 ##            OPTIONAL -- APPLY DDF SOLUTIONS                    ##
@@ -479,7 +487,7 @@ ndppp_applycal.argument.applyamp.solset         = sol001
 do_parallel.control.type                  = pythonplugin
 do_parallel.control.max_per_node          = {{ num_proc_per_node }}
 do_parallel.control.executable            = {{ scripts }}/evaluate_potential_delay_calibrators.py
-do_parallel.argument.flags                = [dpppconcat.output.mapfile,{{ delay_cat }}]
+do_parallel.argument.flags                = [dpppconcat_list.mapfile,{{ delay_cat }}]
 do_parallel.argument.ncpu                 = {{ num_proc_per_node }}
 do_parallel.argument.datacol		  = {{ delaycal_col }}
 do_parallel.argument.nsbs		  = 2
