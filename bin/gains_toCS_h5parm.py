@@ -119,9 +119,14 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                 vals = reorderAxes(vals, soltab.getAxesNames(), ['time', 'ant'])
                 weights = reorderAxes(weights, soltab.getAxesNames(), ['time', 'ant'])
         elif 'amplitude' in soltab_name or 'phase' in soltab_name:
+          if 'pol' in soltab.getAxesNames():  
             for vals, weights, coord, selection in soltab.getValuesIter(returnAxes=['pol', 'ant', 'freq', 'time'], weight=True):
                 vals = reorderAxes(vals, soltab.getAxesNames(), ['time', 'ant', 'freq', 'pol'])
                 weights = reorderAxes(weights, soltab.getAxesNames(), ['time', 'ant', 'freq', 'pol'])
+          else: # in case we have have no polarization axis, so scalarphase-type      
+            for vals, weights, coord, selection in soltab.getValuesIter(returnAxes=['ant', 'freq', 'time'], weight=True):
+                vals = reorderAxes(vals, soltab.getAxesNames(), ['time', 'ant', 'freq'])
+                weights = reorderAxes(weights, soltab.getAxesNames(), ['time', 'ant', 'freq'])             
         else:
             logging.error('No phase or amplitude soltab has been found or specified.')
             return 1
