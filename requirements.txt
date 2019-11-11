@@ -1,6 +1,6 @@
 bdsf==1.8.15
 python-casacore==2.2.1
-git+https://github.com/revoltek/losoto.git
 numpy==">=1.16.0"
 pyvo==">=0.9.3"
+git+https://github.com/revoltek/losoto.git
 git+https://github.com/lofar-astron/RMextract.git
