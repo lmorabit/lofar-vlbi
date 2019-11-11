@@ -3,12 +3,27 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to long_baseline_pipeline's documentation!
-==================================================
+****
+long_baseline_pipeline: a calibration pipeline for LOFAR's international stations
+****
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+Introduction
+############
+Welcome to the LOFAR long baseline pipeline!
+
+This pipeline is designed to be fully compatible with prefactor V3.0 (https://www.astron.nl/citt/prefactor/). It uses and produces solutions in h5parm format. The pipeline is intended to calibrate the international stations of the ILT.
+
+Obtaining the long baseline pipeline
+####################################
+
+.. toctree::
+   :maxdepth: 2
+
+   installation
 
 
 
