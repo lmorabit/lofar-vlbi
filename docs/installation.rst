@@ -36,9 +36,17 @@ Most required Python packages are put in requirements.txt. One can easily instal
 
    pip install -r requirements.txt
 
-The exception is:
+The exceptions are:
 
    * python-casacore
+   * RMextract
+
+These can both be installed from their respective repositories, or with pip via::
+
+   pip install https://github.com/lofar-astron/PyBDSF/archive/v1.9.1.tar.gz
+   
+   git clone https://github.com/lofar-astron/RMextract
+   pip install -e RMextract
 
 Environment settings
 ====================
