@@ -28,6 +28,7 @@ The following software is _optional_, but must be installed for their respective
 
 Python packages
 ####
-The following Python packages must be installed:
+Required Python packages are put in requirements.txt. One can easily install these using::
 
-* pyvo==0.9.3
+   pip install -r requirements.txt
+
