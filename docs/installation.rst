@@ -12,13 +12,22 @@ This will pull the latest master branch.
    :maxdepth: 2
    :caption: Contents:
 
-Dependencies
-############
-The following software must be installed, in order to run the pipeline:
+Software requirements
+#####
+The following software _must_ be installed, in order to run the pipeline:
 
 * AOFlagger
-* DP3
+* DP3 >= 4.0
 * LOFAR software
-* LoSoTo
-* prefactor
+* LoSoTo >= 2.0
+* prefactor >= 3.0
 
+The following software is _optional_, but must be installed for their respective features to work:
+
+* DDFacet
+
+Python packages
+####
+The following Python packages must be installed:
+
+* pyvo==0.9.3
