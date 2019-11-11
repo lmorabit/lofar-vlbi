@@ -25,7 +25,7 @@
 ## Optional DDF parameters				##
 ##########################################################
 
-! data_col = DATA ## set to CORRECTED_DATA to use DDF solutions
+! data_col = DATA ## set to DATA_DI_CORRECTED to use DDF solutions
 
 ##########################################################
 ## These parameters may need to be updated.		##
