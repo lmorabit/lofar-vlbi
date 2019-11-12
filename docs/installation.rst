@@ -51,7 +51,7 @@ These can both be installed from their respective repositories, or with pip via:
 
 Environment settings
 ====================
-The generic pipeline framework needs to be able to find the scripts. This is set in the config file that is passed to the generic pipeline. In order to achieve this, the path to the long baseline pipeline needs to be added to the recipe_directories list in this file.
+The generic pipeline framework needs to be able to find the scripts. This is set in the config file that is passed to the generic pipeline. See the prefactor documentation to see how to set up this file (typically called pipeline.cfg). The path to the long baseline pipeline needs to be added to the recipe_directories list in this file.
 
 ********************
 Running the pipeline
@@ -66,7 +66,7 @@ Once all parameters are set, the pipeline can be run as, for example,::
 
 Below setup of the parset is outlined.
 
-Configuring the LB-Delay-Calibration parset
+Preparing the LB-Delay-Calibration parset
 ===========================================
 This sections describes how to set up the ``LB-Delay-Calibration`` parset. Only sections that are relvant for the user to change are discussed.
 
