@@ -3,7 +3,7 @@
 Acknowledgements
 ================
 
-The **long baseline pipeline** and its scripts where developed by:
+The **long baseline pipeline** and its scripts were developed by:
 
     * Leah Morabito
     * Neal Jackson

@@ -34,7 +34,7 @@ This section will describe the steps performed by ``LB-Delay-Calibration.parset`
    7. Self calibration on the best infield calibrator   [toggle]
    8. Application of self calibration solutions [toggle]
 
-Options marked with ``[toggle]`` can be turned on of off by the user. Other steps are always exectuted.
+Options marked with ``[toggle]`` can be turned on or off by the user. Other steps are always exectuted.
 
 Initial setup
 =============

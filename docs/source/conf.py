@@ -49,6 +49,5 @@ html_theme_options = {
     "github_repo": "long_baseline_pipeline",
     "fixed_sidebar": True,
     "github_button" : True,
-    #"extra_nav_links": True,
     "show_related": True
 }
