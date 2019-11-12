@@ -54,3 +54,21 @@ Target preparation consists of the following steps::
 ``h5parm_add_IS``: adds dummy entries for the international stations to the solutions from prefactor. Phases are initialized as 0 and amplitudes as 1.
 ``ndppp_prep_target``: copies over the target data and applies the clock, polalign and bandpass corrections from prefactor, the beam, rotation measure corrections and the TGSS phase solutions.
 ``ndppp_prep_target_list``: creates a single mapfile pointing to all the target subbands.
+
+===============
+A-team clipping
+===============
+
+A-teamp clipping consists of the following steps::
+
+   create_ateam_model_map
+   make_sourcedb_ateam
+   expand_sourcedb_ateam
+   predict_ateam
+   ateamcliptar
+
+``create_ateam_model_map``: creates a mapfile pointing to the A-team skymodel.
+``make_sourcedb_ateam``: converts the skymodels into DP3 readable sourcedb.
+``expand_sourcedb_ateam``: create a mapfile linking each subband to the skymodel.
+``predict_ateam``: predict the A-team sources into MODEL_DATA.
+``ateamcliptar``: flag data that is affected by the A-team. This is the same clipping as used in prefactor.
