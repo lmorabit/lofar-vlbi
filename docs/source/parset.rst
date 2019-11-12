@@ -50,7 +50,9 @@ Target preparation consists of the following steps::
    ndppp_prep_target_list
 
 ``h5parm_add_IS``: adds dummy entries for the international stations to the solutions from prefactor. Phases are initialized as 0 and amplitudes as 1.
+
 ``ndppp_prep_target``: copies over the target data and applies the clock, polalign and bandpass corrections from prefactor, the beam, rotation measure corrections and the TGSS phase solutions.
+
 ``ndppp_prep_target_list``: creates a single mapfile pointing to all the target subbands.
 
 
@@ -119,7 +121,7 @@ In this optional step, the direction independent solutions obtained by the ddf-p
 
 ``createmap_ddf``: creates a mapfile pointing the pipeline to the ddf-pipeline solutions.
 
-``ddf_solutoins``: creates a mapfile of the specific DIS2 solutions.
+``ddf_solutions``: creates a mapfile of the specific DIS2 solutions.
 
 ``ddf_h5parms``: converts the solutions from killMS format to H5parms.
 
