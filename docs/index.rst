@@ -24,6 +24,7 @@ Obtaining the long baseline pipeline
    :maxdepth: 2
 
    installation
+   parset
 
 
 
