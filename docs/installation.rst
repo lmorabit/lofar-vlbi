@@ -25,6 +25,7 @@ The following software _must_ be installed, in order to run the pipeline:
    * DP3 >= 4.0
    * LOFAR software
    * LoSoTo >= 2.0
+   * Montage
    * prefactor >= 3.0
 
 The following software is _optional_, but must be installed for their respective features to work:
