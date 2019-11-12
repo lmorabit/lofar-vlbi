@@ -14,7 +14,6 @@ This section will describe the steps performed by ``LB-Delay-Calibration.parset`
 
 Options marked with ``[toggle]`` can be turned on of off by the user. Other steps are always exectuted.
 
-=============
 Initial setup
 =============
 Initial setup consists of the following steps::
@@ -41,7 +40,6 @@ Initial setup consists of the following steps::
 
 ``download_cats``: downloads LoTSS and LBCS catalogues for the field.
 
-==================
 Target preparation
 ==================
 
@@ -55,11 +53,11 @@ Target preparation consists of the following steps::
 ``ndppp_prep_target``: copies over the target data and applies the clock, polalign and bandpass corrections from prefactor, the beam, rotation measure corrections and the TGSS phase solutions.
 ``ndppp_prep_target_list``: creates a single mapfile pointing to all the target subbands.
 
-===============
+
 A-team clipping
 ===============
 
-A-teamp clipping consists of the following steps::
+A-team clipping consists of the following steps::
 
    create_ateam_model_map
    make_sourcedb_ateam
@@ -72,3 +70,46 @@ A-teamp clipping consists of the following steps::
 ``expand_sourcedb_ateam``: create a mapfile linking each subband to the skymodel.
 ``predict_ateam``: predict the A-team sources into MODEL_DATA.
 ``ateamcliptar``: flag data that is affected by the A-team. This is the same clipping as used in prefactor.
+
+AOFlagging
+==========
+An extra round of AOFlagger can be run if the user enabled this. AOFlagging consists of the following steps::
+
+   ms_concat_target
+   ms_concat_target_map
+   aoflag 
+
+``ms_concat_target``: virtually concatenate the target subbands.
+``ms_concat_target_map``: create a mapfile pointing to the virtually concatenated measurement sets.
+``aoflag``: run AOFlagger on the data.
+
+Concatenation
+=============
+Subbands will be concatenated into blocks of 10 for further processing. This consists of the following steps::
+
+   sort_concatmap
+   do_sortmap_maps
+   dpppconcat
+   dpppconcat_list
+
+``sort_concatmap``: sorts the subbands by frequencies and adds in dummy entries for any missing subbands (to ensure regular frequency spacing).
+``do_sortmap_maps``: create a usable mapfile from the previous step.
+``dpppconcat``: runs DP3 to concatenate subbands and create blocks of 10.
+``dpppconcat_list``: creates a mapfile pointing to the concatenated data.
+
+Application of ddf-pipeline solutions
+=====================================
+In this optional step, the direction independent solutions obtained by the ddf-pipeline are applied to the data. This consists of the following steps::
+
+   createmap_ddf
+   ddf_solutions
+   ddf_h5parms
+   convert_to_h5
+   addIS
+   ndppp_applycal 
+
+``createmap_ddf``: creates a mapfile pointing the pipeline to the ddf-pipeline solutions.
+``ddf_solutoins``: creates a mapfile of the specific DIS2 solutions.
+``ddf_h5parms``: converts the solutions from killMS format to H5parms.
+``addIS``: adds dummy entries for the international stations to the solutions.
+``ndppp_applycal``: applies the solutions to the data. Calibrated data is stored in the ``delaycal_col`` column.
