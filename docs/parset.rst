@@ -40,3 +40,17 @@ Initial setup consists of the following steps::
 ``cp_cal_solutions``: copies the prefactor calibration solutions to the inspection directory.
 
 ``download_cats``: downloads LoTSS and LBCS catalogues for the field.
+
+==================
+Target preparation
+==================
+
+Target preparation consists of the following steps::
+
+   h5parm_add_IS
+   ndppp_prep_target
+   ndppp_prep_target_list
+
+``h5parm_add_IS``: adds dummy entries for the international stations to the solutions from prefactor. Phases are initialized as 0 and amplitudes as 1.
+``ndppp_prep_target``: copies over the target data and applies the clock, polalign and bandpass corrections from prefactor, the beam, rotation measure corrections and the TGSS phase solutions.
+``ndppp_prep_target_list``: creates a single mapfile pointing to all the target subbands.
