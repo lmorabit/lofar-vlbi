@@ -10,11 +10,13 @@ The Long Baseline Pipelines
 Pipelines overview
 ==================
 
+    .. image:: long_baseline_workflow_sketch.png
+    
 The **long baseline pipeline** is organized in two major parts to process **LOFAR** data with international stations:
 
 ``LB-Delay-Calibration``
     infos to be added
-``LB-Split-Calibrators``
+``LB-Split-Calibrators`` including ``loop3``
     infos to be added
 
 
@@ -30,11 +32,11 @@ This section will describe the steps performed by ``LB-Delay-Calibration.parset`
    3. A-team clipping
    4. AOFlagging [toggle]
    5. Subband concatenation
-   6. Application of ddf-pipeline DI solutions  [toggle]
-   7. Self calibration on the best infield calibrator   [toggle]
-   8. Application of self calibration solutions [toggle]
+   6. Application of ddf-pipeline DI solutions [toggle]
+   7. Self-calibration on the best in-field calibrator [toggle]
+   8. Application of self-calibration solutions [toggle]
 
-Options marked with ``[toggle]`` can be turned on or off by the user. Other steps are always exectuted.
+Options marked with ``[toggle]`` can be turned on or off by the user. Other steps are always executed.
 
 Initial setup
 =============
@@ -150,3 +152,66 @@ In this optional step, the direction independent solutions obtained by the ddf-p
 ``addIS``: adds dummy entries for the international stations to the solutions.
 
 ``ndppp_applycal``: applies the solutions to the data. Calibrated data is stored in the ``delaycal_col`` column.
+
+
+.. _split:
+
+=================================
+Direction-dependent calibration
+=================================
+This section will describe the steps performed by ``LB-Split-Calibrators.parset``. Within the parset, the following major steps are performed:
+
+   1. Initial setup
+   2. TEC-solve on in-field calibrators
+   3. Amplitude and phase self-calibration loop
+
+Initial setup
+=============
+Initial setup consists of the following steps::
+
+   targetdata_map
+   targetdata_map_list
+   parallel_split
+   caldata_map   
+   cal_model
+   h5parm_map
+   sourcedb_map
+
+``targetdata_map``: maps the location of the input target data
+
+``targetdata_map_list``: writes all target data into a single list map
+
+``parallel_split``: splits off data for every identified in-field calibrator, i.e., shifting the phase-centre to an in-field calibrator direction, averaging to smear out signals from sources outside of the region of interest, and coherently adding of all core stations to a superstation to increase the signal-to-noise-ratio for any upcoming solves on international station - superstation baselines
+
+``caldata_map``: creates a mapfile for the target subbands.
+
+``cal_model``: creates a mapfile containing all target subbands as one big list.
+
+``h5parm_map``: copies the prefactor calibration solutions to the inspection directory.
+
+``sourcedb_map``: downloads LoTSS and LBCS catalogues for the field.
+
+TEC-solve on in-field calibrators
+=================================
+
+After the initial setup there is a TEC-solve running on each individual in-field calibrator data set::
+
+   tecsolve
+   plot_tec
+   apply_tec
+
+``tecsolve``: solves for TEC for each individual in-field long-baseline calibrator
+
+``plot_tec``: provides diagnostic plots of the TEC solutions for each individual in-field calibrator
+
+``apply_tec``: applies the derived solutions from each individual in-field calibrator to the corresponding data set
+
+
+Amplitude and phase self-calibration loop
+=========================================
+
+The amplitude and phase self-calibration loop consists of the following steps::
+
+   cal_loop3
+
+``cal_loop3``: loop3 is a self-calibration routine for amplitude and phase-corrections with a selected set of strategies. It takes the TEC-corrected in-field calibrator data and provides a set of ``h5parm`` solution sets for each individual in-field calibrator.
