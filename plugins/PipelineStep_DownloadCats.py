@@ -75,10 +75,10 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
     """
     ## first check if the file already exists
     if os.path.isfile( outfile ):
-	print "LOTSS Skymodel for the target field exists on disk, reading in."
+	logging.info("LOTSS Skymodel for the target field exists on disk, reading in.")
 	tb_final = Table.read( outfile, format='csv' )
     else:
-        print "DOWNLOADING LOTSS Skymodel for the target field"
+        logging.info("DOWNLOADING LOTSS Skymodel for the target field")
 
         # Reading a MS to find the coordinate (pyrap)
         RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
@@ -125,10 +125,10 @@ def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
     """
     ## first check if the file already exists
     if os.path.isfile( outfile ):
-        print "LBCS Skymodel for the target field exists on disk, reading in."
+        logging.info("LBCS Skymodel for the target field exists on disk, reading in.")
         tb_out = Table.read( outfile, format='csv' )
     else:
-        print "DOWNLOADING LBCS Skymodel for the target field"
+        logging.info("DOWNLOADING LBCS Skymodel for the target field")
 
         # Reading a MS to find the coordinate (pyrap)
         RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
@@ -301,38 +301,49 @@ def plugin_main( args, **kwargs ):
     subtract_limit = float(kwargs['subtract_limit'])
     image_limit_Jy = float(kwargs['image_limit_Jy'])
     fail_lotss_ok = kwargs['continue_no_lotss'].lower().capitalize()
-    doDownload = kwargs['doDownload']
 
     mslist = DataMap.load(mapfile_in)
     MSname = mslist[0].file
 
-    
-    if doDownload.capitalize() == 'True':
-        lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue ) 
-        lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius, outfile=lbcs_catalogue ) 
-        if len(lotss_catalogue) == 0:
-	    print('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
-	    lbcs_catalogue.write(delay_cals_file, format='csv')
-	    return
-	result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance ) 
-        
-        if (len(result) == 0) and (fail_lotss_ok == 'True'):
-            print('No cross matches found between LoTSS and LBCS! Only writing {:s}'.format(delay_cals_file))
-	    lbcs_catalogue.write(delay_cals_file, format='csv')
-	    return
-        elif (len(result) == 0) and (fail_lotss_ok == 'False'):
-            raise ValueError('No cross matches found between LoTSS and LBCS!')
+    ## look for or download LBCS
+    logging.info("Attempting to find or download LBCS catalogue.")
+    lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue )
+    ## look for or download LoTSS
+    logging.info("Attempting to find or download LoTSS catalogue.")
+    lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue )
 
+    ## if lbcs exists, and either lotss exists or continue_without_lotss = True, process the catalogue(s).
+    ## else provide an error message and stop
+    if len(lbcs_catalogue) == 0:
+	logging.error('LBCS coverage does not exist, and catalogue not found on disk.')
+	return
+    if len(lotss_catalogue) == 0 and not continue_without_lotss:
+	logging.error('LoTSS coverage does not exist, and contine_without_lotss is set to False.')
+	return 
+
+    ## if the LoTSS catalogue is empty, write out the delay cals only and stop
+    if len(lotss_catalogue) == 0:
+        logging.info('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
+        lbcs_catalogue.write(delay_cals_file, format='csv')
+        return
+
+    ## else continue 
+    result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance )
+
+    ## check if there are any matches
+    if len(result) == 0:
+        logging.error('LoTSS and LBCS coverage exists, but no matches found. This indicates something went wrong, please check your catalogues.')
+        return
+    else:
         ## Need to write the following catalogues:
         ## 1 - delay calibrators -- from lbcs_catalogue
         result.write( delay_cals_file, format='csv' )
-	print 'wrote'+delay_cals_file
+	logging.info('Writing delay calibrator file {:s}'.format(delay_cals_file))
 
         ####### sources to subtract
         ## convert Jy to milliJy
         subtract_index = np.where( result['Total_flux'] > subtract_limit*1e3 )[0]
         subtract_cals = result[['Source_id','LOTSS_RA','LOTSS_DEC']][subtract_index]
-	#subtract_cals.rename_column('Source_ID','Source_id')
 	subtract_cals.rename_column('LOTSS_RA','RA')
 	subtract_cals.rename_column('LOTSS_DEC','DEC')
 	
@@ -340,11 +351,6 @@ def plugin_main( args, **kwargs ):
         ## convert Jy to milliJy
         bright_index = np.where( lotss_catalogue['Total_flux'] >= bright_limit_Jy*1e3 )[0]
         subtract_bright = lotss_catalogue[['Source_id','RA','DEC']][bright_index]
-	#subtract_bright['Source_id'] = subtract_bright['Source_id'].astype(str)
-	## change the data type of the source_id column
-	#subtract_bright['tmp'] = subtract_bright['Source_id'].astype(str)
-	#subtract_bright.remove_column('Source_id')
-	#subtract_bright.rename_column('tmp','Source_id')
 	
 	subtract_sources = vstack( [subtract_cals, subtract_bright])
 	subtract_sources = unique( subtract_sources )
@@ -370,10 +376,6 @@ def plugin_main( args, **kwargs ):
             print 'Percentage of sources which are unresolved: '+str( perc_unres )
 
 	sources_to_image.write( lotss_result_file, format='csv' )
-
-    else:
-	print "doDownload == False, not downloading catalogues!"
-
 
     return
 
