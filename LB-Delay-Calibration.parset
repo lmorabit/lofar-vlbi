@@ -495,15 +495,12 @@ ndppp_applycal.argument.msin.baseline          = *&
 ndppp_applycal.argument.msout.datacolumn       = {{ delaycal_col }}
 ndppp_applycal.argument.msout.writefullresflag = False
 ndppp_applycal.argument.msout.storagemanager   = dysco
-ndppp_applycal.argument.steps                  = [applyphase,applyamp]
-ndppp_applycal.argument.applyphase.type           = applycal
-ndppp_applycal.argument.applyphase.parmdb         = {{ job_directory }}/ddf_solutions.h5
-ndppp_applycal.argument.applyphase.correction     = phase000
-ndppp_applycal.argument.applyphase.solset         = sol000
-ndppp_applycal.argument.applyamp.type           = applycal
-ndppp_applycal.argument.applyamp.parmdb         = {{ job_directory }}/ddf_solutions.h5
-ndppp_applycal.argument.applyamp.correction     = amplitude000
-ndppp_applycal.argument.applyamp.solset         = sol000
+ndppp_applycal.argument.steps                  = [applyddf]
+ndppp_applycal.argument.applyddf.type           = applycal
+ndppp_applycal.argument.applyddf.parmdb         = {{ job_directory }}/ddf_solutions.h5
+ndppp_applycal.argument.applyddf.correction     = fulljones
+ndppp_applycal.argument.applyddf.solset         = sol000
+ndppp_applycal.argument.applyddf.soltab         = [amplitude000,phase000]
 
 ###################################################################
 ##                                                               ##
