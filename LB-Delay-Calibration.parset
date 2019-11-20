@@ -442,7 +442,7 @@ convert_to_h5.control.executable		= {{ losoto_directory }}/bin/killMS2H5parm.py
 convert_to_h5.control.max_per_node		= {{ num_proc_per_node }}
 convert_to_h5.control.mapfiles_in		= [ddf_h5parms.output.mapfile,ddf_solutions.output.mapfile]
 convert_to_h5.control.inputkeys			= [outputh5,inputnpz]
-convert_to_h5.argument.flags			= [outputh5,inputnpz,--nofulljones]
+convert_to_h5.argument.flags			= [outputh5,inputnpz]
 
 expand_concat_map.control.kind                      = plugin
 expand_concat_map.control.type                      = expandMapfile
