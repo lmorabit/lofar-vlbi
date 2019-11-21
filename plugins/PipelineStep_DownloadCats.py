@@ -307,7 +307,7 @@ def plugin_main( args, **kwargs ):
 
     ## look for or download LBCS
     logging.info("Attempting to find or download LBCS catalogue.")
-    lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue )
+    lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius, outfile=lbcs_catalogue )
     ## look for or download LoTSS
     logging.info("Attempting to find or download LoTSS catalogue.")
     lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue )
