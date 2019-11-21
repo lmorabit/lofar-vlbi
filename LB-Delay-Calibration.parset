@@ -110,7 +110,7 @@ pipeline.steps.prep = [ ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconcat_list ]
-pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, ndppp_applycal ]
+pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_map_ddf, h5imp_ddf, ndppp_applycal ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto, copy_h5imp_cal ]
 pipeline.steps.applydelay = [ copyST_gains, expand_h5_map, ndppp_apply_delay ]
 
