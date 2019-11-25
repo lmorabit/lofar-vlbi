@@ -13,15 +13,6 @@ import numpy as np
 # cmdline for type of mapfile creation
 # options: mapfile-dir, filename, identifier(name in parsetparset)
 
-
-createmap_target.control.kind             = plugin
-createmap_target.control.type             = createMapfile
-createmap_target.control.method           = mapfile_from_folder
-createmap_target.control.mapfile_dir      = input.output.mapfile_dir
-createmap_target.control.filename         = createmap_target.mapfile
-createmap_target.control.folder           = {{ target_input_path }}
-createmap_target.control.pattern          = {{ target_input_pattern }}
-
 def plugin_main(args, **kwargs):
     result = {}
     datamap = None
