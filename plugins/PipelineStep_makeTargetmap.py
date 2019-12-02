@@ -7,6 +7,7 @@ import argparse
 from argparse import RawTextHelpFormatter
 import casacore.tables as ct
 import numpy as np
+import glob
 
 
 # mandatory arguments:
@@ -41,7 +42,7 @@ def plugin_main(args, **kwargs):
     if kwargs['method'] == 'dummy':
         datamap = MapfileManager()
         datamap.expand(kwargs['number'])
-    if isinstance(kwargs['ddf_solsdir'], basestring ):
+    if kwargs['ddf_solsdir'] != '':
         ## remove things from the datamap that the ddf-pipeline did not successfully complete on
         mspattern = os.path.join( kwargs['ddf_solsdir'], '*pre-cal.ms' )
         msfiles = glob.glob( mspattern )
