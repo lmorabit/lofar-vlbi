@@ -350,7 +350,13 @@ def plugin_main( args, **kwargs ):
         ## also include bright sources from the lotss catalogue
         ## convert Jy to milliJy
         bright_index = np.where( lotss_catalogue['Total_flux'] >= bright_limit_Jy*1e3 )[0]
-        subtract_bright = lotss_catalogue[['Source_id','RA','DEC']][bright_index]
+        tmp = lotss_catalogue[['Source_id','RA','DEC']][bright_index]
+	## lotss catalogue has units, redefine a table that doesn't
+	subtract_bright = Table()
+	subtract_bright['Source_id'] = np.array(tmp['Source_id'], dtype=np.str)
+	subtract_bright['RA'] = np.array(tmp['RA'])
+	subtract_bright['DEC'] = np.array(tmp['DEC'])
+	
 	
 	subtract_sources = vstack( [subtract_cals, subtract_bright])
 	subtract_sources = unique( subtract_sources )
