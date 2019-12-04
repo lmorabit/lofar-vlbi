@@ -9,7 +9,7 @@ import numpy as np
 #from lmfit import SkewedGaussianModel
 import pyvo as vo
 import pyrap.tables as pt
-from astropy.table import Table, Column, vstack, unique
+from astropy.table import Table, Column, vstack, unique, join
 import argparse
 from lofarpipe.support.data_map import DataMap
 from lofarpipe.support.data_map import DataProduct
@@ -61,7 +61,7 @@ def input2strlist_nomapfile(invar):
         raise TypeError('input2strlist: Type '+str(type(invar))+' unknown!')
     return str_list
 
-def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5. ):
+def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
 
     """
     Download the LoTSS skymodel for the target field
@@ -73,40 +73,45 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5. ):
         Radius for the LOTSS cone search in degrees
     
     """
-    print "DOWNLOADING LOTSS Skymodel for the target field"
+    ## first check if the file already exists
+    if os.path.isfile( outfile ):
+	logging.info("LOTSS Skymodel for the target field exists on disk, reading in.")
+	tb_final = Table.read( outfile, format='csv' )
+    else:
+        logging.info("DOWNLOADING LOTSS Skymodel for the target field")
 
-    # Reading a MS to find the coordinate (pyrap)
-    RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+        # Reading a MS to find the coordinate (pyrap)
+        RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
 
-    ## this is the tier 1 database to query
-    #url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
-    # HETDEX database.
-    url = 'https://vo.astron.nl/hetdex/lotss-dr1/cone/scs.xml'
+	## this is the tier 1 database to query
+        #url = 'http://vo.astron.nl/lofartier1/q/cone/scs.xml'
+        # HETDEX database.
+        url = 'https://vo.astron.nl/hetdex/lotss-dr1/cone/scs.xml'
 
-    ## query the database
-    query = vo.dal.scs.SCSQuery( url )
-    query['RA'] = float( RATar )
-    query['DEC'] = float( DECTar )
-    query.radius = float( Radius )
-    t = query.execute()
+        ## query the database
+        query = vo.dal.scs.SCSQuery( url )
+        query['RA'] = float( RATar )
+        query['DEC'] = float( DECTar )
+        query.radius = float( Radius )
+        t = query.execute()
 
-    ## convert to VO table
-    try:
-        tb = t.votable.to_table()
-    except AttributeError:
-        # Above statement didn't work, try the alternative.
-        tb = t.to_table()
-    flux_sort = tb.argsort('Total_flux')
-    tb_sorted = tb[flux_sort[::-1]]
-    ## and keep only some of the columns
-    tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'Isl_rms']
-    resolved = np.where(is_resolved(tb_final['Total_flux'], tb_final['Peak_flux'], tb_final['Isl_rms']), 'R', 'U')
-    tb_final['Resolved'] = resolved
-    tb_final.rename_column('Source_Name', 'Source_id')
+        ## convert to VO table
+        try:
+            tb = t.votable.to_table()
+        except AttributeError:
+            # Above statement didn't work, try the alternative.
+            tb = t.to_table()
+        flux_sort = tb.argsort('Total_flux')
+        tb_sorted = tb[flux_sort[::-1]]
+        ## and keep only some of the columns
+        tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'Isl_rms']
+        resolved = np.where(is_resolved(tb_final['Total_flux'], tb_final['Peak_flux'], tb_final['Isl_rms']), 'R', 'U')
+        tb_final['Resolved'] = resolved
+        tb_final.rename_column('Source_Name', 'Source_id')
 
     return tb_final
 
-def my_lbcs_catalogue( ms_input, Radius=1.5 ):
+def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
 
     """
     Download the LBCS skymodel for the target field
@@ -118,55 +123,60 @@ def my_lbcs_catalogue( ms_input, Radius=1.5 ):
         Radius for the LOTSS cone search in degrees
     
     """
-    print "DOWNLOADING LBCS Skymodel for the target field"
+    ## first check if the file already exists
+    if os.path.isfile( outfile ):
+        logging.info("LBCS Skymodel for the target field exists on disk, reading in.")
+        tb_out = Table.read( outfile, format='csv' )
+    else:
+        logging.info("DOWNLOADING LBCS Skymodel for the target field")
 
-    # Reading a MS to find the coordinate (pyrap)
-    RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+        # Reading a MS to find the coordinate (pyrap)
+        RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
+ 
+        ## this is the tier 1 database to query
+        url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
 
-    ## this is the tier 1 database to query
-    url = 'http://vo.astron.nl/lbcs/lobos/cone/scs.xml'
+        ## query the database
+        query = vo.dal.scs.SCSQuery( url )
+        query['RA'] = float( RATar )
+        query['DEC'] = float( DECTar )
+        query.radius = float( Radius )
+        t = query.execute()
 
-    ## query the database
-    query = vo.dal.scs.SCSQuery( url )
-    query['RA'] = float( RATar )
-    query['DEC'] = float( DECTar )
-    query.radius = float( Radius )
-    t = query.execute()
+        ## convert to VO table
+        try:
+            tb = t.votable.to_table()
+        except AttributeError:
+            # Above statement didn't work, try the alternative.
+            tb = t.to_table()
 
-    ## convert to VO table
-    try:
-        tb = t.votable.to_table()
-    except AttributeError:
-        # Above statement didn't work, try the alternative.
-        tb = t.to_table()
+        #### Workaround to sort and pick good calibrator info from tb array ###########
+        counts=[]
+        P_count  = 0
+        for i in tb:
+            b = i[5].count('P')      #### Count of 'P' - good baselines       
+            counts.append(b)
+            if b >=2:
+                P_count = P_count + 1    #### To determine how many sources to take 
+        print 'Good sources - ' + str(P_count)
+        if P_count == 0:
+            logging.critical('There are no good LBCS sources within the given radius. Check your source is within the LBCS footprint and increase the search radius. Exiting...')
+            return
 
-    #### Workaround to sort and pick good calibrator info from tb array ###########
-    counts=[]
-    P_count  = 0
-    for i in tb:
-        b = i[5].count('P')      #### Count of 'P' - good baselines       
-        counts.append(b)
-        if b >=2:
-            P_count = P_count + 1    #### To determine how many sources to take 
-    print 'Good sources - ' + str(P_count)
-    if P_count == 0:
-        logging.critical('There are no good LBCS sources within the given radius. Check your source is within the LBCS footprint and increase the search radius. Exiting...')
-        return
+        inds = np.argsort(counts)
+        tb_sorted =tb[inds[::-1]]
+        len_array = len(tb_sorted)
+        for i in range ((len_array-P_count)):
+            len_array-=1
+            tb_sorted.remove_row(len_array)
 
-    inds = np.argsort(counts)
-    tb_sorted =tb[inds[::-1]]
-    len_array = len(tb_sorted)
-    for i in range ((len_array-P_count)):
-        len_array-=1
-        tb_sorted.remove_row(len_array)
+        ## remove duplicates
+        tb_tmp = np.array( tb_sorted['raj2000','decj2000'] )
+        result = [ idx for idx, item in enumerate( tb_tmp ) if item in tb_tmp[:idx] ]
+        tb_sorted.remove_rows(result)
 
-    ## remove duplicates
-    tb_tmp = np.array( tb_sorted['raj2000','decj2000'] )
-    result = [ idx for idx, item in enumerate( tb_tmp ) if item in tb_tmp[:idx] ]
-    tb_sorted.remove_rows(result)
-
-    ## keep only some columns
-    tb_out = tb_sorted['raj2000','decj2000','ObsID']
+        ## keep only some columns
+        tb_out = tb_sorted['raj2000','decj2000','ObsID']
 
     return tb_out
 
@@ -283,44 +293,57 @@ def plugin_main( args, **kwargs ):
     lbcs_radius  = kwargs['lbcs_radius']
     bright_limit_Jy = float(kwargs['bright_limit_Jy'])
     lotss_result_file = kwargs['lotss_result_file']
+    lotss_catalogue = kwargs['lotss_catalogue']
+    lbcs_catalogue = kwargs['lbcs_catalogue']
     delay_cals_file = kwargs['delay_cals_file']
     subtract_file = kwargs['subtract_file']
     match_tolerance = float(kwargs['match_tolerance'])
     subtract_limit = float(kwargs['subtract_limit'])
     image_limit_Jy = float(kwargs['image_limit_Jy'])
     fail_lotss_ok = kwargs['continue_no_lotss'].lower().capitalize()
-    doDownload = kwargs['doDownload']
 
     mslist = DataMap.load(mapfile_in)
     MSname = mslist[0].file
 
-    
-    if doDownload.capitalize() == 'True':
-        lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy ) 
-        lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius ) 
-        if len(lotss_catalogue) == 0:
-	    print('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
-	    lbcs_catalogue.write(delay_cals_file, format='csv')
-	    return
-	result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance ) 
-        
-        if (len(result) == 0) and (fail_lotss_ok == 'True'):
-            print('No cross matches found between LoTSS and LBCS! Only writing {:s}'.format(delay_cals_file))
-	    lbcs_catalogue.write(delay_cals_file, format='csv')
-	    return
-        elif (len(result) == 0) and (fail_lotss_ok == 'False'):
-            raise ValueError('No cross matches found between LoTSS and LBCS!')
+    ## look for or download LBCS
+    logging.info("Attempting to find or download LBCS catalogue.")
+    lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius, outfile=lbcs_catalogue )
+    ## look for or download LoTSS
+    logging.info("Attempting to find or download LoTSS catalogue.")
+    lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue )
 
+    ## if lbcs exists, and either lotss exists or continue_without_lotss = True, process the catalogue(s).
+    ## else provide an error message and stop
+    if len(lbcs_catalogue) == 0:
+	logging.error('LBCS coverage does not exist, and catalogue not found on disk.')
+	return
+    if len(lotss_catalogue) == 0 and not continue_without_lotss:
+	logging.error('LoTSS coverage does not exist, and contine_without_lotss is set to False.')
+	return 
+
+    ## if the LoTSS catalogue is empty, write out the delay cals only and stop
+    if len(lotss_catalogue) == 0:
+        logging.info('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
+        lbcs_catalogue.write(delay_cals_file, format='csv')
+        return
+
+    ## else continue 
+    result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance )
+
+    ## check if there are any matches
+    if len(result) == 0:
+        logging.error('LoTSS and LBCS coverage exists, but no matches found. This indicates something went wrong, please check your catalogues.')
+        return
+    else:
         ## Need to write the following catalogues:
         ## 1 - delay calibrators -- from lbcs_catalogue
         result.write( delay_cals_file, format='csv' )
-	print 'wrote'+delay_cals_file
+	logging.info('Writing delay calibrator file {:s}'.format(delay_cals_file))
 
         ####### sources to subtract
         ## convert Jy to milliJy
         subtract_index = np.where( result['Total_flux'] > subtract_limit*1e3 )[0]
         subtract_cals = result[['Source_id','LOTSS_RA','LOTSS_DEC']][subtract_index]
-	#subtract_cals.rename_column('Source_ID','Source_id')
 	subtract_cals.rename_column('LOTSS_RA','RA')
 	subtract_cals.rename_column('LOTSS_DEC','DEC')
 	
@@ -328,11 +351,6 @@ def plugin_main( args, **kwargs ):
         ## convert Jy to milliJy
         bright_index = np.where( lotss_catalogue['Total_flux'] >= bright_limit_Jy*1e3 )[0]
         subtract_bright = lotss_catalogue[['Source_id','RA','DEC']][bright_index]
-	subtract_bright['Source_id'] = subtract_bright['Source_id'].astype(str)
-	## change the data type of the source_id column
-	subtract_bright['tmp'] = subtract_bright['Source_id'].astype(str)
-	subtract_bright.remove_column('Source_id')
-	subtract_bright.rename_column('tmp','Source_id')
 	
 	subtract_sources = vstack( [subtract_cals, subtract_bright])
 	subtract_sources = unique( subtract_sources )
@@ -359,10 +377,6 @@ def plugin_main( args, **kwargs ):
 
 	sources_to_image.write( lotss_result_file, format='csv' )
 
-    else:
-	print "doDownload == False, not downloading catalogues!"
-
-
     return
 
 def is_resolved(Sint, Speak, rms):
@@ -384,7 +398,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument( '--lotss_radius', dest='lotss_radius', type=float, help='Radius to search LoTSS', default=5. )
     parser.add_argument( '--lbcs_radius', dest='lbcs_radius', type=float, help='Radius to search LBCS', default=5. )
-    parser.add_argument( '--lotss_result_file', dest='lotss_result_file', type=str, help='output file of sources to image', default='lotss_catalogue.csv' )
+    parser.add_argument( '--lotss_catalogue', dest='lotss_catalogue', type=str, help='input file for LoTSS catalogue [will be downloaded if does not exist]', default='lotss_catalogue.csv' )
+    parser.add_argument( '--lbcs_catalogue', dest='lbcs_catalogue', type=str, help='input file for LBCS catalogue [will be downloaded if does not exist]', default='lbcs_catalogue.csv' )
+    parser.add_argument( '--lotss_result_file', dest='lotss_result_file', type=str, help='output file of sources to image', default='image_catalogue.csv' )
     parser.add_argument( '--delay_cals_file', dest='delay_cals_file', type=str, help='output file of delay calibrators', default='delay_calibrators.csv' )
     parser.add_argument( '--subtract_file', dest='subtract_file', type=str, help='output file of sources to subtract', default='subtract_sources.csv' )
     parser.add_argument( '--match_tolerance', dest='match_tolerance', type=float, help='radius for matching LBCS to LoTSS [arcsec]', default=5. )
@@ -396,5 +412,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    plugin_main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy, continue_no_lotss = str(args.continue_no_lotss) )
+    plugin_main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_catalogue=args.lotss_catalogue, lbcs_catalogue=args.lbcs_catalogue, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy, continue_no_lotss = str(args.continue_no_lotss) )
 

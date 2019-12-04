@@ -205,6 +205,7 @@ def combine_subbands (in1array, nameout, phasecenter, fstep, tstep):
         fo.write(']' if i==len(in2array)-1 else ',')
     fo.write('\n')
     fo.write('msout = '+nameout+'\n')
+    fo.write('msout.storagemanager=dysco\n')	
     fo.write('msin.datacolumn = %s\n'%datacol)
     if ismissing:
         fo.write('msin.missingdata=True\n')
@@ -243,7 +244,7 @@ def lotss2coords (lotssfile):
             basestring = str
 	if not isinstance(src, basestring):
             src = 'S' + str(src)
-            a = ','.join([str(a['LOTSS_RA']), a(tmp['LOTSS_DEC']), src])
+            a = ','.join([str(a['LOTSS_RA']), str(a['LOTSS_DEC']), src])
     coords=np.array([],dtype='S')
     for xx in range(len(a)):
 	tmp = a[xx]
