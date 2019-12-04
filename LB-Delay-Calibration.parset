@@ -26,9 +26,9 @@
 ! target_input_pattern          = L*.MS
 
 ## Prefactor solution information
-! cal_solutions         = input.output.job_directory/../Pre-Facet-Target/results/cal_values/solutions.h5  ## location of h5parm from prefactor - should contain 'calibrator' and 'target' information
+! prefac_tgt_dir	= input.output.job_directory/../Pre-Facet-Target
+! cal_solutions         = {{ prefac_tgt_dir }}/results/cal_values/solutions.h5  ## location of h5parm from prefactor - should contain 'calibrator' and 'target' information
 ! solutions             = input.output.job_directory/solutions.h5
-! cal_table             = combinedsols
 ! phasesol              = TGSSphase
 
 ## Stations to flag
@@ -43,7 +43,7 @@
 ###########################################################
 
 ! substep_ddf             = # ,apply_ddf   ## set to apply_ddf to use, leave blank otherwise
-! ddf_soldir              = /data/scratch/lb_bw/targetddf/L602888/SOLSDIR     ## path to 'SOLSDIR' from ddf-pipeline run
+! ddf_soldir              = # /data/scratch/lb_bw/targetddf/L602888/SOLSDIR     ## path to 'SOLSDIR' from ddf-pipeline run, leave blank otherwise
 ! delaycal_col            = DATA ## set to DATA_DI_CORRECTED if applying ddf solutions, DATA otherwise.
 
 ##########################################################
@@ -142,12 +142,14 @@ mk_cal_values_dir.control.directory       =  {{ cal_values_directory }}
 
 # generate a mapfile of all the target data
 createmap_target.control.kind             = plugin
-createmap_target.control.type             = createMapfile
+createmap_target.control.type             = makeTargetmap
 createmap_target.control.method           = mapfile_from_folder
 createmap_target.control.mapfile_dir      = input.output.mapfile_dir
 createmap_target.control.filename         = createmap_target.mapfile
 createmap_target.control.folder           = {{ target_input_path }}
 createmap_target.control.pattern          = {{ target_input_pattern }}
+createmap_target.control.ddf_solsdir      = {{ ddf_soldir }}
+createmap_target.control.prefacet_dir     = {{ prefac_tgt_dir }}
 
 # convert to a mapfile with all subbands in one list
 createmap_target_list.control.kind            =   plugin
@@ -196,35 +198,38 @@ ndppp_prep_target.argument.msout.datacolumn             = DATA
 ndppp_prep_target.argument.msout.storagemanager         = dysco
 ndppp_prep_target.argument.msout.writefullresflag       = False
 ndppp_prep_target.argument.msout                        = .
-ndppp_prep_target.argument.steps                        = [flag,flagamp,applyPA,applybandpass,applyclock,applyRM,applybeam,applyphase,count]
+ndppp_prep_target.argument.steps                        = [flag,flagamp,filter,applyPA,applybandpass,applyclock,applyRM,applybeam,applyphase,count]
 ndppp_prep_target.argument.flag.type                    = preflagger
 ndppp_prep_target.argument.flag.baseline                = {{ flag_baselines }}
 ndppp_prep_target.argument.flagamp.type                 = preflagger
 ndppp_prep_target.argument.flagamp.amplmin              = 1e-30
+ndppp_prep_target.argument.filter.type                  = filter
+ndppp_prep_target.argument.filter.baseline              = {{ filter_baselines }}
+ndppp_prep_target.argument.filter.remove                = true
 ndppp_prep_target.argument.applyclock.type              = applycal
 ndppp_prep_target.argument.applyclock.parmdb            = {{ solutions }}
 ndppp_prep_target.argument.applyclock.correction        = clock
-ndppp_prep_target.argument.applyclock.solset            = {{ cal_table }}
+ndppp_prep_target.argument.applyclock.solset            = calibrator
 ndppp_prep_target.argument.applyPA.type                 = applycal
 ndppp_prep_target.argument.applyPA.parmdb               = {{ solutions }}
 ndppp_prep_target.argument.applyPA.correction           = polalign
-ndppp_prep_target.argument.applyPA.solset               = {{ cal_table }}
+ndppp_prep_target.argument.applyPA.solset               = calibrator
 ndppp_prep_target.argument.applybandpass.type           = applycal
 ndppp_prep_target.argument.applybandpass.parmdb         = {{ solutions }}
 ndppp_prep_target.argument.applybandpass.correction     = bandpass
 ndppp_prep_target.argument.applybandpass.updateweights  = True
-ndppp_prep_target.argument.applybandpass.solset         = {{ cal_table }}
+ndppp_prep_target.argument.applybandpass.solset         = calibrator
 ndppp_prep_target.argument.applybeam.type               = applybeam
 ndppp_prep_target.argument.applybeam.usechannelfreq     = True
 ndppp_prep_target.argument.applybeam.updateweights      = True
 ndppp_prep_target.argument.applyRM.type                 = applycal
 ndppp_prep_target.argument.applyRM.parmdb               = {{ solutions }}
 ndppp_prep_target.argument.applyRM.correction           = RMextract
-ndppp_prep_target.argument.applyRM.solset               = {{ cal_table }}
+ndppp_prep_target.argument.applyRM.solset               = target
 ndppp_prep_target.argument.applyphase.type              = applycal
 ndppp_prep_target.argument.applyphase.parmdb            = {{ solutions }}
 ndppp_prep_target.argument.applyphase.correction        = {{ phasesol }}
-ndppp_prep_target.argument.applyphase.solset            = {{ cal_table }}
+ndppp_prep_target.argument.applyphase.solset            = target
 
 # combine all entries into one mapfile
 ndppp_prep_target_list.control.kind                                =   plugin

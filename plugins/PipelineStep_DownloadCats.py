@@ -75,10 +75,10 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
     """
     ## first check if the file already exists
     if os.path.isfile( outfile ):
-	logging.info("LOTSS Skymodel for the target field exists on disk, reading in.")
+	print("LOTSS Skymodel for the target field exists on disk, reading in.")
 	tb_final = Table.read( outfile, format='csv' )
     else:
-        logging.info("DOWNLOADING LOTSS Skymodel for the target field")
+        print("DOWNLOADING LOTSS Skymodel for the target field")
 
         # Reading a MS to find the coordinate (pyrap)
         RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
@@ -124,11 +124,12 @@ def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
     
     """
     ## first check if the file already exists
+    print( outfile )
     if os.path.isfile( outfile ):
-        logging.info("LBCS Skymodel for the target field exists on disk, reading in.")
+        print("LBCS Skymodel for the target field exists on disk, reading in.")
         tb_out = Table.read( outfile, format='csv' )
     else:
-        logging.info("DOWNLOADING LBCS Skymodel for the target field")
+        print("DOWNLOADING LBCS Skymodel for the target field")
 
         # Reading a MS to find the coordinate (pyrap)
         RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(ms_input)[0])
@@ -305,11 +306,16 @@ def plugin_main( args, **kwargs ):
     mslist = DataMap.load(mapfile_in)
     MSname = mslist[0].file
 
+    ## first check for a valid delay_calibrator file
+    if os.path.isfile(delay_cals_file):
+	print( 'Delay calibrators file {:s} exists! returning.'.format(delay_cals_file) )
+        return
+
     ## look for or download LBCS
-    logging.info("Attempting to find or download LBCS catalogue.")
+    print("Attempting to find or download LBCS catalogue.")
     lbcs_catalogue = my_lbcs_catalogue( MSname, Radius=lbcs_radius, outfile=lbcs_catalogue )
     ## look for or download LoTSS
-    logging.info("Attempting to find or download LoTSS catalogue.")
+    print("Attempting to find or download LoTSS catalogue.")
     lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue )
 
     ## if lbcs exists, and either lotss exists or continue_without_lotss = True, process the catalogue(s).
@@ -323,7 +329,7 @@ def plugin_main( args, **kwargs ):
 
     ## if the LoTSS catalogue is empty, write out the delay cals only and stop
     if len(lotss_catalogue) == 0:
-        logging.info('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
+        print('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
         lbcs_catalogue.write(delay_cals_file, format='csv')
         return
 
@@ -338,7 +344,7 @@ def plugin_main( args, **kwargs ):
         ## Need to write the following catalogues:
         ## 1 - delay calibrators -- from lbcs_catalogue
         result.write( delay_cals_file, format='csv' )
-	logging.info('Writing delay calibrator file {:s}'.format(delay_cals_file))
+	print('Writing delay calibrator file {:s}'.format(delay_cals_file))
 
         ####### sources to subtract
         ## convert Jy to milliJy
@@ -350,7 +356,13 @@ def plugin_main( args, **kwargs ):
         ## also include bright sources from the lotss catalogue
         ## convert Jy to milliJy
         bright_index = np.where( lotss_catalogue['Total_flux'] >= bright_limit_Jy*1e3 )[0]
-        subtract_bright = lotss_catalogue[['Source_id','RA','DEC']][bright_index]
+        tmp = lotss_catalogue[['Source_id','RA','DEC']][bright_index]
+	## lotss catalogue has units, redefine a table that doesn't
+	subtract_bright = Table()
+	subtract_bright['Source_id'] = np.array(tmp['Source_id'], dtype=np.str)
+	subtract_bright['RA'] = np.array(tmp['RA'])
+	subtract_bright['DEC'] = np.array(tmp['DEC'])
+	
 	
 	subtract_sources = vstack( [subtract_cals, subtract_bright])
 	subtract_sources = unique( subtract_sources )
