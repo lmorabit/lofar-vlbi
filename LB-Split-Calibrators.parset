@@ -56,8 +56,8 @@
 ! prefactor_scripts			= {{ prefactor_dir }}/scripts
 
 ## Averaging parameters
-! cal_shift_avg_timestep        = 4    ## Calibrator time averaging: output should be 8 seconds
-! cal_shift_avg_freqstep        = 4    ## Calibrator freq averaging: output should be 2 channels per subband
+! cal_shift_avg_timestep        = 8    ## Calibrator time averaging: output should be 8 seconds
+! cal_shift_avg_freqstep        = 8    ## Calibrator freq averaging: output should be 2 channels per subband
 ! tgt_shift_avg_timestep        = 16   ## Target time averaging: output should be 16 seconds
 ! tgt_shift_avg_freqstep        = 16   ## Target freq averaging: output should be 1 channel per subband
 
