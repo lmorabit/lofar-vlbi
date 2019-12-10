@@ -139,7 +139,7 @@ def source (coords,ncpu):
     source_thread.parallel = parallel_function(source_thread,ncpu)
     parallel_result = source_thread.parallel(coords)
 
-def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=999 ):
+def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=999 ):
 
     phaseup_cmd = str(phaseup_cmd)
     filter_cmd = str(filter_cmd)
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     parser.add_argument('MS_pattern',type=str, help='pattern to search for MS')
     parser.add_argument('lotss_file',type=str,help='catalogue to process')
     parser.add_argument('--phaseup_cmd',type=str,default="{ST001:'CS*'}")
-    parser.add_argument('--filter_cmd',type=str,default='!CS*&*')
+    parser.add_argument('--filter_cmd',type=str,default='!CS*&&*')
     parser.add_argument('--ncpu',type=int,help='number of CPUs',required=True)
     parser.add_argument('--datacol',type=str,help='datacolumn to use (default CORRECTED_DATA)',default='CORRECTED_DATA')
     parser.add_argument('--timestep',type=int,default=8)

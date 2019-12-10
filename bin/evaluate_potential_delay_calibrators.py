@@ -220,7 +220,7 @@ def combine_subbands (in1array, nameout, phasecenter, fstep, tstep):
     fo.write('sadder.type = stationadder\n')
     fo.write('sadder.stations = {ST001:\'CS*\'}\n')
     fo.write('filter.type = \'filter\'\n')
-    fo.write('filter.baseline = \'!CS*&*\'\n')
+    fo.write('filter.baseline = \'!CS*&&*\'\n')
     fo.write('filter.remove = True')
     fo.close()
     os.system('NDPPP NDPPP_%s.parset'%nameout)  # run with NDPPP
