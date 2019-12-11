@@ -53,7 +53,7 @@ def addghost (inarray):        # deal with missing frequencies between subbands
         outarray=np.append(outarray,inarray[i])
     return outarray   
 
-def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phscmd, filcmd):
+def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phscmd, filcmd, nthreads):
 
     # get datacolumn
     in2array = addghost(inarray)
@@ -72,7 +72,7 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
         if ismissing:
             fo.write('msin.missingdata=True\n')
             fo.write('msin.orderms=False\n')
-        fo.write('numthreads=4\n')
+        fo.write('numthreads=%s\n'%str(nthreads))
         fo.write('steps = [shift,avg,sadder,filter]\n')
         fo.write('shift.phasecenter = [%s]\n'%phasecenter)
         fo.write('shift.type = phaseshift\n')
@@ -131,7 +131,8 @@ def source_thread (i):
     phaseupcmd = i['phaseup_cmd']
     filtercmd = i['filter_cmd']
     nameout = i['outname']
-    combine_subbands(inarray,nameout,datacol,phasecen,freqstep,timestep,phaseupcmd,filtercmd)
+    nthreads = i['nthreads']
+    combine_subbands(inarray,nameout,datacol,phasecen,freqstep,timestep,phaseupcmd,filtercmd,nthreads)
     print 'PROCESSING SOURCE %s - finished' % src
 
 
@@ -139,11 +140,12 @@ def source (coords,ncpu):
     source_thread.parallel = parallel_function(source_thread,ncpu)
     parallel_result = source_thread.parallel(coords)
 
-def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=999 ):
+def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=999, nthreads=1 ):
 
     phaseup_cmd = str(phaseup_cmd)
     filter_cmd = str(filter_cmd)
     ncpu = int(ncpu)
+    nthreads = int(nthreads)
     datacol = str(datacol)
     timestep = int(timestep)
     freqstep = int(freqstep)
@@ -183,6 +185,7 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*
 	cal_dict['timestep'] = str(timestep)
 	cal_dict['phaseup_cmd'] = phaseup_cmd
 	cal_dict['filter_cmd'] = filter_cmd
+        cal_dict['nthreads'] = nthreads
 
         tmp = []
         for coord in coords:
@@ -197,7 +200,7 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*
         coords = tmp
 	## find number of sources to set right number of cpus
 	## each ndppp process will use 4 threads (this is hardcoded atm)
-	ncpu = int( np.min([len(coords),ncpu/4]) )
+	ncpu = int( np.min([len(coords),ncpu/nthreads]) )
 
         #print( coords )
         starttime = datetime.datetime.now()
@@ -216,6 +219,7 @@ if __name__ == "__main__":
     parser.add_argument('--phaseup_cmd',type=str,default="{ST001:'CS*'}")
     parser.add_argument('--filter_cmd',type=str,default='!CS*&&*')
     parser.add_argument('--ncpu',type=int,help='number of CPUs',required=True)
+    parser.add_argument('--nthreads',type=int,help='number of threads',required=True,default=4)
     parser.add_argument('--datacol',type=str,help='datacolumn to use (default CORRECTED_DATA)',default='CORRECTED_DATA')
     parser.add_argument('--timestep',type=int,default=8)
     parser.add_argument('--freqstep',type=int,default=8)
