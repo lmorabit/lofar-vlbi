@@ -4,7 +4,7 @@ import os
 import sys
 import glob
 from astropy.coordinates import SkyCoord
-from astropy.io import ascii
+from astropy.table import Table
 
 
 def write_skymodel (ra,dec,model,outname):
@@ -43,17 +43,11 @@ def main (vis, delayCalFile='' ):
     vis = vis.split('/')[-1]
     vis_src = vis.split('_')[0]
 
-    ## get flux from primary_delay_calibrator.csv
-    a = ascii.read(delayCalFile)
-    for xx in range(len(a)):
-        tmp = a[xx]
-        src = tmp['Source_id']
-        if type(src) != str:
-            src = 'S'+str(src)
-	if src == vis_src:
-	    ra = tmp['LOTSS_RA']
-	    dec = tmp['LOTSS_DEC']
-	    smodel = tmp['Total_flux']
+    ## get flux from best_delay_calibrators.csv
+    t = Table.read( delayCalFile, format='csv' )
+    ra = t['RA_LOTSS'].data[0]
+    dec = t['DEC_LOTSS'].data[0]
+    smodel = t['Total_flux'].data[0]
 
     print 'generating point model'
     point_model = np.array( [ [0.0,0.0,smodel,0.1,0.0,0.0] ] )
