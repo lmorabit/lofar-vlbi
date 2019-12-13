@@ -11,7 +11,10 @@ def main( ms_input, h5pattern='S*_tec.h5' ):
 
         filestem = tec_h5parm.replace('.h5','')
         losoto_parset = filestem + '_losoto.parset' 
-        imstem = filestem.split('_')[0] + '_' + filestem.split('_')[1] + '_' + filestem.split('_')[2] + '_'
+        try:
+            imstem = filestem.split('_')[0] + '_' + filestem.split('_')[1] + '_' + filestem.split('_')[2] + '_'
+        except:
+            imstem = filestem
         with open( losoto_parset, 'w' ) as f:
             f.write('[plotTEC]\n')
             f.write('plotFlag = False\n')
