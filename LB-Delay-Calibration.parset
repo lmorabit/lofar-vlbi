@@ -35,8 +35,8 @@
 ! flag_baselines        = [ ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
 
 ## averaging information -- do not touch unless you know what you are doing!
-! cal_shift_avg_freqstep    = 4
-! cal_shift_avg_timestep    = 4
+! cal_shift_avg_freqstep    = 8
+! cal_shift_avg_timestep    = 8
 
 ###########################################################
 ### DDF Options -- please check even if not using        ##
@@ -52,7 +52,7 @@
 
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
-! filter_command = '!CS*&*' ## remove the core stations after combination
+! filter_command = '!CS*&&*' ## remove the core stations after combination
 
 ## Output directories
 ! job_directory                 = input.output.job_directory ## directory of the prefactor outputs
