@@ -10,6 +10,7 @@ from lofarpipe.support.data_map import DataProduct
 import argparse
 from argparse import RawTextHelpFormatter
 import casacore.tables as ct, numpy as np, glob
+from losoto.h5parm import h5parm
 
 def plugin_main(args, **kwargs):
     result = {}
@@ -42,12 +43,12 @@ def plugin_main(args, **kwargs):
         datamap.expand(kwargs['number'])
     if kwargs['ddf_solsdir'] != '':
         ddf_freqs = get_dico_freqs(kwargs['ddf_solsdir'], solnames='killMS.DIS2_full.sols.npz')
-        prefac_sbs = get_input_ms(kwargs['prefacet_dir'], mspattern='L*msdpppconcat')
+        prefac_freqs = get_prefactor_freqs( solname=kwargs['solname'], solset='target' )
+        print( ddf_freqs )
+        print( prefac_freqs )
         for dd in datamap:
-            tmp = dd.file.split('/')[(-1)]
-            dd_sb = tmp.split('_')[1]
-            if dd_sb not in prefac_sbs:
-                dd.skip = True
+	    ## check if in prefactor freqs
+            dd.skip = check_dd_freq( dd.file, prefac_freqs )
             if not dd.skip:
                 dd.skip = check_dd_freq(dd.file, ddf_freqs)
 
@@ -89,6 +90,21 @@ def get_dico_freqs(input_dir, solnames='killMS.DIS2_full.sols.npz'):
         SolDico.close()
 
     return freqs
+
+def get_prefactor_freqs( solname='solutions.h5', solset='target' ):
+    sols = h5parm( solname )
+    ss = sols.getSolset( solset )
+    st_names = ss.getSoltabNames()
+    ph_sol_name = [ xx for xx in st_names if 'extract' not in xx ][0]
+    st = ss.getSoltab(ph_sol_name)
+    freqs = st.getAxisValues('freq')
+    freqstep = 1953125.0  ## the value for 10 subbands
+    f_arr = []
+    for xx in range(len(freqs)):
+        fmin = freqs[xx] - freqstep/2.
+        fmax = freqs[xx] + freqstep/2.
+        f_arr.append(np.array([fmin,fmax]))
+    return( f_arr )
 
 
 def get_input_ms(input_dir, mspattern='L*msdpppconcat'):
