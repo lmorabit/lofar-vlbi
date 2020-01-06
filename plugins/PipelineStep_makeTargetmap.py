@@ -402,7 +402,6 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--method', help='Method of creating the mapfile.', default='mapfile_from_folder')
     parser.add_argument('-d', '--directory', help='Directory to store the mapfile in.', default='.')
     parser.add_argument('--ddf_solsdir', help='DDF sols directory')
-    parser.add_argument('--prefacet_dir', help='Pre-Factor-Target directory')
     args = parser.parse_args()
     kwarg = {'filename': args.name, 
        'number': args.number, 
@@ -414,7 +413,6 @@ if __name__ == '__main__':
        'method': args.method, 
        'mapfile_dir': args.directory, 
        'ddf_solsdir': args.ddf_solsdir, 
-       'prefacet_dir': args.prefacet_dir}
     if args.number != 0:
         kwarg['method'] = 'dummy'
     if args.suffix:
