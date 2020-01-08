@@ -63,9 +63,9 @@ def plugin_main(args, **kwargs):
     current_name = map_out_coords[0].file
     # initialise an output data map
     map_out = DataMap([])
-    # loop through input data map and copy information over to output, changing names
-    for msID, ms_file in enumerate(datalist):
-        map_out.data.append(DataProduct(data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip))
+    msID = 0 
+    ms_file = datalist[0]
+    map_out.data.append(DataProduct(data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip))
     # save the file
     map_out.save(fileid)
 
