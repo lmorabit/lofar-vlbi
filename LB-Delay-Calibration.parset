@@ -150,6 +150,7 @@ createmap_target.control.folder           = {{ target_input_path }}
 createmap_target.control.pattern          = {{ target_input_pattern }}
 createmap_target.control.ddf_solsdir      = {{ ddf_soldir }}
 createmap_target.control.prefacet_dir     = {{ prefac_tgt_dir }}
+createmap_target.control.solname          = {{ cal_solutions }}
 
 # convert to a mapfile with all subbands in one list
 createmap_target_list.control.kind            =   plugin
