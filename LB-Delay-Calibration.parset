@@ -112,7 +112,7 @@ pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, crea
 pipeline.steps.prep = [ ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconcat_list ]
-pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
+pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, expand_memory_map, aoflag ]
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto, copy_h5imp_cal ]
 pipeline.steps.applydelay = [ copyST_gains, expand_h5_map, ndppp_apply_delay ]
@@ -323,14 +323,22 @@ ms_concat_target.control.executable                            =   {{ prefactor_
 ms_concat_target.control.error_tolerance                       =   {{ error_tolerance }}
 ms_concat_target.argument.filename                             =   concatmapfile.mapfile
 ms_concat_target.argument.mapfile_dir                          =   input.output.mapfile_dir
-ms_concat_target.argument.min_length                   =   {{ min_length }}
-ms_concat.target.argument.overhead                   =   {{ overhead }}
-ms_concat_target.argument.flags                                =   [ndppp_prep_target_list.output.mapfile,outputkey]
+ms_concat_target.argument.min_length                           =   {{ min_length }}
+ms_concat.target.argument.overhead                             =   {{ overhead }}
+ms_concat_target.argument.flags                                =   [dpppconcat_list.output.mapfile,outputkey]
 
 # convert the output of ms_concat_target into usable mapfiles
 ms_concat_target_map.control.kind                              =   plugin
 ms_concat_target_map.control.type                              =   mapfilenamesFromMapfiles
 ms_concat_target_map.control.mapfile_concatmap                 =   ms_concat_target.output.concatmapfile.mapfile
+
+## convert the output of ms_concat_target into usable mapfiles
+expand_memory_map.control.kind                                 =   plugin
+expand_memory_map.control.type                                 =   expandMapfile
+expand_memory_map.control.mapfile_in                           =   ms_concat_target.output.memory.mapfile
+expand_memory_map.control.mapfile_to_match                     =   ms_concat_target_map.output.concatmap
+expand_memory_map.control.mapfile_dir                          =   {{ mapfile_dir }}
+expand_memory_map.control.filename                             =   expand_memory_map.mapfile
 
 # run aoflagger on the concatenated data
 aoflag.control.kind                                            =   recipe
@@ -339,11 +347,11 @@ aoflag.control.inplace                                         =   True
 aoflag.control.executable                                      =   {{ aoflagger }}
 aoflag.control.max_per_node                                    =   1
 aoflag.control.error_tolerance                                 =   {{ error_tolerance }}
-aoflag.control.mapfile_in                                      =   ms_concat_target_map.output.concatmap
-aoflag.control.inputkey                                        =   msin
+aoflag.control.mapfile_in                                      =   [ms_concat_target_map.output.concatmap,expand_memory_map.output.mapfile]
+aoflag.control.inputkey                                        =   [msin,memory]
 aoflag.control.args_format                                     =   wsclean
-aoflag.argument.strategy                                       =   {{ lofar_directory }}/share/rfistrategies/{{ rfistrategy }}
-aoflag.argument.flags                                          =   [-v,-combine-spws,msin]
+aoflag.argument.strategy                                       =   {{ prefactor_directory }}/rfistrategies/{{ rfistrategy }}
+aoflag.argument.flags                                          =   [-v,memory,-combine-spws,msin]
 
 ##################################################################
 #                                                               ##
