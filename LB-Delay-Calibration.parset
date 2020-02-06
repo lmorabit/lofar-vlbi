@@ -114,7 +114,8 @@ pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, exp
 pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconcat_list ]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, expand_memory_map, aoflag ]
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
-pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto, copy_h5imp_cal ]
+pipeline.steps.delaycal = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, phaseup_concat, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, tecsolve, make_losoto, process_losoto ]
+#pipeline.steps.delaycal = [ delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto, copy_h5imp_cal ]
 pipeline.steps.applydelay = [ copyST_gains, expand_h5_map, ndppp_apply_delay ]
 
 
@@ -288,6 +289,7 @@ predict_ateam.argument.numthreads                              =   {{ max_dppp_t
 predict_ateam.argument.msin.datacolumn                         =   DATA
 predict_ateam.argument.msout.datacolumn                        =   MODEL_DATA
 predict_ateam.argument.msout.storagemanager                    =   dysco
+predict_ateam.argument.msout.storagemanager.databitrate        =   0
 predict_ateam.argument.steps                                   =   [filter,predict]
 predict_ateam.argument.filter.type                             =   filter
 predict_ateam.argument.filter.baseline                         =   [CR]S*&
@@ -403,7 +405,6 @@ aoflag.control.args_format                                     =   wsclean
 aoflag.argument.strategy                                       =   {{ prefactor_directory }}/rfistrategies/{{ rfistrategy }}
 aoflag.argument.flags                                          =   [-v,memory,-combine-spws,msin]
 
-
 ###################################################################
 ##                                                               ##
 ##            OPTIONAL -- APPLY DDF SOLUTIONS                    ##
@@ -510,37 +511,19 @@ ndppp_applycal.argument.applyddf.soltab         = [amplitude000,phase000]
 ##                                                               ##
 ###################################################################
 
-# do a parallel search for the best delay calibrator
-do_parallel.control.type                  = pythonplugin
-do_parallel.control.max_per_node          = {{ num_proc_per_node }}
-do_parallel.control.executable            = {{ scripts }}/evaluate_potential_delay_calibrators.py
-do_parallel.argument.flags                = [dpppconcat_list.output.mapfile,{{ delay_cat }}]
-do_parallel.argument.ncpu                 = {{ num_proc_per_node }}
-do_parallel.argument.datacol          = {{ delaycal_col }}
-do_parallel.argument.nsbs          = 2
-
-# automatically find the best calibrator 
-find_delay_cal.control.kind               = plugin
-find_delay_cal.control.type               = DelayCalToMapfile
-find_delay_cal.control.delaycals          = {{ delay_cat }}
-find_delay_cal.control.clphase_file       = {{ job_directory }}/closure_phases.txt
-
-# Initialise file with direction of delay calibrator
-prep_dirs.control.kind                    = plugin
-prep_dirs.control.type                    = TargetListToMapfile
-prep_dirs.control.mapfile_dir             = input.output.mapfile_dir
-prep_dirs.control.infile                  = dpppconcat.output.mapfile
-prep_dirs.control.filename                = prep_dirs.mapfile
-prep_dirs.control.wd                      = {{ job_directory }}
-prep_dirs.control.nP                      = 3   # this is the default setting
-prep_dirs.control.counter                 = 0
-prep_dirs.control.manual                  = True ## 
-prep_dirs.control.target_file             = find_delay_cal.output.calfile
+# convert the best delay calibrator from catalogue to output mapfile
+prep_delay_dir.control.kind             = plugin
+prep_delay_dir.control.type             = TargetListToMapfile
+prep_delay_dir.control.mapfile_dir      = input.output.mapfile_dir
+prep_delay_dir.control.mapfile_in       = dpppconcat.output.mapfile
+prep_delay_dir.control.filename         = prep_delay_dir.mapfile
+prep_delay_dir.control.target_file      = {{ best_delay_cat }}
+prep_delay_dir.control.all_to_one       = False
 
 # shift, average and add up stations for tied array
 dppp_phaseup.control.type                 = dppp
 dppp_phaseup.control.max_per_node         = {{ num_proc_per_node }}
-dppp_phaseup.control.mapfile_out          = prep_dirs.output.mapfile
+dppp_phaseup.control.mapfile_out          = prep_delay_dir.output.mapfile
 dppp_phaseup.argument.msin                = dpppconcat.output.mapfile
 dppp_phaseup.argument.msin.datacolumn     = {{ delaycal_col }}
 dppp_phaseup.argument.msout.datacolumn    = DATA
@@ -548,7 +531,7 @@ dppp_phaseup.argument.msout.storagemanager= dysco
 dppp_phaseup.argument.msout.overwrite     = True
 dppp_phaseup.argument.steps               = [shift, avg, adder, filter]
 dppp_phaseup.argument.shift.type          = phaseshift
-dppp_phaseup.argument.shift.phasecenter   = prep_dirs.output.coords
+dppp_phaseup.argument.shift.phasecenter   = prep_delay_dir.output.coords
 dppp_phaseup.argument.avg.type            = squash
 dppp_phaseup.argument.avg.freqstep        = {{ cal_shift_avg_freqstep }}
 dppp_phaseup.argument.avg.timestep        = {{ cal_shift_avg_timestep }}
@@ -559,13 +542,37 @@ dppp_phaseup.argument.filter.baseline     = {{ filter_command }}
 dppp_phaseup.argument.filter.remove       = True
 dppp_phaseup.argument.numthreads          = {{ max_dppp_threads }}
 
+# convert to a mapfile with all bands in one list
+dppp_phaseup_list.control.kind            =   plugin
+dppp_phaseup_list.control.type            =   createMapfile
+dppp_phaseup_list.control.method          =   mapfile_all_to_one
+dppp_phaseup_list.control.mapfile_dir     =   input.output.mapfile_dir
+dppp_phaseup_list.control.filename        =   combine_data_tar_map.mapfile
+dppp_phaseup_list.control.mapfile_in      =   dppp_phaseup.output.mapfile
+
+# concatenate them
+phaseup_concat.control.type                  = dppp
+phaseup_concat.control.max_per_node          = {{ num_proc_per_node_limit }}
+phaseup_concat.control.error_tolerance       = {{ error_tolerance }}
+phaseup_concat.control.mapfiles_in           = [dppp_phaseup_list.output.mapfile]
+phaseup_concat.control.inputkey              = msin
+phaseup_concat.argument.msin.datacolumn      = DATA
+phaseup_concat.argument.msin.missingdata     = True
+phaseup_concat.argument.msin.orderms         = False
+phaseup_concat.argument.msout.datacolumn     = DATA
+phaseup_concat.argument.msout.writefullresflag = False
+phaseup_concat.argument.msout.storagemanager = dysco
+phaseup_concat.argument.msout.overwrite      = True
+phaseup_concat.argument.steps                = [count]
+phaseup_concat.argument.numthreads           = {{ max_dppp_threads }}
+
 # generate the calibrator model with skynet
 delay_cal_model.control.type                  = pythonplugin
 delay_cal_model.control.executable            = {{ scripts }}/skynet.py
-delay_cal_model.control.mapfile_in            = dppp_phaseup.output.mapfile
+delay_cal_model.control.mapfile_in            = phaseup_concat.output.mapfile
 delay_cal_model.control.inputkey              = msin
 delay_cal_model.argument.flags                = [msin]
-delay_cal_model.argument.delayCalFile         = {{ delay_cat }}
+delay_cal_model.argument.delayCalFile         = {{ best_delay_cat }}
 
 # generate mapfile with the sourceDB names to be used in the gsmcal steps
 delay_cal_model_map.control.kind               =  plugin
@@ -584,6 +591,24 @@ delay_cal_parmmap.control.mapfile_in         =  dppp_phaseup.output.mapfile
 delay_cal_parmmap.control.add_suffix_to_file =  _delay_instrument.h5
 delay_cal_parmmap.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_parmmap.control.filename           =  delay_cal_parmdbs.mapfile
+
+# solve for tec
+tecsolve.control.type                   = dppp
+tecsolve.control.inplace                = True
+tecsolve.control.max_per_node           = {{ num_proc_per_node_limit }}
+tecsolve.control.error_tolerance        = {{ error_tolerance }}
+tecsolve.control.mapfiles_in            = [phaseup_concat.output.mapfile,delay_cal_parmmap.output.mapfile,delay_cal_model_map.output.mapfile]
+tecsolve.control.inputkeys              = [msfiles,h5parms,skymodels]
+tecsolve.argument.numthreads            = {{ max_dppp_threads }}
+tecsolve.argument.msin                  = msfiles
+tecsolve.argument.msin.datacolumn       = DATA
+tecsolve.argument.steps                 = [gaincal]
+tecsolve.argument.gaincal.caltype       = tec
+tecsolve.argument.gaincal.solint        = 5
+tecsolve.argument.gaincal.nchan         = 10
+tecsolve.argument.gaincal.directions    = [ME0]
+tecsolve.argument.gaincal.parmdb        = h5parms
+tecsolve.argument.gaincal.sourcedb      = skymodels
 
 # generate gain solutions
 calib_cal.control.type                    = dppp
