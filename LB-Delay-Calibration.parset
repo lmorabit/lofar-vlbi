@@ -15,10 +15,11 @@
 ##########################################################
 
 # software paths
-! long_baseline_pipeline_dir            = /home/lmorabit/long_baseline_pipeline_new
-! prefactor_dir                         = /home/lmorabit/prefactor
-! losoto_directory                      = /home/lmorabit/losoto
-! aoflagger                             = /opt/cep/aoflagger/aoflagger-2.14.0/build/bin/aoflagger ## path to your aoflagger executable
+! long_baseline_pipeline_dir            = /home/morabito/software/long_baseline_pipeline
+! prefactor_dir                         = /home/morabito/software/prefactor
+! losoto_directory                      = /home/morabito/software/losoto
+! aoflagger                             = /opt/lofar/aoflagger/bin/aoflagger  ## use with singularity image
+#! aoflagger 				= /soft/aoflagger-new/aoflagger/bin/aoflagger ## local installation
 ! lofar_directory                       = $LOFARROOT
 
 # ## target data information
@@ -31,8 +32,9 @@
 ! solutions             = input.output.job_directory/solutions.h5
 ! phasesol              = TGSSphase
 
-## Stations to flag
-! flag_baselines        = [ ] ## for HBA data before October 2015, should set to: [ CS013HBA* ]
+## Stations to flag and filter
+! flag_baselines        = [ ] ## flag baselines, eg: [ CS013HBA*&&* ]
+! filter_baselines	=   ## filter baselines that are flagged, e.g.: !CS013HBA*&&*
 
 ## averaging information -- do not touch unless you know what you are doing!
 ! cal_shift_avg_freqstep    = 8
@@ -52,7 +54,7 @@
 
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
-! filter_command = '!CS*&&*' ## remove the core stations after combination
+! filter_command                = '!CS*&&*' ## remove the core stations after combination
 
 ## Output directories
 ! job_directory                 = input.output.job_directory ## directory of the prefactor outputs
@@ -65,14 +67,15 @@
 ! lbcs_skymodel          = {{ job_directory }}/lbcs_catalogue.csv
 ! image_cat              = {{ job_directory }}/image_catalogue.csv
 ! delay_cat              = {{ job_directory }}/delay_calibrators.csv
+! best_delay_cat	 = {{ job_directory }}/best_delay_calibrators.csv
 ! subtract_cat           = {{ job_directory }}/subtract_sources.csv
 ! continue_without_lotss = True
 
 ## setup for running steps
-! substep_clip     = clipATeam,     ## leave blank for no a-team clipping
-! substep_flag     = # aoflagging,    ## aoflagging,  ## turned off by default
-! substep_delay    = # ,delaycal    ## off by default, turn on to do a single in-field delay calibration
-! substep_apply    = # ,applydelay ## off by default, turn on ONLY IF you have run substep_delay and wish to apply solutions
+! substep_clip     = # clipATeam,     ## off by default, leave blank for no a-team clipping
+! substep_flag     = # aoflagging,    ## off by default, aoflagging
+! substep_delay    = ,delaycal        ## off by default, turn on to do a single in-field delay calibration
+! substep_apply    = # ,applydelay    ## off by default, turn on ONLY IF you have run substep_delay and wish to apply solutions
 
 ##########################################################
 ## Changing these will probably break something.    ##
@@ -91,8 +94,8 @@
 ! min_separation                    =  30         ## minimal accepted distance to an A-team source on the sky in degrees (will raise a WARNING)
 ## Runtime setup -- will depend on your computing cluster
 ! num_proc_per_node                 = input.output.max_per_node    ## number of processes to use per step per node
-! num_proc_per_node_limit           = 4     ## number of processes to use per step per node for tasks with high i/o (dppp or cp) or memory (eg calibration)
-! max_dppp_threads                  = 2     ## number of threads per process for NDPPP
+! num_proc_per_node_limit           = 6     ## number of processes to use per step per node for tasks with high i/o (dppp or cp) or memory (eg calibration)
+! max_dppp_threads                  = 4     ## number of threads per process for NDPPP
 ! error_tolerance                   = False ## False = stop if any subband fails, True = keep going
 
 ##
@@ -103,13 +106,13 @@
 ## Steps to run.                                        ##
 ##########################################################
 
-pipeline.steps = [ setup, prep, {{ substep_clip }} {{ substep_flag }} concat {{ substep_ddf }} {{ substep_delay }} {{ substep_apply }} ]
+pipeline.steps = [ setup, prep, {{ substep_clip }} concat {{ substep_flag }} {{ substep_ddf }} {{ substep_delay }} {{ substep_apply }} ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, createmap_target, createmap_target_list, cp_cal_solutions, download_cats ]
 pipeline.steps.prep = [ ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
-pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconcat_list ]
+pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, aoflag ]
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
 pipeline.steps.delaycal = [ do_parallel, find_delay_cal, prep_dirs, dppp_phaseup, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, calib_cal, delaysol_map, h5_imp_delaysol_map, make_losoto, process_losoto, copy_h5imp_cal ]
 pipeline.steps.applydelay = [ copyST_gains, expand_h5_map, ndppp_apply_delay ]
