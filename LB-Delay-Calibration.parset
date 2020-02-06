@@ -192,12 +192,12 @@ download_cats.control.continue_no_lotss       = {{ continue_without_lotss }}
 
 # run NDPPP on the target data to flag and apply solutions
 ndppp_prep_target.control.type                          = dppp
-ndppp_prep_target.control.max_per_node                  = {{ num_proc_per_node }}
+ndppp_prep_target.control.max_per_node                  = {{ num_proc_per_node_limit }}
 ndppp_prep_target.control.error_tolerance               = {{ error_tolerance }}
 ndppp_prep_target.argument.numthreads                   = {{ max_dppp_threads }}
 ndppp_prep_target.argument.msin                         = createmap_target.output.mapfile  
 ndppp_prep_target.argument.msin.datacolumn              = DATA
-ndppp_prep_target.argument.msin.baseline                = *&
+ndppp_prep_target.argument.msin.baseline                = {{ filter_baselines }}
 ndppp_prep_target.argument.msout.datacolumn             = DATA
 ndppp_prep_target.argument.msout.storagemanager         = dysco
 ndppp_prep_target.argument.msout.writefullresflag       = False
@@ -289,9 +289,9 @@ predict_ateam.argument.msin.datacolumn                         =   DATA
 predict_ateam.argument.msout.datacolumn                        =   MODEL_DATA
 predict_ateam.argument.msout.storagemanager                    =   dysco
 predict_ateam.argument.steps                                   =   [filter,predict]
-predict_ateam.argument.filter.type                   =   filter
-predict_ateam.argument.filter.baseline                   =   [CR]S*&
-predict_ateam.argument.filter.remove                   =   False
+predict_ateam.argument.filter.type                             =   filter
+predict_ateam.argument.filter.baseline                         =   [CR]S*&
+predict_ateam.argument.filter.remove                           =   False
 predict_ateam.argument.predict.type                            =   predict
 predict_ateam.argument.predict.operation                       =   replace
 predict_ateam.argument.predict.sourcedb                        =   sourcedb
@@ -309,49 +309,6 @@ ateamcliptar.control.error_tolerance                           =   {{ error_tole
 ateamcliptar.control.mapfile_in                                =   ndppp_prep_target.output.mapfile
 ateamcliptar.control.arguments                                 =   [allms]
 ateamcliptar.control.inputkey                                  =   allms
-
-
-##################################################################
-#                                                               ##
-#                     AOFLAGGING                            ##
-#                                                               ##
-##################################################################
-
-# virtually concatenate target subbands
-ms_concat_target.control.type                                  =   pythonplugin
-ms_concat_target.control.executable                            =   {{ prefactor_scripts }}/concat_MS.py
-ms_concat_target.control.error_tolerance                       =   {{ error_tolerance }}
-ms_concat_target.argument.filename                             =   concatmapfile.mapfile
-ms_concat_target.argument.mapfile_dir                          =   input.output.mapfile_dir
-ms_concat_target.argument.min_length                           =   {{ min_length }}
-ms_concat.target.argument.overhead                             =   {{ overhead }}
-ms_concat_target.argument.flags                                =   [dpppconcat_list.output.mapfile,outputkey]
-
-# convert the output of ms_concat_target into usable mapfiles
-ms_concat_target_map.control.kind                              =   plugin
-ms_concat_target_map.control.type                              =   mapfilenamesFromMapfiles
-ms_concat_target_map.control.mapfile_concatmap                 =   ms_concat_target.output.concatmapfile.mapfile
-
-## convert the output of ms_concat_target into usable mapfiles
-expand_memory_map.control.kind                                 =   plugin
-expand_memory_map.control.type                                 =   expandMapfile
-expand_memory_map.control.mapfile_in                           =   ms_concat_target.output.memory.mapfile
-expand_memory_map.control.mapfile_to_match                     =   ms_concat_target_map.output.concatmap
-expand_memory_map.control.mapfile_dir                          =   {{ mapfile_dir }}
-expand_memory_map.control.filename                             =   expand_memory_map.mapfile
-
-# run aoflagger on the concatenated data
-aoflag.control.kind                                            =   recipe
-aoflag.control.type                                            =   executable_args
-aoflag.control.inplace                                         =   True
-aoflag.control.executable                                      =   {{ aoflagger }}
-aoflag.control.max_per_node                                    =   1
-aoflag.control.error_tolerance                                 =   {{ error_tolerance }}
-aoflag.control.mapfile_in                                      =   [ms_concat_target_map.output.concatmap,expand_memory_map.output.mapfile]
-aoflag.control.inputkey                                        =   [msin,memory]
-aoflag.control.args_format                                     =   wsclean
-aoflag.argument.strategy                                       =   {{ prefactor_directory }}/rfistrategies/{{ rfistrategy }}
-aoflag.argument.flags                                          =   [-v,memory,-combine-spws,msin]
 
 ##################################################################
 #                                                               ##
@@ -402,6 +359,50 @@ dpppconcat_list.control.method          =   mapfile_all_to_one
 dpppconcat_list.control.mapfile_dir     =   input.output.mapfile_dir
 dpppconcat_list.control.filename        =  dpppconcat_list.mapfile
 dpppconcat_list.control.mapfile_in      =  dpppconcat.output.mapfile
+
+
+##################################################################
+#                                                               ##
+#                     AOFLAGGING                            ##
+#                                                               ##
+##################################################################
+
+# virtually concatenate target subbands
+ms_concat_target.control.type                                  =   pythonplugin
+ms_concat_target.control.executable                            =   {{ prefactor_scripts }}/concat_MS.py
+ms_concat_target.control.error_tolerance                       =   {{ error_tolerance }}
+ms_concat_target.argument.filename                             =   concatmapfile.mapfile
+ms_concat_target.argument.mapfile_dir                          =   input.output.mapfile_dir
+ms_concat_target.argument.min_length                           =   {{ min_length }}
+ms_concat.target.argument.overhead                             =   {{ overhead }}
+ms_concat_target.argument.flags                                =   [dpppconcat_list.output.mapfile,outputkey]
+
+# convert the output of ms_concat_target into usable mapfiles
+ms_concat_target_map.control.kind                              =   plugin
+ms_concat_target_map.control.type                              =   mapfilenamesFromMapfiles
+ms_concat_target_map.control.mapfile_concatmap                 =   ms_concat_target.output.concatmapfile.mapfile
+
+## convert the output of ms_concat_target into usable mapfiles
+expand_memory_map.control.kind                                 =   plugin
+expand_memory_map.control.type                                 =   expandMapfile
+expand_memory_map.control.mapfile_in                           =   ms_concat_target.output.memory.mapfile
+expand_memory_map.control.mapfile_to_match                     =   ms_concat_target_map.output.concatmap
+expand_memory_map.control.mapfile_dir                          =   {{ mapfile_dir }}
+expand_memory_map.control.filename                             =   expand_memory_map.mapfile
+
+# run aoflagger on the concatenated data
+aoflag.control.kind                                            =   recipe
+aoflag.control.type                                            =   executable_args
+aoflag.control.inplace                                         =   True
+aoflag.control.executable                                      =   {{ aoflagger }}
+aoflag.control.max_per_node                                    =   1
+aoflag.control.error_tolerance                                 =   {{ error_tolerance }}
+aoflag.control.mapfile_in                                      =   [ms_concat_target_map.output.concatmap,expand_memory_map.output.mapfile]
+aoflag.control.inputkey                                        =   [msin,memory]
+aoflag.control.args_format                                     =   wsclean
+aoflag.argument.strategy                                       =   {{ prefactor_directory }}/rfistrategies/{{ rfistrategy }}
+aoflag.argument.flags                                          =   [-v,memory,-combine-spws,msin]
+
 
 ###################################################################
 ##                                                               ##
