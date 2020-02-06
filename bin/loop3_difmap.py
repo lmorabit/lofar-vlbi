@@ -272,8 +272,8 @@ def find_chan_ms (filename,datacolumn="CORRECTED_DATA",flagname="FLAG"):
 
 # convert corplt output to an amp/phase array - note
 # that the UTs are arbitrary **** needs fixing ****
-def corplt2array():
-    f = open('./CORPLT')
+def corplt2array(corpltfile):
+    f = open(corpltfile)
     fc = f.readlines()
     f.close()
     ut=[]
@@ -360,6 +360,7 @@ def file2fits(infile,datacolumn,flagcol):
 def dif_script (infile,pol='XX',aipsno=340,clean_sigma=6,map_size=512,\
                 pixel_size=100,obs_length=900,datacolumn='CORRECTED_DATA',\
                 startmod=True,flagcol='FLAG'):
+
     fitsfile = file2fits(infile,datacolumn,flagcol)
     # Open script and declare variables
     fs = open('dif_script','w')
@@ -432,18 +433,17 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     work_dir = os.path.join( mypath, 'difmap_{:s}'.format( filestem ) )
     os.mkdir( work_dir )
     os.system( 'mv {:s} {:s}'.format( infile, work_dir ) )
-    infile = os.path.join( work_dir, tmp[-1] )
+    #infile = os.path.join( work_dir, tmp[-1] )
     os.chdir( work_dir )
-    os.system('rm CORPLT')
     ## write a difmap script for the XX polarisation and run
     fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod, flagcol=flagcolumn)
     ## plot solutions and get valies
-    ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array()
+    ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array('./CORPLT')
     os.system('mv CORPLT CORPLT_XX')
     ## write a difmap script for the YY polarisation and run
     fitsfile = dif_script(infile, pol='YY', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod, flagcol=flagcolumn)
     ## plot solutions and get values
-    ampYY,amperrYY,phsYY,phserrYY,utYY,stnYY = corplt2array()
+    ampYY,amperrYY,phsYY,phserrYY,utYY,stnYY = corplt2array('./CORPLT')
     os.system('mv CORPLT CORPLT_YY')
 
     ## COPY FREQUENCY AND TIME FROM LB-Delay-Calibration/solutions.h5 target:TGSSphase
@@ -523,8 +523,11 @@ if __name__ == "__main__":
 
     ## positionals
     parser.add_argument("filename",type=str,help="Name of the measurement set")
+    parser.add_argument("insolfile",type=str,help="Name of h5parm with phase solutions")
 
     args=parser.parse_args()
 
-    main( args.filename, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
+    main( args.filename, args.insolfile, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
 	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, flagcolumn=args.flagcol, verbose=args.verbose )
+
+

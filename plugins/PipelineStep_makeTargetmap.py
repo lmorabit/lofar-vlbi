@@ -412,7 +412,7 @@ if __name__ == '__main__':
        'add_suffix_to_file': args.suffix, 
        'method': args.method, 
        'mapfile_dir': args.directory, 
-       'ddf_solsdir': args.ddf_solsdir, 
+       'ddf_solsdir': args.ddf_solsdir}
     if args.number != 0:
         kwarg['method'] = 'dummy'
     if args.suffix:

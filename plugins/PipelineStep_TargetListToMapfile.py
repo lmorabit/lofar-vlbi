@@ -33,6 +33,7 @@ def plugin_main(args, **kwargs):
     mapfile_dir = kwargs['mapfile_dir']
     filename = kwargs['filename']
     target_file = kwargs['target_file']
+    all_to_one = kwargs['all_to_one'].lower().capitalize()
     
     # the input data
     data = DataMap.load(infile_map)
@@ -41,8 +42,6 @@ def plugin_main(args, **kwargs):
     # outfile information
     fileid = os.path.join(mapfile_dir, filename)
     coordfileid = os.path.join(mapfile_dir, 'coords_' + filename)
-    print fileid
-    print coordfileid
 
     # initialise the output data map for the coordinates
     map_out_coords = DataMap([])
@@ -63,9 +62,14 @@ def plugin_main(args, **kwargs):
     current_name = map_out_coords[0].file
     # initialise an output data map
     map_out = DataMap([])
-    msID = 0 
-    ms_file = datalist[0]
-    map_out.data.append(DataProduct(data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip))
+    if all_to_one == 'True':
+        msID = 0 
+        ms_file = datalist[0]
+        map_out.data.append(DataProduct(data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip))
+    else:
+        print( 'HELLO HELLO HELLO' )
+        for msID, ms_file in enumerate(datalist):
+	    map_out.data.append(DataProduct(data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip))
     # save the file
     map_out.save(fileid)
 

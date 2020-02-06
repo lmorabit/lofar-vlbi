@@ -174,7 +174,6 @@ def coherence_metric (htab='1327_test.ms_cal.h5',antenna_list='',solset='sol000'
     ant,freq,pol,time = vm['ant'],vm['freq'],vm['pol'],vm['time']
     if type(ant) != list:
 	ant = ant.tolist()
-        ant = ant.tolist()
     coh = np.array([])
 #   If no antenna list is passed, assume that the antennas in the calibration
 #   table are the ones requested. This will fail on return if they are not
