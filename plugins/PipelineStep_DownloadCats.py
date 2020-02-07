@@ -316,7 +316,7 @@ def plugin_main( args, **kwargs ):
     if len(lbcs_catalogue) == 0:
 	logging.error('LBCS coverage does not exist, and catalogue not found on disk.')
 	return
-    if len(lotss_catalogue) == 0 and not continue_without_lotss:
+    if len(lotss_catalogue) == 0 and not fail_lotss_ok:
 	logging.error('LoTSS coverage does not exist, and contine_without_lotss is set to False.')
 	return 
 
