@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import numpy as np,os,glob,sys
 import losoto; from losoto.h5parm import h5parm
-from pyrap.tables import table
 import argparse
 import casacore.tables as ct
 
@@ -10,14 +9,6 @@ import casacore.tables as ct
 #  You will also need PGPLOT_FONT=/soft/pgplot/grfont.dat
 #     and PGPLOT_DIR=/soft/pgplot  (or wherever pgplot lives)
 
-try:
-    from AIPSData import AIPSUVData
-    from AIPSTask import AIPSTask,AIPSList,AIPSMessageLog
-    import Wizardry
-    from Wizardry.AIPSData import AIPSUVData as WizAIPSUVData
-    HAVE_AIPS = True
-except:
-    HAVE_AIPS = False
 
 def find_first_unflagged_ant( msfile ):
     ant_t = ct.taql( 'select ANTENNA1 from {:s} where all(FLAG) limit 1'.format(msfile) )
@@ -214,30 +205,6 @@ def insert_into_filestem( infile, insert ):
     new_file = os.path.join( mypath, insert+myfile )
     return new_file
 
-# given FITS file, return list of good channels
-def find_chan_fits (infile,indisk=1,inseq=1):
-    try:
-        AIPSUVData('DIFMAP','UVDATA',indisk,inseq).zap()
-        print ('Removed DIFMAP.UVDATA.%d disk %d'%(inseq,indisk))
-    except:
-        pass
-    fitld=AIPSTask('fitld')
-    fitld.datain=infile if '/' in infile else './'+infile
-    fitld.outname = 'DIFMAP'
-    fitld.outclass = 'UVDATA'
-    fitld.outdisk = indisk
-    fitld.outseq = inseq
-    fitld.go()
-    data = WizAIPSUVData('DIFMAP','UVDATA',indisk,inseq)
-    for i in data:
-        v = i.visibility
-        na = np.asarray(np.ravel(v[:,:,0,0]),dtype='bool')
-        try:
-            a = na | a
-        except:
-            a = np.copy(na)
-    return a
-
 # given an array of OK channels, write difmap select line
 def chan2write (output, a):
     nums=sorted(set(a))
@@ -257,7 +224,7 @@ def chan2write (output, a):
 # given MS file, return list of good channels
 def find_chan_ms (filename,datacolumn="CORRECTED_DATA",flagname="FLAG"):
     # open ms
-    ms=table(filename,ack=False)
+    ms=ct.table(filename,ack=False,readonly=False)
     # read data, flags
     d=ms.getcol(datacolumn)
     f=ms.getcol(flagname)
@@ -268,6 +235,9 @@ def find_chan_ms (filename,datacolumn="CORRECTED_DATA",flagname="FLAG"):
         datasum=np.sum(np.abs(d[:,i],dtype=np.float64))
         if datasum!=0.:
             goodchans.append(i)
+    ms.putcol(datacolumn,d)
+    ms.flush()
+    ms.close()
     return goodchans
 
 # convert corplt output to an amp/phase array - note
@@ -328,14 +298,11 @@ def file2fits(infile,datacolumn,flagcol):
             if os.path.isfile('dchan_%s'%infile):
                 os.system ('mv dchan_%s dchan_%s.fits'%(infile,infile))
 	    else:
-		if HAVE_AIPS:
-		    a = find_chan_fits( fitsfile )
-	        else:
-                    print ('FITS file provided but no AIPS available, so cannot')
-                    print ('find the flagged channels, aborting. Either use AIPS')
-                    print ('or provide a file called dchan_[infile] with a select')
-                    print ('command e.g. select I,1,49,51,100 if channel 50 is bad.')
-                    exit(0)
+                print ('FITS file provided but no AIPS available, so cannot')
+                print ('find the flagged channels, aborting. Either use AIPS')
+                print ('or provide a file called dchan_[infile] with a select')
+                print ('command e.g. select I,1,49,51,100 if channel 50 is bad.')
+                exit(1)
             fitsfile=infile+'.fits'
         else:
             fitsfile=infile
@@ -435,7 +402,7 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     os.system( 'mv {:s} {:s}'.format( infile, work_dir ) )
     #infile = os.path.join( work_dir, tmp[-1] )
     os.chdir( work_dir )
-    ## write a difmap script for the XX polarisation and run
+    # write a difmap script for the XX polarisation and run
     fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod, flagcol=flagcolumn)
     ## plot solutions and get valies
     ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array('./CORPLT')
