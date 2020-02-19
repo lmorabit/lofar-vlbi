@@ -255,7 +255,7 @@ def find_close_objs(lo, lbcs, tolerance=5.):
 		    tmp = combined[idx[yy]]['Goodness']
 		    num_P.append( count_p( tmp ) )
 
-		    tmp = combined[idx[yy]]['Goodness_FT']
+		    tmp = combined[idx[yy]]['FT_Goodness']
                     total_ft.append( sum_digits( tmp ) )
 
 	        ## pick the one with the highest number of P's -- if tie, use total_ft
