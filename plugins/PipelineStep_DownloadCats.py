@@ -261,12 +261,16 @@ def find_close_objs(lo, lbcs, tolerance=5.):
 	        ## pick the one with the highest number of P's -- if tie, use total_ft
 		best_idx = np.where( num_P == np.max( num_P ) )[0]
 	        if len( best_idx ) == 1:
-		    good_idx.append(best_idx)
+		    good_idx.append(idx[best_idx][0])
 		if len( best_idx ) > 1:
-		    ft_idx = np.where( total_ft[best_idx] == np.max( total_ft[best_idx] ) )[0]
-		    good_idx.append( best_idx[ft_idx] )
+		    currentmax = 0.0 
+                    for i in range(0,len(best_idx)):
+		        if total_ft[best_idx[i]] > currentmax:
+			    currentmax = total_ft[best_idx[i]]
+                            ft_idx = i
+		    good_idx.append( idx[best_idx[ft_idx]][0] )
             else:
-		good_idx.append(idx)
+		good_idx.append(idx[0])
 
 	result = combined[good_idx]
     else:
@@ -391,9 +395,9 @@ def plugin_main( args, **kwargs ):
 		if len( idx ) > 1:
 		    tmp = subtract_sources[idx]
 		    lbcs_idx = np.where( tmp['RA_LBCS'] > 0 )[0]
-		    good_idx.append( idx[lbcs_idx] )
+		    good_idx.append( idx[lbcs_idx][0] )
 		else:
-		    good_idx.append( idx )
+		    good_idx.append( idx[0] )
 	    subtract_sources = subtract_sources[good_idx]
 
 	subtract_sources.write( subtract_file, format='csv' )
