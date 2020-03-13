@@ -3,6 +3,7 @@ import numpy as np,os,glob,sys
 import losoto; from losoto.h5parm import h5parm
 import argparse
 import casacore.tables as ct
+from astropy.io import fits
 
 #  The difmap installation must be built with the modified corplt.c 
 #     from  https://github.com/nealjackson/loop3_difmap
@@ -221,6 +222,23 @@ def chan2write (output, a):
     fo.write('\n')
     fo.close()
 
+def fake_telescope( msfile ):
+    obs_table = ct.table( msfile + '::OBSERVATION', readonly=False )
+    obs_table.putcol('TELESCOPE_NAME','VLBA')
+    obs_table.flush()
+    obs_table.close()
+
+def find_good_chans( fitsfile ):
+
+    f = fits.open( fitsfile, readonly=False )
+    ## get data
+    mydata = f[0].data
+    myvis = np.squeeze( mydata['DATA'] )
+    real = myvis[:,:,0,0] * myvis[:,:,3,0]
+    ## ms2uvfits converts nans to zeros, and flagged data to zeros (?) so search for zeros
+    goodchans = [ x for x in np.arange(real.shape[1]) if np.sum(real[:,x]) != 0. ]
+    return goodchans
+
 # given MS file, return list of good channels
 def find_chan_ms (filename,datacolumn="CORRECTED_DATA",flagname="FLAG"):
     # open ms
@@ -286,7 +304,7 @@ def clean_selfcal_loop (fs,weight):
 
 # Process the input file supplied, converting to FITS if needed, and write
 # a dchan_XXX file containing the bad channels.
-def file2fits(infile,datacolumn,flagcol):
+def file2fits(infile,datacolumn):
     isms = os.path.isdir( infile )
     # Process file itself. If FITS, add '.fits' to the filename and any dchan_
     # file if not present already. Otherwise convert to FITS, replacing any '.ms'
@@ -295,14 +313,6 @@ def file2fits(infile,datacolumn,flagcol):
         print( 'File is already in fits format.' )
         if infile[-5:]!='.fits':
             os.system ('mv %s %s.fits'%(infile,infile))
-            if os.path.isfile('dchan_%s'%infile):
-                os.system ('mv dchan_%s dchan_%s.fits'%(infile,infile))
-	    else:
-                print ('FITS file provided but no AIPS available, so cannot')
-                print ('find the flagged channels, aborting. Either use AIPS')
-                print ('or provide a file called dchan_[infile] with a select')
-                print ('command e.g. select I,1,49,51,100 if channel 50 is bad.')
-                exit(1)
             fitsfile=infile+'.fits'
         else:
             fitsfile=infile
@@ -314,21 +324,20 @@ def file2fits(infile,datacolumn,flagcol):
             fitsfile = infile+'.fits'
         if not os.path.isfile( fitsfile ):
             os.system('ms2uvfits in=%s out=%s writesyscal=F'%(infile,fitsfile))
-    # Check for presence of a dchan_file. If not, use find_chan_fits or
-    # find_chan_ms as necessary
 
+    ## find the good channels (i.e., not empty) from the fits file
     chan_file = insert_into_filestem( fitsfile, 'dchan_' )
     if not os.path.isfile( chan_file ):
-        a = find_chan_ms(infile,datacolumn=datacolumn,flagname=flagcol)
+        a = find_good_chans( fitsfile )
         chan2write(fitsfile,a)
     return fitsfile
 
 # Write and execute the difmap script
 def dif_script (infile,pol='XX',aipsno=340,clean_sigma=6,map_size=512,\
                 pixel_size=100,obs_length=900,datacolumn='CORRECTED_DATA',\
-                startmod=True,flagcol='FLAG'):
+                startmod=True):
 
-    fitsfile = file2fits(infile,datacolumn,flagcol)
+    fitsfile = file2fits(infile,datacolumn)
     # Open script and declare variables
     fs = open('dif_script','w')
     fs.write('float clean_sigma; clean_sigma = %f\n'%float(clean_sigma))
@@ -391,7 +400,7 @@ def dif_script (infile,pol='XX',aipsno=340,clean_sigma=6,map_size=512,\
 #    in AIPS and mapped, *If no AIPS and no good-channel file, exit with error*.
 # We assume that XX and YY have the same number of telescopes and UTs, and also
 #    the same bad/missing channels, and image separately for separate XX/YY corrs
-def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, flagcolumn='FLAG', verbose=False ):
+def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False ):
 
     ## make a working directory, move the data, and chdir
     tmp = infile.split('/')
@@ -403,12 +412,12 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     #infile = os.path.join( work_dir, tmp[-1] )
     os.chdir( work_dir )
     # write a difmap script for the XX polarisation and run
-    fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod, flagcol=flagcolumn)
+    fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
     ## plot solutions and get valies
     ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array('./CORPLT')
     os.system('mv CORPLT CORPLT_XX')
     ## write a difmap script for the YY polarisation and run
-    fitsfile = dif_script(infile, pol='YY', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod, flagcol=flagcolumn)
+    fitsfile = dif_script(infile, pol='YY', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
     ## plot solutions and get values
     ampYY,amperrYY,phsYY,phserrYY,utYY,stnYY = corplt2array('./CORPLT')
     os.system('mv CORPLT CORPLT_YY')
@@ -467,12 +476,30 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     out_solset.makeSoltab('phase',axesNames=['time','freq','ant','pol'], axesVals=[time_ax,freq_ax,stnYY,['XX','YY']], vals=phs, weights=np.ones_like(phs))   
     out_h5.close()
 
+    ## apply the solutions
+    with open( 'applysols.parset', 'w' ) as f:
+	f.write('msin={:s}\n'.format(infile))
+        f.write('msin.datacolumn=DATA\n')
+        f.write('msout=.\n')
+        f.write('msout.datacolumn=CORRECTED_DATA\n')
+        f.write('numthreads=6\n')
+        f.write('steps=[applycal]\n')
+        f.write('applycal.type=applycal\n')
+        f.write('applycal.parmdb={:s}\n'.format(h5parmfile))
+        f.write('applycal.steps=[applyphs,applyamp]\n')
+        f.write('applycal.applyphs.correction=phase000\n')
+        f.write('applycal.applyamp.correction=amplitude000\n')
+    f.close()
+
+    ss = 'NDPPP applysols.parset > applysols.log 2>&1'
+    os.system( ss )
+
     ## rename files so they have unique names
     os.system( 'mv CORPLT_XX {:s}_CORPLT_XX'.format( filestem ) )
     os.system( 'mv CORPLT_YY {:s}_CORPLT_YY'.format( filestem ) )
     os.system( 'mv dif_script {:s}_dif_script'.format( filestem ) )
-    os.system( 'mv difmap_log {:s}_difmap_log'.format( filestem ) )
-    os.system( 'mv difmap_log1 {:s}_difmap_log1'.format( filestem ) )
+    os.system( 'mv difmap.log {:s}_difmap_log'.format( filestem ) )
+    os.system( 'mv difmap.log_1 {:s}_difmap_log1'.format( filestem ) )
     
 
 if __name__ == "__main__":
@@ -486,7 +513,6 @@ if __name__ == "__main__":
     parser.add_argument("--obs_length",help="Observation length, default 900",required=False,default=900)
     parser.add_argument("--colname",type=str,help="Name of the data column. Default is CORRECTED_DATA.",required=False,default="CORRECTED_DATA")
     parser.add_argument("--startmod",help="Generate a starting model. Default is True",required=False,action="store_false")
-    parser.add_argument("--flagcol",type=str,help="Name of the flag column you want to apply. Default is FLAG.",required=False,default="FLAG")
 
     ## positionals
     parser.add_argument("filename",type=str,help="Name of the measurement set")
@@ -495,6 +521,6 @@ if __name__ == "__main__":
     args=parser.parse_args()
 
     main( args.filename, args.insolfile, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
-	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, flagcolumn=args.flagcol, verbose=args.verbose )
+	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose )
 
 
