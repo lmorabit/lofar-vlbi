@@ -22,7 +22,7 @@
 ! aoflagger                             = /opt/lofar/aoflagger/bin/aoflagger 
 ! lofar_directory                       = $LOFARROOT
 
-# ## target data information
+## target data information
 ! target_input_path             = /data/scratch/lb_bw/targetdata
 ! target_input_pattern          = L*.MS
 
@@ -37,8 +37,12 @@
 ! filter_baselines	=   ## filter baselines that are flagged, e.g.: !CS013HBA*&&*
 
 ## averaging information -- do not touch unless you know what you are doing!
-! cal_shift_avg_freqstep    = 8
-! cal_shift_avg_timestep    = 8
+! cal_shift_avg_freqstep    = 4
+! cal_shift_avg_timestep    = 4
+
+## flagging and a-team clipping settings
+! rfistrategy                       =  HBAdefault
+! min_separation                    =  30         ## minimal accepted distance to an A-team source on the sky in degrees (will raise a WARNING)
 
 ###########################################################
 ### DDF Options -- please check even if not using        ##
@@ -49,7 +53,7 @@
 ! delaycal_col            = DATA ## set to DATA_DI_CORRECTED if applying ddf solutions, DATA otherwise.
 
 ##########################################################
-## These parameters may need to be updated.        ##
+## These parameters may need to be updated.             ##
 ##########################################################
 
 ## Station combination
@@ -72,13 +76,13 @@
 ! continue_without_lotss = True
 
 ## setup for running steps
-! substep_clip     = clipATeam,     ## off by default, leave blank for no a-team clipping
+! substep_clip     = # clipATeam,     ## off by default, turn on if you want to a-team clip (will take several days)
 ! substep_flag     = # aoflagging,    ## off by default, aoflagging
 ! substep_delay    = ,delaycal        ## off by default, turn on to do a single in-field delay calibration
 ! substep_apply    = # ,applydelay    ## off by default, turn on ONLY IF you have run substep_delay and wish to apply solutions
 
 ##########################################################
-## Changing these will probably break something.    ##
+## Changing these will probably break something.        ##
 ##########################################################
 
 ## global information
@@ -87,15 +91,17 @@
 ! scripts                 = {{ long_baseline_pipeline_dir }}/bin
 ! prefactor_scripts       = {{ prefactor_dir }}/scripts
 
+##########################################################
+##  Cluster-specific configuration: adjust as needed    ##
+##########################################################
+
 ## parameters for pipeline performance
-! rfistrategy                       = HBAdefault
 ! min_length                        =  5          ## minimum amount of chunks to concatenate in frequency necessary to perform the wide-band flagging in the RAM. It data is too big aoflag will use indirect-read.
 ! overhead                          =  0.5        ## Only use this fraction of the available memory for deriving the amount of data to be concatenated.
-! min_separation                    =  30         ## minimal accepted distance to an A-team source on the sky in degrees (will raise a WARNING)
 ## Runtime setup -- will depend on your computing cluster
 ! num_proc_per_node                 = input.output.max_per_node    ## number of processes to use per step per node
 ! num_proc_per_node_limit           = 6     ## number of processes to use per step per node for tasks with high i/o (dppp or cp) or memory (eg calibration)
-! max_dppp_threads                  = 4     ## number of threads per process for NDPPP
+! max_dppp_threads                  = 6     ## number of threads per process for NDPPP
 ! error_tolerance                   = False ## False = stop if any subband fails, True = keep going
 
 ##
@@ -194,7 +200,7 @@ download_cats.control.continue_no_lotss       = {{ continue_without_lotss }}
 ndppp_prep_target.control.type                          = dppp
 ndppp_prep_target.control.max_per_node                  = {{ num_proc_per_node_limit }}
 ndppp_prep_target.control.error_tolerance               = {{ error_tolerance }}
-ndppp_prep_target.argument.numthreads                   = {{ max_dppp_threads }}
+ndppp_prep_target.argument.numthreads                   = 2
 ndppp_prep_target.argument.msin                         = createmap_target.output.mapfile  
 ndppp_prep_target.argument.msin.datacolumn              = DATA
 ndppp_prep_target.argument.msin.baseline                = {{ filter_baselines }}
@@ -313,7 +319,7 @@ ateamcliptar.control.inputkey                                  =   allms
 
 ##################################################################
 #                                                               ##
-#                    CONCATENATION                        ##
+#                    CONCATENATION                              ##
 #                                                               ##
 ##################################################################
 
@@ -364,7 +370,7 @@ dpppconcat_list.control.mapfile_in      =  dpppconcat.output.mapfile
 
 ##################################################################
 #                                                               ##
-#                     AOFLAGGING                            ##
+#                     AOFLAGGING                                ##
 #                                                               ##
 ##################################################################
 
@@ -611,7 +617,6 @@ tecsolve.argument.gaincal.sourcedb      = skymodels
 # clip and plot the solutions
 make_losoto.control.kind                             = plugin
 make_losoto.control.type                             = makeLosotoParset
-#make_losoto.control.steps                            = [plotTEC1,clip,plotTEC2]
 make_losoto.control.steps                            = [plotTEC1]
 make_losoto.control.filename                         = input.output.job_directory/losoto.parset
 make_losoto.control.global.ncpu                      = 0
@@ -622,21 +627,6 @@ make_losoto.control.plotTEC1.soltab                   = sol000/tec000
 make_losoto.control.plotTEC1.prefix                   = {{ inspection_directory }}/TEC_before_flagging_
 make_losoto.control.plotTEC1.axesInPlot               = [time]
 make_losoto.control.plotTEC1.plotFlag                 = False
-#make_losoto.control.clip.operation                   = FLAG
-#make_losoto.control.clip.axesToFlag                  = [time]
-#make_losoto.control.clip.order                       = [100]
-#make_losoto.control.clip.maxCycles                   = 1
-#make_losoto.control.clip.maxRms                      = 5
-#make_losoto.control.clip.replace                     = False
-#make_losoto.control.clip.PreFlagZeros                = False
-#make_losoto.control.clip.Mode                        = smooth
-#make_losoto.control.plotTEC2.operation                = PLOT
-#make_losoto.control.plotTEC2.refAnt                   = ST001
-#make_losoto.control.plotTEC2.axisInTable              = ant
-#make_losoto.control.plotTEC2.soltab                   = sol000/tec000
-#make_losoto.control.plotTEC2.prefix                   = {{ inspection_directory }}/TEC_after_flagging_
-#make_losoto.control.plotTEC2.axesInPlot               = [time]
-#make_losoto.control.plotTEC2.plotFlag                 = False
 
 # run losoto 
 process_losoto.control.kind                          =  recipe
