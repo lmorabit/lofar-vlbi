@@ -9,6 +9,7 @@ from astropy.io import fits
 #     from  https://github.com/nealjackson/loop3_difmap
 #  You will also need PGPLOT_FONT=/soft/pgplot/grfont.dat
 #     and PGPLOT_DIR=/soft/pgplot  (or wherever pgplot lives)
+#  these are both in the singularity image!!
 
 
 def find_first_unflagged_ant( msfile ):
@@ -274,15 +275,15 @@ def corplt2array(corpltfile):
             stn = np.append(stn,ls[3])
         if len(ls)==4 and ls[0] in ['Amp','Phs']:
             ut.append(float(ls[1]))  # faster than numpy append    
-    ut = np.unique(np.asarray(ut,dtype='f'))
-    amp = np.ones((len(stn),len(ut)))*np.nan
-    phs = np.ones((len(stn),len(ut)))*np.nan
-    amperr = np.ones((len(stn),len(ut)))*np.nan
-    phserr = np.ones((len(stn),len(ut)))*np.nan
+    ut = np.unique(np.asarray(ut,dtype=np.float64))
+    amp = np.ones((len(stn),len(ut)),dtype=np.float64)*np.nan
+    phs = np.ones((len(stn),len(ut)),dtype=np.float64)*np.nan
+    amperr = np.ones((len(stn),len(ut)),dtype=np.float64)*np.nan
+    phserr = np.ones((len(stn),len(ut)),dtype=np.float64)*np.nan
     stn_idx = 0
     for l in fc:
         if l[:3] in ['Amp','Phs']:
-            t_ut,t_val,t_err = np.asarray(l.split()[1:],dtype='float')
+            t_ut,t_val,t_err = np.asarray(l.split()[1:],dtype=np.float64)
             ut_idx = np.argwhere(ut==t_ut)[0][0]
             if l[:3] == 'Amp':
                 amp[stn_idx,ut_idx] = t_val
@@ -403,24 +404,31 @@ def dif_script (infile,pol='XX',aipsno=340,clean_sigma=6,map_size=512,\
 def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False ):
 
     ## make a working directory, move the data, and chdir
+    # get filestem to make unique name
     tmp = infile.split('/')
     filestem = tmp[-1].split('_')[0] 
-    mypath = '/'.join(tmp[0:-1])
-    work_dir = os.path.join( mypath, 'difmap_{:s}'.format( filestem ) )
+    # current working directory
+    current_dir = os.getcwd()
+    work_dir = os.path.join( current_dir, 'difmap_{:s}'.format( filestem ) )
     os.mkdir( work_dir )
-    os.system( 'mv {:s} {:s}'.format( infile, work_dir ) )
-    #infile = os.path.join( work_dir, tmp[-1] )
+    os.system( 'cp -r {:s} {:s}'.format( infile, work_dir ) )
     os.chdir( work_dir )
+    ## redefine infile
+    infile = glob.glob( os.path.join( work_dir, tmp[-1] ) )[0]
     # write a difmap script for the XX polarisation and run
     fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
-    ## plot solutions and get valies
-    ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array('./CORPLT')
-    os.system('mv CORPLT CORPLT_XX')
+    ## plot solutions and get values
+    corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
+    ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array(corpltfile)
+    corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_XX'), filestem )
+    os.system('mv {:s} {:s}'.format( corpltfile, corpltout ) )
     ## write a difmap script for the YY polarisation and run
     fitsfile = dif_script(infile, pol='YY', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
     ## plot solutions and get values
-    ampYY,amperrYY,phsYY,phserrYY,utYY,stnYY = corplt2array('./CORPLT')
-    os.system('mv CORPLT CORPLT_YY')
+    corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
+    ampYY,amperrYY,phsYY,phserrYY,utYY,stnYY = corplt2array(corpltfile)
+    corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_YY'), filestem )
+    os.system('mv {:s} {:s}'.format( corpltfile, corpltout ) )
 
     ## COPY FREQUENCY AND TIME FROM LB-Delay-Calibration/solutions.h5 target:TGSSphase
     insols = h5parm( insolfile )
@@ -430,14 +438,11 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     freq_ax = inst.getAxisValues('freq')
     time_ax = inst.getAxisValues('time')
     insols.close()
-    if len(utXX) < len(time_ax):
-	## interpolate along axis
-        ut = np.float64(utXX)
-        utmin = np.float64(ut)
-        times = ct.taql('select TIME from {:s} limit 1'.format(infile))
-        first_time = times.getcol('TIME')[0]
-        time_ax = ut - utmin + first_time
-
+    if len(utXX) != len(time_ax):
+	## convert utXX to lofar times
+	utvec = utXX - np.min(utXX)
+	time_ax = utvec + np.min(time_ax)
+	
     ## combine XX and YY information and reformat axes
     tmp_amp = np.rollaxis(np.dstack((ampXX,ampYY)),1,0)
     tmp_phs = np.rollaxis(np.dstack((phsXX,phsYY)),1,0)
@@ -447,13 +452,6 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     amp = np.repeat( tmp_amp2, len(freq_ax), axis=1 )
     phs = np.repeat( tmp_phs2, len(freq_ax), axis=1 )
     phs = phs * -1.0 ## difmap has a different convention
-
-    ## re-reference phases to first antenna in measurement set that isn't flagged
-    #ref_ant = find_first_unflagged_ant( infile )
-    #ref_idx = [ xx for xx, myant in enumerate( stnXX ) if myant == ref_ant ][0]
-    #ref_phs = phs[:,:,ref_idx,:]
-    #for xx in range(len(stnXX)):
-    #    phs[:,:,xx,:] = phs[:,:,xx,:] - ref_phs
 
     ## get antenna information
     new_ants = make_ant_table( stnXX )
@@ -466,7 +464,7 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     new_dir[filestem] = ptg_dir[0]
 
     ## write solutions to an h5parm
-    h5parmfile = fitsfile.replace('.fits','_auto.h5')
+    h5parmfile = os.path.join( work_dir, filestem + '_sols.h5' )
     out_h5 = h5parm(h5parmfile, readonly = False)
     out_solset = out_h5.makeSolset(solsetName='sol000')
     antenna_table = out_solset.obj._f_get_child('antenna')
@@ -495,11 +493,12 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     os.system( ss )
 
     ## rename files so they have unique names
-    os.system( 'mv CORPLT_XX {:s}_CORPLT_XX'.format( filestem ) )
-    os.system( 'mv CORPLT_YY {:s}_CORPLT_YY'.format( filestem ) )
-    os.system( 'mv dif_script {:s}_dif_script'.format( filestem ) )
-    os.system( 'mv difmap.log {:s}_difmap_log'.format( filestem ) )
-    os.system( 'mv difmap.log_1 {:s}_difmap_log1'.format( filestem ) )
+    diflogs = glob.glob( os.path.join( work_dir, 'dif*' ) )
+    for diflog in diflogs:
+        diflogout = insert_into_filestem( diflog, filestem+'_' )
+        os.system( 'mv {:s} {:s}'.format( diflog, diflogout ) )
+
+    ## TO DO: move final files
     
 
 if __name__ == "__main__":
