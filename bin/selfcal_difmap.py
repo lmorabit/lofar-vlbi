@@ -403,12 +403,18 @@ def dif_script (infile,pol='XX',aipsno=340,clean_sigma=6,map_size=512,\
 #    the same bad/missing channels, and image separately for separate XX/YY corrs
 def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False ):
 
+    # current working directory
+    current_dir = os.getcwd()
+
+    # check if insolfile is an absolute path
+    if len(insolfile.split('/')) == 1:
+	insolfile = os.path.join( current_dir, insolfile )
+
     ## make a working directory, move the data, and chdir
     # get filestem to make unique name
     tmp = infile.split('/')
     filestem = tmp[-1].split('_')[0] 
-    # current working directory
-    current_dir = os.getcwd()
+    # working directory
     work_dir = os.path.join( current_dir, 'difmap_{:s}'.format( filestem ) )
     os.mkdir( work_dir )
     os.system( 'cp -r {:s} {:s}'.format( infile, work_dir ) )
