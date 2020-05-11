@@ -120,7 +120,7 @@ pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, exp
 pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconcat_list ]
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, expand_memory_map, aoflag ]
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
-pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat ]
+pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat, correct_beam ]
 pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, delay_cal_parmmap, tecsolve, make_losoto, process_losoto, apply_tec, selfcal ]
 pipeline.steps.applydelay = [ copyST_gains, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
 
@@ -589,6 +589,13 @@ phaseup_concat.argument.msout.overwrite      = True
 phaseup_concat.argument.steps                = [count]
 phaseup_concat.argument.numthreads           = {{ max_dppp_threads }}
 
+# correct the beam for the array_factor
+correct_beam.control.type			= pythonplugin
+correct_beam.control.executable			= {{ scripts }}/correct_array_factor.py
+correct_beam.control.mapfile_in			= phaseup_concat.output.mapfile
+correct_beam.control.inputkey			= msin
+correct_beam.control.arguments			= [msin]
+
 # generate the calibrator model with skynet
 delay_cal_model.control.type                  = pythonplugin
 delay_cal_model.control.executable            = {{ scripts }}/skynet.py
@@ -633,7 +640,7 @@ tecsolve.argument.gaincal.directions    = [ME0]
 tecsolve.argument.gaincal.parmdb        = h5parms
 tecsolve.argument.gaincal.sourcedb      = skymodels
 
-# clip and plot the solutions
+# plot the solutions
 make_losoto.control.kind                             = plugin
 make_losoto.control.type                             = makeLosotoParset
 make_losoto.control.steps                            = [plotTEC1]
@@ -643,7 +650,7 @@ make_losoto.control.plotTEC1.operation                = PLOT
 make_losoto.control.plotTEC1.refAnt                   = ST001
 make_losoto.control.plotTEC1.axisInTable              = ant
 make_losoto.control.plotTEC1.soltab                   = sol000/tec000
-make_losoto.control.plotTEC1.prefix                   = {{ inspection_directory }}/TEC_before_flagging_
+make_losoto.control.plotTEC1.prefix                   = {{ inspection_directory }}/TEC_
 make_losoto.control.plotTEC1.axesInPlot               = [time]
 make_losoto.control.plotTEC1.plotFlag                 = False
 
