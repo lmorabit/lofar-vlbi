@@ -667,8 +667,25 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     ss = 'makesourcedb in={:s} out={:s} format="<"'.format( outfile, outfile.replace('mod','skymodel') )
     os.system( ss )
 
+    ## run wsclean 
+    wsclean_name = filestem + '_wsclean' 
+    ss = 'wsclean -j 16 -mem 40 -v -reorder -update-model-required -weight uniform -mf-weighting -weighting-rank-filter 3 -name {:s} -size 1024 1024 -padding 1.4 -scale 0.05asec -channels-out 6 -data-column CORRECTED_DATA -niter 10000 -auto-threshold 3 -auto-mask 5 -mgain 0.8 -join-channels -fit-spectral-pol 3 -fit-beam {:s}'.format( wsclean_name, infile )
+    os.system( ss )
 
     ## TO DO: move final files
+    ## h5parm, images, log files, and skymodel
+    image_files = glob.glob( os.path.join( work_dir, '*.ps') )
+    log_files = glob.glob( os.path.join( work_dir, '*log') )
+    wsclean_ims = glob.glob( os.path.join( work_dir, '*wsclean*MFS*fits' ) )
+    h5parm = glob.glob( os.path.join( work_dir, '*h5' ) )
+    skymodel = glob.glob( os.path.join( work_dir, '*skymodel' ) )
+    file_list = image_files + log_files + wsclean_ims + h5parm + skymodel
+    for myfile in file_list:
+        ff = myfile.split('/')[-1]
+        ss = 'mv {:s} {:s}'.format( myfile, os.path.join( current_dir, ff ) )
+
+    print( 'done' )
+    
     
 
 if __name__ == "__main__":
