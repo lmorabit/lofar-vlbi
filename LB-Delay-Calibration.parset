@@ -727,17 +727,12 @@ ndppp_apply_delay.argument.msin.baseline                 = *&
 ndppp_apply_delay.argument.msout.datacolumn              = CORRECTED_DATA
 ndppp_apply_delay.argument.msout.writefullresflag        = False
 ndppp_apply_delay.argument.msout.storagemanager          = dysco
-ndppp_apply_delay.argument.steps                         = [applyDelayAmp,applyDelayPhase,count]
-ndppp_apply_delay.argument.applyDelayAmp.type            = applycal
-ndppp_apply_delay.argument.applyDelayAmp.parmdb          = h5parm
-ndppp_apply_delay.argument.applyDelayAmp.correction      = amplitude000
-ndppp_apply_delay.argument.applyDelayAmp.solset          = sol001
-ndppp_apply_delay.argument.applyDelayAmp.updateweights   = false
-ndppp_apply_delay.argument.applyDelayPhase.type          = applycal
-ndppp_apply_delay.argument.applyDelayPhase.parmdb        = h5parm
-ndppp_apply_delay.argument.applyDelayPhase.correction    = phase000
-ndppp_apply_delay.argument.applyDelayPhase.solset        = sol001
-ndppp_apply_delay.argument.applyDelayPhase.updateweights = false 
+ndppp_apply_delay.argument.steps                         = [applyTEC,count]
+ndppp_apply_delay.argument.applyTEC.type		 = applycal
+ndppp_apply_delay.argument.applyTEC.parmdb		 = h5parm
+ndppp_apply_delay.argument.applyTEC.correction		 = tec000
+ndppp_apply_delay.argument.applyTEC.solset		 = sol001
+ndppp_apply_delay.argument.applyTEC.updateweights	 = false
 
 ##################################################################
 #                                                               ##
