@@ -78,8 +78,8 @@
 ## setup for running steps
 ! substep_clip     = # clipATeam,     ## off by default, turn on if you want to a-team clip (will take several days)
 ! substep_flag     = # aoflagging,    ## off by default, aoflagging
-! substep_delay    = ,delaycal        ## off by default, turn on to do a single in-field delay calibration
-! substep_apply    = # ,applydelay    ## off by default, turn on ONLY IF you have run substep_delay and wish to apply solutions
+! substep_delay    = ,delaycal        ## do a single in-field delay calibration
+! substep_apply    = ,applydelay      ## apply the delay solutions back to the data
 
 ##########################################################
 ## Changing these will probably break something.        ##
@@ -121,11 +121,8 @@ pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconca
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, expand_memory_map, aoflag ]
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
 pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat ]
-#pipeline.steps.delaycal = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, phaseup_concat, delay_cal_model, delay_cal_model_map, delay_cal_parmmap, tecsolve, make_losoto, process_losoto, apply_tec, selfcal ]
 pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, delay_cal_parmmap, tecsolve, make_losoto, process_losoto, apply_tec, selfcal ]
-pipeline.steps.applydelay = [ copy_h5imp_cal, copyST_gains, expand_h5_map, ndppp_apply_delay ]
-
-
+pipeline.steps.applydelay = [ copyST_gains, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
 
 ##################################################################################################################
 ##                                                                                                              ##
@@ -688,23 +685,23 @@ selfcal.argument.datacolumn		= DATA
 selfcal.argument.startmod		= True
 selfcal.argument.verbose		= False
 
-# copy the LoSoTo file to the inspection_directory
-copy_h5imp_cal.control.kind               =  recipe
-copy_h5imp_cal.control.type               =  executable_args
-copy_h5imp_cal.control.executable         =  /bin/cp
-copy_h5imp_cal.control.mapfile_in         =  h5_imp_delaysol_map.output.mapfile
-copy_h5imp_cal.control.inputkey           =  h5in
-copy_h5imp_cal.control.arguments          =  [h5in, {{ cal_values_directory }}/delay_cal_1.h5]
-
 # in delay cal parmdb, copy ST values to CS values
 copyST_gains.control.type                            = pythonplugin
 copyST_gains.control.executable                      = {{ scripts }}/gains_toCS_h5parm.py
-copyST_gains.argument.flags                          = [h5_imp_delaysol_map.output.mapfile,dpppconcat.output.mapfile]
+copyST_gains.argument.flags                          = [delay_cal_parmmap.output.mapfile,dpppconcat.output.mapfile]
+
+# copy the LoSoTo file to the inspection_directory
+copy_delay_sols.control.kind               =  recipe
+copy_delay_sols.control.type               =  executable_args
+copy_delay_sols.control.executable         =  /bin/cp
+copy_delay_sols.control.mapfile_in         =  delay_cal_parmmap.output.mapfile
+copy_delay_sols.control.inputkey           =  h5in
+copy_delay_sols.control.arguments          =  [h5in, {{ cal_values_directory }}/delay_cal_sols.h5]
 
 # expand the mapfile so there's one entry per ms
 expand_h5_map.control.kind                      = plugin
 expand_h5_map.control.type                      = expandMapfile
-expand_h5_map.control.mapfile_in                = h5_imp_delaysol_map.output.mapfile
+expand_h5_map.control.mapfile_in                = delay_cal_parmmap.output.mapfile
 expand_h5_map.control.mapfile_to_match          = dpppconcat.output.mapfile
 expand_h5_map.control.mapfile_dir               = input.output.mapfile_dir
 expand_h5_map.control.filename                  = expand_h5_map.mapfile
