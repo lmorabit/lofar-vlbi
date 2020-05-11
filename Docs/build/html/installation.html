@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Installation and software requirements &#8212; lofar-vlbi V2.5 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="License" href="license.html" />
+    <link rel="prev" title="Documentation for the LOFAR-VLBI pipeline" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="installation-and-software-requirements">
+<h1>Installation and software requirements<a class="headerlink" href="#installation-and-software-requirements" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="software-requirements">
+<h2>Software Requirements<a class="headerlink" href="#software-requirements" title="Permalink to this headline">¶</a></h2>
+<p>To get the LOFAR-VLBI pipeline, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/lmorabit/lofar-vlbi
+</pre></div>
+</div>
+<p>You will also need a local copy of prefactor, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/lofar-astron/prefactor
+$ cd prefactor
+$ git checkout 7e9103d10c8e37ee2ac2203b678af295ed03e4fd
+</pre></div>
+</div>
+<p>The software dependencies for the LOFAR-VLBI pipeline and prefactor are listed below.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Fortunately, everything has been packaged into a singularity image, which can be found here:</p>
+<p><a class="reference external" href="https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp&#64;e7512b7e92e5a3124e6ed177650e99a8c4eb2263.sif?action=show">https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp&#64;e7512b7e92e5a3124e6ed177650e99a8c4eb2263.sif?action=show</a></p>
+<p>This version has been tested, but does not work with the -H flag in the h5exp_gsm step in the prefactor Pre-Facet-Target.parset, so you have to remove that manually.</p>
+</div>
+<p>If you do not wish to use this singularity image, the following software must be installed locally:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>AOFlagger &gt;= 2.14.0</p></li>
+<li><p>DP3 &gt;= 4.0</p></li>
+<li><p>LoSoTo &gt;= 2.0</p></li>
+<li><p>Montage</p></li>
+<li><p>prefactor (commit 7e9103d10c8e37ee2ac2203b678af295ed03e4fd)</p></li>
+<li><p>PGPLOT</p></li>
+<li><p>Difmap (built with modified version of corplt.c found here: <a class="reference external" href="https://github.com/nealjackson/loop3_difmap/corplt.c">https://github.com/nealjackson/loop3_difmap/corplt.c</a>)</p></li>
+</ul>
+</div></blockquote>
+<p>The following software is <strong>optional</strong>, but must be installed for their respective features to work:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The ddf-pipeline (<a class="reference external" href="https://github.com/mhardcastle/ddf-pipeline">https://github.com/mhardcastle/ddf-pipeline</a>) and its software prerequisites (listed in docs/manual.md)</p></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="python-packages">
+<h2>Python packages<a class="headerlink" href="#python-packages" title="Permalink to this headline">¶</a></h2>
+<p>These are all included in the singularity image, which we strongly recommend using. If you wish to run the pipeline locally, the required Python packages are listed in requirements.txt. One can easily install these using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>The exceptions are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>PyBDSF</p></li>
+<li><p>RMextract</p></li>
+</ul>
+</div></blockquote>
+<p>These can both be installed from their respective repositories, or with pip via:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">lofar</span><span class="o">-</span><span class="n">astron</span><span class="o">/</span><span class="n">PyBDSF</span><span class="o">/</span><span class="n">archive</span><span class="o">/</span><span class="n">v1</span><span class="o">.</span><span class="mf">9.1</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">lofar</span><span class="o">-</span><span class="n">astron</span><span class="o">/</span><span class="n">RMextract</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="n">RMextract</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">lofar-vlbi</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation and software requirements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#software-requirements">Software Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python-packages">Python packages</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Documentation for the LOFAR-VLBI pipeline</a></li>
+      <li>Next: <a href="license.html" title="next chapter">License</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Leah Morabito.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
