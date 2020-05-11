@@ -15,7 +15,9 @@ Table of Contents
    :maxdepth: 2
 
    installation
+   setup
    license
+   help
    acknowledgements
 
 Quick Links

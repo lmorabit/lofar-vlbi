@@ -15,12 +15,12 @@ Table of Contents
    :maxdepth: 2
 
    installation
+   setup
    license
+   help
    acknowledgements
 
 Quick Links
 ^^^^^^^^^^^
 
-* :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`

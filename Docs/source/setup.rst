@@ -1,0 +1,69 @@
+**********************************************
+Setting Up and Running the LOFAR-VLBI pipeline
+**********************************************
+
+=============================
+Preparing the data: Prefactor
+=============================
+
+The LOFAR-VLBI pipeline makes use of prefactor solutions to apply to the data. Therefore you must pre-process your data through prefactor, both the calibrator and target pipelines. For instructions how to run prefactor on your data, please look at the `prefactor documentation`_. For any issues you encounter with prefactor, please open an issue on the `prefactor`_ repository.
+
+
+* The default is now for **Pre-Facet-Calibrator.parset** to process all stations, including the international stations. You can run this with the default settings. Please check the outputs to make sure they are sensible! 
+
+.. note::
+    If your standard calibrator is either 3C 295 or 3C 196, the standard models in the prefactor github repository do not have sufficiently high resolution, but high-resolution models do exist. Please contact the long baseline working group for help. 
+
+* The **Pre-Facet-Target.parset** should be run with all the standard defaults. This will copy over the solutions from Pre-Facet-Calibrator and add the self-cal phase solutions for the core and remote stations, which are necessary for the LOFAR-VLBI pipeline. Please check the outputs to make sure they are sensible!  Also note any stations which were flagged as 'bad' as you will need to pre-flag these for the LOFAR-VLBI pipeline.
+
+.. note::
+    Processing of interleaved datasets is not currently supported.
+
+======================
+Optional: ddf-pipeline
+======================
+
+This is an optional step which is only relevant if you wish to progress to wide-field imaging afterwards, and is not necessary to run the pipeline. It is also necessary in the case where your field has not been covered yet by LoTSS, to generate a catalogue of sources in the field, which is used by the LOFAR-VLBI pipeline to help select the best candidate for in-field calibration. If you can query sources in your field with the `LoTSS catalogue server`_ then you do not need to generate this catalogue. 
+
+Follow the instructions for the `ddf-pipeline`_ , using the LoTSS default settings. This operates on the results of Pre-Facet-Target and will provide:
+
+* additional phase solutions for core and remote stations
+* a self-calibrated image at 6" resolution
+* a catalogue of sources in the field
+
+The long baseline pipeline **requires** the information on the sources, either from this output catalogue or the `LoTSS catalogue server`_ , and if you run the ddf-pipeline it can use the additional phase solutions (but this is not required). We recommend skipping this step if your field is already in the `LoTSS catalogue server`_ unless you wish do do wide-field imaging at high resolution, rather than imaging science targets in a few (or one) directions. 
+
+
+===============================
+Running the LOFAR-VLBI pipeline
+===============================
+
+The LOFAR-VLBI pipeline uses the same ``genericpipeline`` framework as prefactor. You can see the prefactor `documentation`_ on how to modify the ``pipeline.cfg`` and the corresponding parset files before you start the pipeline, although you should already be familiar with this if you've done it for prefactor.
+
+.. note::
+    The pipeline.cfg file in the `LOFAR-VLBI`_ repository already contains paths for the singularity image, although some paths will need to be local. Please check this file carefully before making changes. 
+
+The LOFAR-VLBI pipeline is broken into two steps: **Delay-Calibration.parset** and **Split-Directions.parset**. The first parset does all the heavy lifting; it applies the prefactor solutions, splits out best in-field calibrator candidate, performs the delay calibration on it, and applies these corrections back to the data. The second parset takes the resulting CORRECTED_DATA, splits out the directions in which you wish to image, and runs self-calibration on them. 
+
+
+Before running the pipeline, you should check:
+
+* If there are any bad stations flagged by prefactor. These will need to be manually input into the parsets. Follow exactly the syntax for the example given in the parset.
+
+* Check the rest of the "Please update these parameters" section. Comments in the parset(s) describe what they are. 
+
+* Optional: if you have run the ddf-pipeline, please update the DDF options as well. If you are only using the catalogue, update the lotss_skymodel parameter to point to your output file. 
+
+Once all parameters are set, the pipeline can be run as, for example::
+
+   genericpipeline.py -c pipeline.cfg Delay-Calibration.parset
+   
+.. _help:
+
+.. _LOFAR-VLBI: https://github.com/lmorabit/lofar-vlbi
+.. _LoTSS catalogue server: https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form
+.. _Long Baseline Pipeline GitHub issues: https://github.com/lmorabit/lofar-vlbi/issues
+.. _prefactor: https://github.com/lofar-astron/prefactor
+.. _prefactor documentation: https://www.astron.nl/citt/prefactor/
+.. _documentation: file:///media/quasarfix/media/cep3/prefactor/docs/build/html/parset.html
+.. _ddf-pipeline: https://github.com/mhardcastle/ddf-pipeline
