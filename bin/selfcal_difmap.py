@@ -677,9 +677,9 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     image_files = glob.glob( os.path.join( work_dir, '*.ps') )
     log_files = glob.glob( os.path.join( work_dir, '*log') )
     wsclean_ims = glob.glob( os.path.join( work_dir, '*wsclean*MFS*fits' ) )
-    h5parm = glob.glob( os.path.join( work_dir, '*h5' ) )
+    myh5parm = glob.glob( os.path.join( work_dir, '*h5' ) )
     skymodel = glob.glob( os.path.join( work_dir, '*skymodel' ) )
-    file_list = image_files + log_files + wsclean_ims + h5parm + skymodel
+    file_list = image_files + log_files + wsclean_ims + myh5parm + skymodel
     for myfile in file_list:
         ff = myfile.split('/')[-1]
         ss = 'mv {:s} {:s}'.format( myfile, os.path.join( current_dir, ff ) )
