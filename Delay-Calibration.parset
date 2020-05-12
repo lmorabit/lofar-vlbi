@@ -6,7 +6,7 @@
 ##  - The working and runtime directory are expected            ##
 ##    to be the same.                                           ##
 ##  - Please report any issues at                               ##
-##    https://github.com/lmorabit/long_baseline_pipeline        ##
+##    https://github.com/lmorabit/lofar_vlbi        ##
 ##################################################################
 
 
@@ -15,9 +15,9 @@
 ##########################################################
 
 # local software paths
-! long_baseline_pipeline_dir            = /home/morabito/software/long_baseline_pipeline
+! lofar_vlbi_dir            		= /home/morabito/software/lofar_vlbi
 ! prefactor_dir                         = /home/morabito/software/prefactor
-# these are in the singularity image and should not need to be changed
+# the following are in the singularity image and should not need to be changed
 ! losoto_directory                      = /opt/lofar/losoto
 ! aoflagger                             = /opt/lofar/aoflagger/bin/aoflagger 
 ! lofar_directory                       = $LOFARROOT
@@ -26,7 +26,8 @@
 ! target_input_path             = /data/scratch/lb_bw/targetdata
 ! target_input_pattern          = L*.MS
 
-## Prefactor solution information 
+## Prefactor solution information
+## assumes the job directory and Pre-Facet-Target will be in the same parent directory
 ! prefac_tgt_dir	= input.output.job_directory/../Pre-Facet-Target
 ! cal_solutions         = {{ prefac_tgt_dir }}/results/cal_values/solutions.h5  ## location of h5parm from prefactor - should contain 'calibrator' and 'target' information
 ! solutions             = input.output.job_directory/solutions.h5
@@ -37,8 +38,8 @@
 ! filter_baselines	=   ## filter baselines that are flagged, e.g.: !CS013HBA*&&*
 
 ## averaging information -- do not touch unless you know what you are doing!
-! cal_shift_avg_freqstep    = 4
-! cal_shift_avg_timestep    = 4
+! cal_shift_avg_freqstep    = 8
+! cal_shift_avg_timestep    = 8
 
 ## flagging and a-team clipping settings
 ! rfistrategy                       =  HBAdefault
@@ -50,7 +51,7 @@
 
 ! substep_ddf             = # ,apply_ddf   ## set to apply_ddf to use, leave blank otherwise
 ! ddf_soldir              = # /data/scratch/lb_bw/targetddf/L602888/SOLSDIR     ## path to 'SOLSDIR' from ddf-pipeline run, leave blank otherwise
-! delaycal_col            = DATA ## set to DATA_DI_CORRECTED if applying ddf solutions, DATA otherwise.
+! delaycal_col            = DATA ## set to DATA_DI_CORRECTED if applying ddf solutions, leave as DATA otherwise.
 
 ##########################################################
 ## These parameters may need to be updated.             ##
@@ -60,13 +61,14 @@
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
 ! filter_command                = '!CS*&&*' ## remove the core stations after combination
 
-## Output directories
-! job_directory                 = input.output.job_directory ## directory of the prefactor outputs
+## job and output directories
+! job_directory                 = input.output.job_directory 
 ! results_directory             = {{ job_directory }}/results
 ! inspection_directory          = {{ results_directory }}/inspection/
 ! cal_values_directory          = {{ results_directory }}/calibrator_results/
 
 ## catalogue information
+## if using your own field catalogue (i.e., ddf-pipeline generated catalogue), point lotss_skymodel to it on disk
 ! lotss_skymodel         = {{ job_directory }}/lotss_catalogue.csv
 ! lbcs_skymodel          = {{ job_directory }}/lbcs_catalogue.csv
 ! image_cat              = {{ job_directory }}/image_catalogue.csv
@@ -76,10 +78,11 @@
 ! continue_without_lotss = True
 
 ## setup for running steps
-! substep_clip     = # clipATeam,     ## off by default, turn on if you want to a-team clip (will take several days)
-! substep_flag     = # aoflagging,    ## off by default, aoflagging
+! substep_clip     = # clipATeam,     ## turn on if you want to a-team clip (will take several days)
+! substep_flag     = # aoflagging,    ## aoflagging
 ! substep_delay    = ,delaycal        ## do a single in-field delay calibration
 ! substep_apply    = ,applydelay      ## apply the delay solutions back to the data
+! substep_cleanup  = ,cleanup	      ## delete files not needed for Split-Directions.parset
 
 ##########################################################
 ## Changing these will probably break something.        ##
@@ -88,7 +91,7 @@
 ## global information
 ! base_directory          = input.output.working_directory  
 ! job_directory           = input.output.job_directory      
-! scripts                 = {{ long_baseline_pipeline_dir }}/bin
+! scripts                 = {{ lofar_vlbi_dir }}/bin
 ! prefactor_scripts       = {{ prefactor_dir }}/scripts
 
 ##########################################################
@@ -112,7 +115,7 @@
 ## Steps to run.                                        ##
 ##########################################################
 
-pipeline.steps = [ setup, prep, {{ substep_clip }} concat {{ substep_flag }} {{ substep_ddf }} ,phaseup {{ substep_delay }} {{ substep_apply }} ]
+pipeline.steps = [ setup, prep, {{ substep_clip }} concat {{ substep_flag }} {{ substep_ddf }} ,phaseup {{ substep_delay }} {{ substep_apply }} {{ substep_cleanup }} ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, createmap_target, createmap_target_list, cp_cal_solutions, download_cats ]
 pipeline.steps.prep = [ ndppp_prep_target, ndppp_prep_target_list ]
@@ -121,8 +124,9 @@ pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconca
 pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, expand_memory_map, aoflag ]
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
 pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat, correct_beam ]
-pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, delay_cal_parmmap, tecsolve, make_losoto, process_losoto, apply_tec, selfcal ]
+pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, delay_cal_parmmap, delay_solve, make_losoto, process_losoto, apply_delay, selfcal ]
 pipeline.steps.applydelay = [ copyST_gains, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
+pipeline.steps.cleanup = [ delete_prep_target, delete_phaseup ]
 
 ##################################################################################################################
 ##                                                                                                              ##
@@ -165,7 +169,7 @@ createmap_target_list.control.kind            =   plugin
 createmap_target_list.control.type            =   createMapfile
 createmap_target_list.control.method          =   mapfile_all_to_one
 createmap_target_list.control.mapfile_dir     =   input.output.mapfile_dir
-createmap_target_list.control.filename        =   combine_data_tar_map.mapfile
+createmap_target_list.control.filename        =   createmap_target_list.mapfile
 createmap_target_list.control.mapfile_in      =   createmap_target.output.mapfile
 
 # copy the cal solutions to operate on
@@ -194,7 +198,6 @@ download_cats.control.subtract_limit          = 0.5
 download_cats.control.image_limit_Jy          = 0.05
 download_cats.control.continue_no_lotss       = {{ continue_without_lotss }}
        
-
 # run NDPPP on the target data to flag and apply solutions
 ndppp_prep_target.control.type                          = dppp
 ndppp_prep_target.control.max_per_node                  = {{ num_proc_per_node_limit }}
@@ -359,12 +362,12 @@ dpppconcat.argument.steps                = [count]
 dpppconcat.argument.numthreads           = {{ max_dppp_threads }}
 
 # make a mapfile with all blocks in one list
-dpppconcat_list.control.kind              = plugin
-dpppconcat_list.control.type            =   createMapfile
-dpppconcat_list.control.method          =   mapfile_all_to_one
-dpppconcat_list.control.mapfile_dir     =   input.output.mapfile_dir
-dpppconcat_list.control.filename        =  dpppconcat_list.mapfile
-dpppconcat_list.control.mapfile_in      =  dpppconcat.output.mapfile
+dpppconcat_list.control.kind            = plugin
+dpppconcat_list.control.type            = createMapfile
+dpppconcat_list.control.method          = mapfile_all_to_one
+dpppconcat_list.control.mapfile_dir     = input.output.mapfile_dir
+dpppconcat_list.control.filename        = dpppconcat_list.mapfile
+dpppconcat_list.control.mapfile_in      = dpppconcat.output.mapfile
 
 
 ##################################################################
@@ -434,23 +437,24 @@ ddf_solutions.control.mapfile_dir        =  input.output.mapfile_dir
 ddf_solutions.control.filename          =  ddf_solutions.mapfile
 
 # make mapfile for output h5parms
-ddf_h5parms.control.kind        = plugin
-ddf_h5parms.control.type        = makeResultsMapfile
-ddf_h5parms.control.mapfile_dir        = input.output.mapfile_dir
-ddf_h5parms.control.filename        = ddf_h5parms.mapfile
+ddf_h5parms.control.kind              = plugin
+ddf_h5parms.control.type              = makeResultsMapfile
+ddf_h5parms.control.mapfile_dir       = input.output.mapfile_dir
+ddf_h5parms.control.filename          = ddf_h5parms.mapfile
 ddf_h5parms.control.mapfile_in        = createmap_ddf.output.mapfile
 ddf_h5parms.control.target_dir        = {{ job_directory }}
 ddf_h5parms.control.new_suffix        = _ddf.h5
 
 # run losoto to convert
-convert_to_h5.control.kind            = recipe
-convert_to_h5.control.type            = executable_args
+convert_to_h5.control.kind              = recipe
+convert_to_h5.control.type              = executable_args
 convert_to_h5.control.executable        = {{ losoto_directory }}/bin/killMS2H5parm.py
-convert_to_h5.control.max_per_node        = {{ num_proc_per_node }}
-convert_to_h5.control.mapfiles_in        = [ddf_h5parms.output.mapfile,ddf_solutions.output.mapfile]
-convert_to_h5.control.inputkeys            = [outputh5,inputnpz]
+convert_to_h5.control.max_per_node      = {{ num_proc_per_node }}
+convert_to_h5.control.mapfiles_in       = [ddf_h5parms.output.mapfile,ddf_solutions.output.mapfile]
+convert_to_h5.control.inputkeys         = [outputh5,inputnpz]
 convert_to_h5.argument.flags            = [outputh5,inputnpz]
 
+# expand the output to one entry per ms
 expand_concat_map.control.kind                      = plugin
 expand_concat_map.control.type                      = expandMapfile
 expand_concat_map.control.mapfile_in                = dpppconcat.output.mapfile
@@ -459,15 +463,14 @@ expand_concat_map.control.mapfile_dir               = input.output.mapfile_dir
 expand_concat_map.control.filename                  = expand_concat_map.mapfile
 
 # add the international stations
-# addIS.control.kind                = recipe
-addIS.control.type                = pythonplugin
-addIS.control.executable            = {{ long_baseline_pipeline_dir }}/bin/addIS_to_h5.py
-addIS.control.max_per_node            = {{ num_proc_per_node }}
-addIS.control.mapfiles_in            = [expand_concat_map.output.mapfile,ddf_h5parms.output.mapfile]
-addIS.control.inputkeys                = [msin,h5parms]
+addIS.control.type                  = pythonplugin
+addIS.control.executable            = {{ lofar_vlbi_dir }}/bin/addIS_to_h5.py
+addIS.control.max_per_node          = {{ num_proc_per_node }}
+addIS.control.mapfiles_in           = [expand_concat_map.output.mapfile,ddf_h5parms.output.mapfile]
+addIS.control.inputkeys             = [msin,h5parms]
 addIS.argument.solset_in            = sol000
-addIS.argument.solset_out            = sol001
-addIS.argument.do_int_stations            = True
+addIS.argument.solset_out           = sol001
+addIS.argument.do_int_stations      = True
 addIS.argument.flags                = [h5parms,msin]
 
 # generate a mapfile with all files in a single entry
@@ -524,33 +527,33 @@ prep_delay_dir.control.target_file      = {{ best_delay_cat }}
 prep_delay_dir.control.all_to_one       = False
 
 # shift, average and add up stations for tied array
-dppp_phaseup.control.type                 = dppp
-dppp_phaseup.control.max_per_node         = {{ num_proc_per_node }}
-dppp_phaseup.control.mapfile_out          = prep_delay_dir.output.mapfile
-dppp_phaseup.argument.msin                = dpppconcat.output.mapfile
-dppp_phaseup.argument.msin.datacolumn     = {{ delaycal_col }}
-dppp_phaseup.argument.msout.datacolumn    = DATA
-dppp_phaseup.argument.msout.storagemanager= dysco
-dppp_phaseup.argument.msout.overwrite     = True
-dppp_phaseup.argument.steps               = [shift, avg, adder, filter]
-dppp_phaseup.argument.shift.type          = phaseshift
-dppp_phaseup.argument.shift.phasecenter   = prep_delay_dir.output.coords
-dppp_phaseup.argument.avg.type            = squash
-dppp_phaseup.argument.avg.freqstep        = {{ cal_shift_avg_freqstep }}
-dppp_phaseup.argument.avg.timestep        = {{ cal_shift_avg_timestep }}
-dppp_phaseup.argument.adder.type          = stationadder
-dppp_phaseup.argument.adder.stations      = {{ phaseup_command }}
-dppp_phaseup.argument.filter.type         = filter
-dppp_phaseup.argument.filter.baseline     = {{ filter_command }}
-dppp_phaseup.argument.filter.remove       = True
-dppp_phaseup.argument.numthreads          = {{ max_dppp_threads }}
+dppp_phaseup.control.type                  = dppp
+dppp_phaseup.control.max_per_node          = {{ num_proc_per_node }}
+dppp_phaseup.control.mapfile_out           = prep_delay_dir.output.mapfile
+dppp_phaseup.argument.msin                 = dpppconcat.output.mapfile
+dppp_phaseup.argument.msin.datacolumn      = {{ delaycal_col }}
+dppp_phaseup.argument.msout.datacolumn     = DATA
+dppp_phaseup.argument.msout.storagemanager = dysco
+dppp_phaseup.argument.msout.overwrite      = True
+dppp_phaseup.argument.steps                = [shift, avg, adder, filter]
+dppp_phaseup.argument.shift.type           = phaseshift
+dppp_phaseup.argument.shift.phasecenter    = prep_delay_dir.output.coords
+dppp_phaseup.argument.avg.type             = squash
+dppp_phaseup.argument.avg.freqstep         = {{ cal_shift_avg_freqstep }}
+dppp_phaseup.argument.avg.timestep         = {{ cal_shift_avg_timestep }}
+dppp_phaseup.argument.adder.type           = stationadder
+dppp_phaseup.argument.adder.stations       = {{ phaseup_command }}
+dppp_phaseup.argument.filter.type          = filter
+dppp_phaseup.argument.filter.baseline      = {{ filter_command }}
+dppp_phaseup.argument.filter.remove        = True
+dppp_phaseup.argument.numthreads           = {{ max_dppp_threads }}
 
 # convert to a mapfile with all bands in one list
 dppp_phaseup_list.control.kind            =   plugin
 dppp_phaseup_list.control.type            =   createMapfile
 dppp_phaseup_list.control.method          =   mapfile_all_to_one
 dppp_phaseup_list.control.mapfile_dir     =   input.output.mapfile_dir
-dppp_phaseup_list.control.filename        =   combine_data_tar_map.mapfile
+dppp_phaseup_list.control.filename        =   dppp_phaseup_list.mapfile
 dppp_phaseup_list.control.mapfile_in      =   dppp_phaseup.output.mapfile
 
 # sort them by frequency and fill in missing subband information
@@ -573,21 +576,21 @@ do_phaseup_maps.control.mapfile_groupmap  =  sort_phaseupmap.output.groupmapfile
 do_phaseup_maps.control.mapfile_datamap   =  sort_phaseupmap.output.mapfile.mapfile
 
 # concatenate them
-phaseup_concat.control.type                  = dppp
-phaseup_concat.control.max_per_node          = {{ num_proc_per_node_limit }}
-phaseup_concat.control.error_tolerance       = {{ error_tolerance }}
-phaseup_concat.control.mapfiles_out	     = do_phaseup_maps.output.groupmap
-phaseup_concat.control.mapfiles_in           = [do_phaseup_maps.output.datamap]
-phaseup_concat.control.inputkey              = msin
-phaseup_concat.argument.msin.datacolumn      = DATA
-phaseup_concat.argument.msin.missingdata     = True
-phaseup_concat.argument.msin.orderms         = False
-phaseup_concat.argument.msout.datacolumn     = DATA
+phaseup_concat.control.type                    = dppp
+phaseup_concat.control.max_per_node            = {{ num_proc_per_node_limit }}
+phaseup_concat.control.error_tolerance         = {{ error_tolerance }}
+phaseup_concat.control.mapfiles_out	       = do_phaseup_maps.output.groupmap
+phaseup_concat.control.mapfiles_in             = [do_phaseup_maps.output.datamap]
+phaseup_concat.control.inputkey                = msin
+phaseup_concat.argument.msin.datacolumn        = DATA
+phaseup_concat.argument.msin.missingdata       = True
+phaseup_concat.argument.msin.orderms           = False
+phaseup_concat.argument.msout.datacolumn       = DATA
 phaseup_concat.argument.msout.writefullresflag = False
-phaseup_concat.argument.msout.storagemanager = dysco
-phaseup_concat.argument.msout.overwrite      = True
-phaseup_concat.argument.steps                = [count]
-phaseup_concat.argument.numthreads           = {{ max_dppp_threads }}
+phaseup_concat.argument.msout.storagemanager   = dysco
+phaseup_concat.argument.msout.overwrite        = True
+phaseup_concat.argument.steps                  = [count]
+phaseup_concat.argument.numthreads             = {{ max_dppp_threads }}
 
 # correct the beam for the array_factor
 correct_beam.control.type			= pythonplugin
@@ -623,29 +626,29 @@ delay_cal_parmmap.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_parmmap.control.filename           =  delay_cal_parmdbs.mapfile
 
 # solve for tec
-tecsolve.control.type                   = dppp
-tecsolve.control.inplace                = True
-tecsolve.control.max_per_node           = {{ num_proc_per_node_limit }}
-tecsolve.control.error_tolerance        = {{ error_tolerance }}
-tecsolve.control.mapfiles_in            = [phaseup_concat.output.mapfile,delay_cal_parmmap.output.mapfile,delay_cal_model_map.output.mapfile]
-tecsolve.control.inputkeys              = [msfiles,h5parms,skymodels]
-tecsolve.argument.numthreads            = {{ max_dppp_threads }}
-tecsolve.argument.msin                  = msfiles
-tecsolve.argument.msin.datacolumn       = DATA
-tecsolve.argument.steps                 = [gaincal]
-tecsolve.argument.gaincal.caltype       = tec
-tecsolve.argument.gaincal.solint        = 5
-tecsolve.argument.gaincal.nchan         = 10
-tecsolve.argument.gaincal.directions    = [ME0]
-tecsolve.argument.gaincal.parmdb        = h5parms
-tecsolve.argument.gaincal.sourcedb      = skymodels
+delay_solve.control.type                   = dppp
+delay_solve.control.inplace                = True
+delay_solve.control.max_per_node           = {{ num_proc_per_node_limit }}
+delay_solve.control.error_tolerance        = {{ error_tolerance }}
+delay_solve.control.mapfiles_in            = [phaseup_concat.output.mapfile,delay_cal_parmmap.output.mapfile,delay_cal_model_map.output.mapfile]
+delay_solve.control.inputkeys              = [msfiles,h5parms,skymodels]
+delay_solve.argument.numthreads            = {{ max_dppp_threads }}
+delay_solve.argument.msin                  = msfiles
+delay_solve.argument.msin.datacolumn       = DATA
+delay_solve.argument.steps                 = [gaincal]
+delay_solve.argument.gaincal.caltype       = tecandphase
+delay_solve.argument.gaincal.solint        = 5
+delay_solve.argument.gaincal.nchan         = 10
+delay_solve.argument.gaincal.directions    = [ME0]
+delay_solve.argument.gaincal.parmdb        = h5parms
+delay_solve.argument.gaincal.sourcedb      = skymodels
 
 # plot the solutions
-make_losoto.control.kind                             = plugin
-make_losoto.control.type                             = makeLosotoParset
-make_losoto.control.steps                            = [plotTEC1]
-make_losoto.control.filename                         = input.output.job_directory/losoto.parset
-make_losoto.control.global.ncpu                      = 0
+make_losoto.control.kind                              = plugin
+make_losoto.control.type                              = makeLosotoParset
+make_losoto.control.steps                             = [plotTEC1]
+make_losoto.control.filename                          = input.output.job_directory/losoto.parset
+make_losoto.control.global.ncpu                       = 0
 make_losoto.control.plotTEC1.operation                = PLOT
 make_losoto.control.plotTEC1.refAnt                   = ST001
 make_losoto.control.plotTEC1.axisInTable              = ant
@@ -653,6 +656,7 @@ make_losoto.control.plotTEC1.soltab                   = sol000/tec000
 make_losoto.control.plotTEC1.prefix                   = {{ inspection_directory }}/TEC_
 make_losoto.control.plotTEC1.axesInPlot               = [time]
 make_losoto.control.plotTEC1.plotFlag                 = False
+## TODO: plot phase offset
 
 # run losoto 
 process_losoto.control.kind                          =  recipe
@@ -663,25 +667,28 @@ process_losoto.control.mapfile_in                    =  delay_cal_parmmap.output
 process_losoto.control.inputkey                      =  h5in
 process_losoto.argument.flags                        =  [h5in,{{ job_directory }}/losoto.parset]
 
-# apply the solutions
-apply_tec.control.type			= dppp
-apply_tec.control.max_per_node		= {{ num_proc_per_node_limit }}
-apply_tec.control.error_tolerance	= {{ error_tolerance }}
-apply_tec.control.mapfiles_in		= [phaseup_concat.output.mapfile,delay_cal_parmmap.output.mapfile]
-apply_tec.control.inputkeys		= [msfiles,h5parms]
-apply_tec.argument.msin			= msfiles
-apply_tec.argument.numthreads		= {{ max_dppp_threads }}
-apply_tec.argument.msin.datacolumn	= DATA
-apply_tec.argument.msout.datacolumn	= DATA
-apply_tec.argument.steps		= [applycal]
-apply_tec.argument.applycal.type	= applycal
-apply_tec.argument.applycal.correction	= tec000
-apply_tec.argument.applycal.parmdb	= h5parms
+# apply the solutions -- intentionally do not use dysco as this will be passed to difmap
+apply_delay.control.type			= dppp
+apply_delay.control.max_per_node		= {{ num_proc_per_node_limit }}
+apply_delay.control.error_tolerance	        = {{ error_tolerance }}
+apply_delay.control.mapfiles_in		        = [phaseup_concat.output.mapfile,delay_cal_parmmap.output.mapfile]
+apply_delay.control.inputkeys		        = [msfiles,h5parms]
+apply_delay.argument.msin			= msfiles
+apply_delay.argument.numthreads		        = {{ max_dppp_threads }}
+apply_delay.argument.msin.datacolumn	        = DATA
+apply_delay.argument.msout.datacolumn	        = DATA
+apply_delay.argument.steps		        = [applytec,applyphs]
+apply_delay.argument.applytec.type	        = applycal
+apply_delay.argument.applytec.correction	= tec000
+apply_delay.argument.applytec.parmdb	        = h5parms
+apply_delay.argument.applyphs.type		= applycal
+apply_delay.argument.applyphs.correction	= phase000
+apply_delay.argument.applyphs.parmdb		= h5parms
 
 # run self-calibration
 selfcal.control.type			= pythonplugin
 selfcal.control.executable		= {{ scripts }}/selfcal_difmap.py
-selfcal.control.mapfile_in		= apply_tec.output.mapfile
+selfcal.control.mapfile_in		= apply_delay.output.mapfile
 selfcal.control.inputkey		= msin
 selfcal.argument.flags			= [msin,{{ cal_solutions }}]
 selfcal.argument.clean_sig		= 6
@@ -698,7 +705,7 @@ copyST_gains.control.executable                      = {{ scripts }}/gains_toCS_
 copyST_gains.argument.flags                          = [delay_cal_parmmap.output.mapfile,dpppconcat.output.mapfile]
 copyST_gains.argument.solset_in                      = sol000
 copyST_gains.argument.solset_out                     = sol001
-copyST_gains.argument.soltab_list                    = 'tec,clock,phase_offset'
+copyST_gains.argument.soltab_list                    = 'tec000,phase000'
 copyST_gains.argument.superstation                   = ST001
 copyST_gains.argument.restrictToCS                   = True
 
@@ -732,23 +739,39 @@ ndppp_apply_delay.argument.msin.baseline                 = *&
 ndppp_apply_delay.argument.msout.datacolumn              = CORRECTED_DATA
 ndppp_apply_delay.argument.msout.writefullresflag        = False
 ndppp_apply_delay.argument.msout.storagemanager          = dysco
-ndppp_apply_delay.argument.steps                         = [applyTEC,applyclock,applyphaseoffset,count]
+ndppp_apply_delay.argument.steps                         = [applyTEC,applyphase,count]
 ndppp_apply_delay.argument.applyTEC.type		 = applycal
 ndppp_apply_delay.argument.applyTEC.parmdb		 = h5parm
 ndppp_apply_delay.argument.applyTEC.correction		 = tec000
 ndppp_apply_delay.argument.applyTEC.solset		 = sol001
 ndppp_apply_delay.argument.applyTEC.updateweights	 = false
-ndppp_apply_delay.argument.applyclock.type               = applycal
-ndppp_apply_delay.argument.applyclock.parmdb             = h5parm
-ndppp_apply_delay.argument.applyclock.correction         = clock
-ndppp_apply_delay.argument.applyclock.solset             = sol001
-ndppp_apply_delay.argument.applyclock.updateweights     = false
-ndppp_apply_delay.argument.applyphaseoffset.type        = applycal
-ndppp_apply_delay.argument.applyphaseoffset.parmdb      = h5parm
-ndppp_apply_delay.argument.applyphaseoffset.correction  = phase_offset
-ndppp_apply_delay.argument.applyphaseoffset.solset      = sol001
-ndppp_apply_delay.argument.applyphaseoffset.updateweights = false
+ndppp_apply_delay.argument.applyphase.type               = applycal
+ndppp_apply_delay.argument.applyphase.parmdb             = h5parm
+ndppp_apply_delay.argument.applyphase.correction         = phase000
+ndppp_apply_delay.argument.applyphase.solset             = sol001
+ndppp_apply_delay.argument.applyphase.updateweights      = false
 
+############################################
+#                                         ##
+#                  CLEANUP                ##
+#                                         ##
+############################################
+
+# delete ndppp_prep_target files
+delete_prep_target.control.kind		   = recipe
+delete_prep_target.control.type		   = executable_args
+delete_prep_target.control.executable	   = /bin/rm
+delete_prep_target.control.mapfile_in	   = ndppp_prep_target.output.mapfile
+delete_prep_target.control.inputkey	   = msin
+delete_prep_target.control.arguments	   = [-r,msin]
+
+# delete intermediate files for delay calibrator
+delete_phaseup.control.kind            = recipe
+delete_phaseup.control.type            = executable_args
+delete_phaseup.control.executable      = /bin/rm
+delete_phaseup.control.mapfile_in      = dppp_phaseup.output.mapfile
+delete_phaseup.control.inputkey        = msin
+delete_phaseup.control.arguments       = [-r,msin]
 
 ##################################################################
 #                                                               ##
