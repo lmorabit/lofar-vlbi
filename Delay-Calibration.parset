@@ -696,6 +696,11 @@ selfcal.argument.verbose		= False
 copyST_gains.control.type                            = pythonplugin
 copyST_gains.control.executable                      = {{ scripts }}/gains_toCS_h5parm.py
 copyST_gains.argument.flags                          = [delay_cal_parmmap.output.mapfile,dpppconcat.output.mapfile]
+copyST_gains.argument.solset_in                      = sol000
+copyST_gains.argument.solset_out                     = sol001
+copyST_gains.argument.soltab_list                    = 'tec,clock,phase_offset'
+copyST_gains.argument.superstation                   = ST001
+copyST_gains.argument.restrictToCS                   = True
 
 # copy the LoSoTo file to the inspection_directory
 copy_delay_sols.control.kind               =  recipe
@@ -727,12 +732,23 @@ ndppp_apply_delay.argument.msin.baseline                 = *&
 ndppp_apply_delay.argument.msout.datacolumn              = CORRECTED_DATA
 ndppp_apply_delay.argument.msout.writefullresflag        = False
 ndppp_apply_delay.argument.msout.storagemanager          = dysco
-ndppp_apply_delay.argument.steps                         = [applyTEC,count]
+ndppp_apply_delay.argument.steps                         = [applyTEC,applyclock,applyphaseoffset,count]
 ndppp_apply_delay.argument.applyTEC.type		 = applycal
 ndppp_apply_delay.argument.applyTEC.parmdb		 = h5parm
 ndppp_apply_delay.argument.applyTEC.correction		 = tec000
 ndppp_apply_delay.argument.applyTEC.solset		 = sol001
 ndppp_apply_delay.argument.applyTEC.updateweights	 = false
+ndppp_apply_delay.argument.applyclock.type               = applycal
+ndppp_apply_delay.argument.applyclock.parmdb             = h5parm
+ndppp_apply_delay.argument.applyclock.correction         = clock
+ndppp_apply_delay.argument.applyclock.solset             = sol001
+ndppp_apply_delay.argument.applyclock.updateweights     = false
+ndppp_apply_delay.argument.applyphaseoffset.type        = applycal
+ndppp_apply_delay.argument.applyphaseoffset.parmdb      = h5parm
+ndppp_apply_delay.argument.applyphaseoffset.correction  = phase_offset
+ndppp_apply_delay.argument.applyphaseoffset.solset      = sol001
+ndppp_apply_delay.argument.applyphaseoffset.updateweights = false
+
 
 ##################################################################
 #                                                               ##

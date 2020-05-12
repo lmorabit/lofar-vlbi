@@ -7,6 +7,7 @@ Copy H5parm values from a reference station to all new stations, e.g., from ST00
 Created on Tue Aug 28 2018
 
 @author: Alexander Drabent (parts by Maaijke Mevius)
+modified by Leah Morabito
 """
 
 import argparse
@@ -56,7 +57,7 @@ def makesolset(MS, data, solset_name):
     return antennaNames
 
 
-def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_list=['phase000', 'amplitude000'], superstation='ST001', restrictToCS=True):
+def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_list='phase000,amplitude000', superstation='ST001', restrictToCS=True):
     ''' Copy the gains from the phased up core back to all core stations.
 
     Args:
@@ -73,6 +74,9 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
     '''
 
     mslist = MSfiles.lstrip('[').rstrip(']').replace(' ', '').replace("'", "").split(',')
+
+    soltab_list = soltab_list.split(',')
+    print( 'Processing soltabs:', soltab_list )
 
     if len(mslist) == 0:
         logging.error("Did not find any existing directory in input MS list!")
@@ -118,7 +122,11 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
             for vals, weights, coord, selection in soltab.getValuesIter(returnAxes=['time', 'ant'], weight=True):
                 vals = reorderAxes(vals, soltab.getAxesNames(), ['time', 'ant'])
                 weights = reorderAxes(weights, soltab.getAxesNames(), ['time', 'ant'])
-        elif 'amplitude' in soltab_name or 'phase' in soltab_name:
+        elif 'phase_offset' in soltab_name:
+            for vals, weights, coord, selection, in soltab.getValuesIter(returnAxes=['ant'], weight=True):
+		vals = reorderAxes( vals, soltab.getAxesNames(), ['ant'] )
+		weights = reorderAxes( weights, soltab.getAxesNames(), ['ant'])
+        elif 'amplitude' in soltab_name or 'phase' in soltab_name and 'offset' not in soltab_name:
           if 'pol' in soltab.getAxesNames():  
             for vals, weights, coord, selection in soltab.getValuesIter(returnAxes=['pol', 'ant', 'freq', 'time'], weight=True):
                 vals = reorderAxes(vals, soltab.getAxesNames(), ['time', 'ant', 'freq', 'pol'])
@@ -136,7 +144,10 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
         if 'clock' in soltab_name or 'tec' in soltab_name:
             new_vals = np.ndarray(shape=(dimension[0], len(new_station_names)))
             new_weights = np.ndarray(shape=(dimension[0], len(new_station_names)))
-        if 'amplitude' in soltab_name or 'phase' in soltab_name:
+        if 'phase_offset' in soltab_name:
+	    new_vals = np.ndarray(shape=(len(new_station_names)))
+	    new_weights = np.ndarray(shape=(len(new_station_names)))
+        if 'amplitude' in soltab_name or 'phase' in soltab_name and 'offset' not in soltab_name:
             if 'pol' in soltab.getAxesNames():
                 new_vals = np.ndarray(shape=(dimension[0], len(new_station_names), dimension[2], dimension[3]))
                 new_weights = np.ndarray(shape=(dimension[0], len(new_station_names), dimension[2], dimension[3]))
@@ -150,7 +161,10 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                 if 'clock' in soltab_name or 'tec' in soltab_name:
                     new_vals[:, i] = vals[:, ant_index]
                     new_weights[:, i] = weights[:, ant_index]
-                if 'amplitude' in soltab_name or 'phase' in soltab_name:
+                if 'phase_offset' in soltab_name:
+		    new_vals[i] = vals[ant_index]
+                    new_weights[i] = weights[ant_index]
+                if 'amplitude' in soltab_name or 'phase' in soltab_name and 'offset' not in soltab_name:
                     if 'pol' in soltab.getAxesNames():
                         new_vals[:, i, :, :] = vals[:, ant_index, :, :]
                         new_weights[:, i, :, :] = weights[:, ant_index, :, :]
@@ -165,7 +179,10 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                 if 'clock' in soltab_name or 'tec' in soltab_name:
                     new_vals[:, i] = vals[:, STindex]
                     new_weights[:, i] = weights[:, STindex]
-                if 'amplitude' in soltab_name or 'phase' in soltab_name:
+                if 'phase_offset' in soltab_name:
+		    new_vals[i] = vals[STindex]
+		    new_weights[i] = weights[STindex]
+                if 'amplitude' in soltab_name or 'phase' in soltab_name and 'offset' not in soltab_name:
                     if 'pol' in soltab.getAxesNames():
                         new_vals[:, i, :, :] = vals[:, STindex, :, :]
                         new_weights[:, i, :, :] = weights[:, STindex, :, :]
@@ -178,12 +195,16 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                                               axesNames=['time', 'ant'],
                                               axesVals=[soltab.time, new_station_names],
                                               vals=new_vals, weights=new_weights)
-            pass
         elif 'tec' in soltab_name:
             new_soltab = OutSolset.makeSoltab(soltype='tec', soltabName=soltab_name,
                                               axesNames=['time', 'ant'],
                                               axesVals=[soltab.time, new_station_names],
                                               vals=new_vals, weights=new_weights)
+        elif 'phase_offset' in soltab_name:
+	    new_soltab = OutSolset.makeSoltab(soltype='phase', soltabName=soltab_name,
+						axesNames=['ant'],
+						axesVals=[new_station_names],
+						vals=new_vals, weights=new_weights)
         elif 'amplitude' in soltab_name:
             if 'pol' in soltab.getAxesNames():
                 new_soltab = OutSolset.makeSoltab(soltype='amplitude', soltabName=soltab_name,
@@ -196,7 +217,7 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
                                                   axesVals=[soltab.time, new_station_names, soltab.freq],
                                                   vals=new_vals, weights=new_weights)
 
-        elif 'phase' in soltab_name:
+        elif 'phase' in soltab_name and 'offset' not in soltab_name:
             if 'pol' in soltab.getAxesNames():
                 new_soltab = OutSolset.makeSoltab(soltype='phase', soltabName=soltab_name,
                                                   axesNames=['time', 'ant', 'freq', 'pol'],
@@ -243,7 +264,6 @@ if __name__ == "__main__":
 
     MSfiles = args.MSfiles
     h5parmfile = args.h5parm
-    soltablist = args.soltab_list.split(',')
 
     main(h5parmfile, MSfiles, solset_in=args.solset_in, solset_out=args.solset_out,
-         soltab_list=soltablist, superstation=args.superstation, restrictToCS=args.restrictToCS)
+         soltab_list=args.soltab_list, superstation=args.superstation, restrictToCS=args.restrictToCS)
