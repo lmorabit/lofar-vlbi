@@ -195,7 +195,7 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*
 	    tmp_dict['src'] = coord_tmp[2]
             phasecen = ','.join([coord_tmp[0]+'deg',coord_tmp[1]+'deg'])
 	    tmp_dict['phasecen'] = phasecen
-	    tmp_dict['outname'] = coord_tmp[2]+'_'+obsid+'_phasecal.MS'
+	    tmp_dict['outname'] = coord_tmp[2]+'_'+obsid+'_imdir.ms'
 	    tmp.append(tmp_dict)
         coords = tmp
 	## find number of sources to set right number of cpus
