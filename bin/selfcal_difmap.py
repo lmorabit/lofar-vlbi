@@ -690,6 +690,7 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     for myfile in file_list:
         ff = myfile.split('/')[-1]
         ss = 'mv {:s} {:s}'.format( myfile, os.path.join( current_dir, ff ) )
+        os.system( ss )
 
     print( 'done' )
     
