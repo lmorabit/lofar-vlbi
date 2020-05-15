@@ -329,6 +329,13 @@ def file2fits(infile,datacolumn):
         else:
             fitsfile = infile+'.fits'
         if not os.path.isfile( fitsfile ):
+            ## check length of fitsfile name
+            nchar = len( fitsfile.split('/')[-1] )
+	    if nchar > 90:
+		tmp = fitsfile.split('/')
+		modname = tmp[-1].split('_')[0] + '.fits'
+		tmp[-1] = modname
+		fitsfile = '/'.join(tmp)
             os.system('ms2uvfits in=%s out=%s writesyscal=F'%(infile,fitsfile))
 
     ## find the good channels (i.e., not empty) from the fits file
