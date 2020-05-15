@@ -68,7 +68,7 @@ def main(mslist,results_dir):
 
     ## move h5 and plots to results_dir
     h5file = glob.glob( '*templatejones.h5' )
-    plots = glob.glob( 'plotlosoto*' )
+    plots = glob.glob( 'plotlosoto*/*png' )
     movefiles = h5file + plots
     for mvfile in movefiles:
 	os.system( 'mv {:s} {:s}/'.format(mvfile, results_dir) )
@@ -132,6 +132,7 @@ def create_losoto_beamcorparset(ms):
     Returns:
         parset (str): name of the parset created.
     """
+    ms = ms.split('/')[-1]
     parset = 'losotobeam.parset'
     os.system('rm -f ' + parset)
     f = open(parset, 'w')
