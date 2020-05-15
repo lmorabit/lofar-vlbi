@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os
+import glob
 import sys
 import numpy as np
 import losoto
@@ -15,7 +16,7 @@ from lofar.stationresponse import stationresponse
 ## originally part of runwsclean.py from https://github.com/mhardcastle/ddf-pipeline
 ## adopted into stand-alone script by F. Sweijen
 
-def main(mslist):
+def main(mslist,results_dir):
     """ Correct a ms for the beam in the phase center (array_factor only).
     Newer versions of DP3 support this natively and better. It is recommended to use that functionality instead of this if available.
     Args:
@@ -64,6 +65,13 @@ def main(mslist):
     beamdir['m0']['value'] = phasedir[0]
     beamdir['m1']['value'] = phasedir[1]
     t.putcolkeywords('DATA', {'LOFAR_APPLIED_BEAM_DIR': beamdir})
+
+    ## move h5 and plots to results_dir
+    h5file = glob.glob( '*templatejones.h5' )
+    plots = glob.glob( 'plotlosoto*' )
+    movefiles = h5file + plots
+    for mvfile in movefiles:
+	os.system( 'mv {:s} {:s}/'.format(mvfile, results_dir) )
 
 
 def create_beamcortemplate(ms):
