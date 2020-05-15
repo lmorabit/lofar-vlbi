@@ -72,6 +72,7 @@ def main(mslist,results_dir):
     movefiles = h5file + plots
     for mvfile in movefiles:
 	os.system( 'mv {:s} {:s}/'.format(mvfile, results_dir) )
+    os.system( 'rm -r plotlosoto*' )
 
 
 def create_beamcortemplate(ms):
