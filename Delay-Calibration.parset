@@ -597,7 +597,7 @@ correct_beam.control.type			= pythonplugin
 correct_beam.control.executable			= {{ scripts }}/correct_array_factor.py
 correct_beam.control.mapfile_in			= phaseup_concat.output.mapfile
 correct_beam.control.inputkey			= msin
-correct_beam.control.arguments			= [msin]
+correct_beam.argument.mslist			= msin
 
 # generate the calibrator model with skynet
 delay_cal_model.control.type                  = pythonplugin

@@ -15,7 +15,7 @@ from lofar.stationresponse import stationresponse
 ## originally part of runwsclean.py from https://github.com/mhardcastle/ddf-pipeline
 ## adopted into stand-alone script by F. Sweijen
 
-def beamcor(ms):
+def main(mslist):
     """ Correct a ms for the beam in the phase center (array_factor only).
     Newer versions of DP3 support this natively and better. It is recommended to use that functionality instead of this if available.
     Args:
@@ -23,6 +23,8 @@ def beamcor(ms):
     Returns:
         None
     """
+    ms = mslist.lstrip('[').rstrip(']').replace(' ', '').replace("'", "").split(',')[0]
+
     losoto = 'losoto'
     taql = 'taql'
     H5name = create_beamcortemplate(ms)
@@ -203,5 +205,5 @@ def losotolofarbeam(parmdb, soltabname, ms, inverse=False, useElementResponse=Tr
 
 
 if __name__ == '__main__':
-    msin = sys.argv[1]
-    beamcor(msin)
+
+    main(mslist)
