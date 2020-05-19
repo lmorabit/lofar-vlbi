@@ -56,7 +56,7 @@ def makesolset(MS, data, solset_name):
     return antennaNames
 
 
-def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_list=['phase000', 'amplitude000'], superstation='ST001', restrictToCS=True):
+def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_list='phase000,amplitude000', superstation='ST001', restrictToCS=True):
     ''' Copy the gains from the phased up core back to all core stations.
 
     Args:
@@ -73,6 +73,8 @@ def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_li
     '''
 
     mslist = MSfiles.lstrip('[').rstrip(']').replace(' ', '').replace("'", "").split(',')
+
+    soltab_list = soltab_list.split(',')
 
     if len(mslist) == 0:
         logging.error("Did not find any existing directory in input MS list!")
@@ -243,8 +245,7 @@ if __name__ == "__main__":
 
     MSfiles = args.MSfiles
     h5parmfile = args.h5parm
-    soltablist = args.soltab_list.split(',')
 
     main(h5parmfile, MSfiles, solset_in=args.solset_in, solset_out=args.solset_out,
-         soltab_list=soltablist, superstation=args.superstation, restrictToCS=args.restrictToCS)
+         soltab_list=args.soltab_list, superstation=args.superstation, restrictToCS=args.restrictToCS)
 

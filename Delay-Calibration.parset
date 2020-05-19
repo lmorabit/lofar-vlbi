@@ -104,7 +104,7 @@
 ## Runtime setup -- will depend on your computing cluster
 ! num_proc_per_node                 = input.output.max_per_node    ## number of processes to use per step per node
 ! num_proc_per_node_limit           = 6     ## number of processes to use per step per node for tasks with high i/o (dppp or cp) or memory (eg calibration)
-! max_dppp_threads                  = 6     ## number of threads per process for NDPPP
+! max_dppp_threads                  = 5     ## number of threads per process for NDPPP
 ! error_tolerance                   = False ## False = stop if any subband fails, True = keep going
 
 ##
@@ -729,7 +729,7 @@ expand_h5_map.control.filename                  = expand_h5_map.mapfile
 # Apply the gain solutions directly to the data -- no need to remove time dependence
 ndppp_apply_delay.control.type                           = dppp
 ndppp_apply_delay.control.inplace                        = True
-ndppp_apply_delay.control.max_per_node                   = {{ num_proc_per_node }}
+ndppp_apply_delay.control.max_per_node                   = {{ num_proc_per_node_limit }}
 ndppp_apply_delay.control.error_tolerance                = {{ error_tolerance }}
 ndppp_apply_delay.control.mapfiles_in                    = [dpppconcat.output.mapfile,expand_h5_map.output.mapfile]
 ndppp_apply_delay.control.inputkeys                      = [inputms,h5parm]
@@ -739,7 +739,6 @@ ndppp_apply_delay.argument.msin.datacolumn               = {{ delaycal_col }}
 ndppp_apply_delay.argument.msin.baseline                 = *&
 ndppp_apply_delay.argument.msout.datacolumn              = CORRECTED_DATA
 ndppp_apply_delay.argument.msout.writefullresflag        = False
-ndppp_apply_delay.argument.msout.storagemanager          = dysco
 ndppp_apply_delay.argument.steps                         = [applyTEC,applyphase,count]
 ndppp_apply_delay.argument.applyTEC.type		 = applycal
 ndppp_apply_delay.argument.applyTEC.parmdb		 = h5parm
