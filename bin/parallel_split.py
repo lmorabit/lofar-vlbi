@@ -10,7 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import argparse
-from astropy.io import ascii
+from astropy.table import Table
 import re
 import datetime
 
@@ -90,7 +90,7 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
     
 def lotss2coords (lotssfile):
 
-    a = ascii.read(lotssfile)
+    a = Table.read(lotssfile)
     coords=np.array([],dtype='S')
     for xx in range(len(a)):
 	tmp = a[xx]
@@ -98,9 +98,9 @@ def lotss2coords (lotssfile):
 	src = tmp['Source_id']
 	if type(src) != str:
 	    src = 'S'+str(src)
-	tmp_1 = ','.join([str(tmp['LOTSS_RA']),str(tmp['LOTSS_DEC']),src])
+	tmp_1 = ','.join([str(tmp['RA']),str(tmp['DEC']),src])
         coords=np.append(coords,tmp_1)
-    return     coords
+    return coords
 
 
 def parallel_function(f,ncpu):            # Scott Sievert parallelize function
@@ -159,6 +159,7 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*
 
     ## housekeeping
     coords = lotss2coords( lotss_file )
+    print( 'check 2' )
     ## get the calibrator names
     cal_names = []
     for coord in coords:
