@@ -539,14 +539,10 @@ def lof_coords( myskycoord ):
 #    in AIPS and mapped, *If no AIPS and no good-channel file, exit with error*.
 # We assume that XX and YY have the same number of telescopes and UTs, and also
 #    the same bad/missing channels, and image separately for separate XX/YY corrs
-def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False ):
+def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False ):
 
     # current working directory
     current_dir = os.getcwd()
-
-    # check if insolfile is an absolute path
-    if len(insolfile.split('/')) == 1:
-	insolfile = os.path.join( current_dir, insolfile )
 
     ## make a working directory, move the data, and chdir
     # get filestem to make unique name
@@ -574,19 +570,18 @@ def main( infile, insolfile, clean_sig=6, map_size=512, pix_size=100, obs_length
     corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_YY'), filestem )
     os.system('mv {:s} {:s}'.format( corpltfile, corpltout ) )
 
-    ## COPY FREQUENCY AND TIME FROM LB-Delay-Calibration/solutions.h5 target:TGSSphase
-    insols = h5parm( insolfile )
-    inss = insols.getSolset('target')
-    phasename = [ xx for xx in inss.getSoltabNames() if 'extract' not in xx ][0]
-    inst = inss.getSoltab(phasename)
-    freq_ax = inst.getAxisValues('freq')
-    time_ax = inst.getAxisValues('time')
-    insols.close()
-    if len(utXX) != len(time_ax):
-	## convert utXX to lofar times
-	utvec = utXX - np.min(utXX)
-	time_ax = utvec + np.min(time_ax)
-	
+    ## convert time axis to lofar times
+    myms = ct.table( infile )
+    lof_times = myms.getcol('TIME')
+    myms.close()
+    utvec = utXX - np.min(utXX)
+    time_ax = utvec + np.min(lof_times)
+
+    ## get frequency axis
+    myspw = ct.table( infile + '::SPECTRAL_WINDOW' )
+    freq_ax = np.squeeze( myspw.getcol('CHAN_FREQS') )
+    myspw.close()
+
     ## combine XX and YY information and reformat axes
     tmp_amp = np.rollaxis(np.dstack((ampXX,ampYY)),1,0)
     tmp_phs = np.rollaxis(np.dstack((phsXX,phsYY)),1,0)
@@ -710,11 +705,10 @@ if __name__ == "__main__":
 
     ## positionals
     parser.add_argument("filename",type=str,help="Name of the measurement set")
-    parser.add_argument("insolfile",type=str,help="Name of h5parm with phase solutions")
 
     args=parser.parse_args()
 
-    main( args.filename, args.insolfile, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
+    main( args.filename, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
 	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose )
 
 
