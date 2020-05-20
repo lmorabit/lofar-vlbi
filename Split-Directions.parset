@@ -15,7 +15,7 @@
 ##########################################################
 
 # software paths
-! lofar_vlbi_dir            		= /home/morabito/software/lofar_vlbi
+! lofar_vlbi_dir            		= /home/morabito/software/lofar-vlbi
 ! prefactor_dir                         = /home/morabito/software/prefactor
 # the following are in the singularity image and should not need to be changed
 ! losoto_directory                      = /opt/lofar/losoto
@@ -36,9 +36,9 @@
 ##########################################################
 
 ## catalogue information -- update if you want to use your own instead of the auto-generated one
-! image_cat  = {{ delaycal_directory }}/image_catalogue.csv
+! image_cat  = {{ delaycal_directory }}/results/image_catalogue.csv
 ## format h5parm for setting time axis
-! cal_solutions = {{ delaycal+directory }}/solutions.h5
+! cal_solutions = {{ delaycal_directory }}/solutions.h5
 
 ## Runtime setup -- will depend on your computing cluster
 ! num_proc_per_node             = input.output.max_per_node    ## number of processes to use per step per node
