@@ -47,16 +47,17 @@ def main (vis, delayCalFile='' ):
     t = Table.read( delayCalFile, format='csv' )
     ## find the RA column
     mycols = t.colnames
-    ra_col = [ val in mycols if 'RA' in val ]
-    de_col = [ val in mycols if 'DEC' in val ]
-    if len(ra_idx) == 1:
+    ra_col = [ val for val in mycols if val == 'RA' ]
+    de_col = [ val for val in mycols if val == 'DEC' ]
+    if len(ra_col) == 1:
         ra_col = ra_col[0]
         de_col = de_col[0]
     else:
         ## pick LoTSS position
-        ra_col = [ val for val in mycols if 'RA_LOTSS' in val ][0]
-        de_col = [ val for val in mycols if 'DEC_LOTSS' in val ][0]
+        ra_col = [ val for val in mycols if val == 'RA_LOTSS' ][0]
+        de_col = [ val for val in mycols if val == 'DEC_LOTSS' ][0]
     ## get the right source
+    src_ids = t['Source_id']
     try:
 	int_src = int( vis_src.replace('S','') )
         src_idx = [ i for i, val in enumerate(src_ids) if val == int(vis_src.replace('S','')) ][0]
