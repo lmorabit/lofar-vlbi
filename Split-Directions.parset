@@ -61,7 +61,7 @@
 
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
-! filter_command                = '!CS*&*'      ## remove the core stations after combination
+! filter_command                = '!CS*&&*'      ## remove the core stations after combination
 
 ! rfistrategy			= HBAdefault
 
