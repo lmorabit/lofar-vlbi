@@ -45,9 +45,27 @@ def main (vis, delayCalFile='' ):
 
     ## get flux from best_delay_calibrators.csv
     t = Table.read( delayCalFile, format='csv' )
-    ra = t['RA_LOTSS'].data[0]
-    dec = t['DEC_LOTSS'].data[0]
-    smodel = t['Total_flux'].data[0]
+    ## find the RA column
+    mycols = t.colnames
+    ra_col = [ val in mycols if 'RA' in val ]
+    de_col = [ val in mycols if 'DEC' in val ]
+    if len(ra_idx) == 1:
+        ra_col = ra_col[0]
+        de_col = de_col[0]
+    else:
+        ## pick LoTSS position
+        ra_col = [ val for val in mycols if 'RA_LOTSS' in val ][0]
+        de_col = [ val for val in mycols if 'DEC_LOTSS' in val ][0]
+    ## get the right source
+    try:
+	int_src = int( vis_src.replace('S','') )
+        src_idx = [ i for i, val in enumerate(src_ids) if val == int(vis_src.replace('S','')) ][0]
+    except:
+	src_idx = [ i for i, val in enumerate(src_ids) if val == vis_src ][0]
+
+    ra = t[ra_col].data[src_idx]
+    dec = t[de_col].data[src_idx]
+    smodel = t['Total_flux'].data[src_idx]
 
     print 'generating point model'
     point_model = np.array( [ [0.0,0.0,smodel,0.1,0.0,0.0] ] )
