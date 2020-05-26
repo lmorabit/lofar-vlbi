@@ -58,11 +58,15 @@ def main (vis, delayCalFile='' ):
         de_col = [ val for val in mycols if val == 'DEC_LOTSS' ][0]
     ## get the right source
     src_ids = t['Source_id']
-    try:
-	int_src = int( vis_src.replace('S','') )
-        src_idx = [ i for i, val in enumerate(src_ids) if val == int(vis_src.replace('S','')) ][0]
-    except:
-	src_idx = [ i for i, val in enumerate(src_ids) if val == vis_src ][0]
+
+    src_names = []
+    for src_id in src_ids:
+	if type( src_id ) != str:
+            val = 'S'+str(src_id)
+	else:
+	    val = src_id
+        src_names.append(val)
+    src_idx = [ i for i, val in enumerate(src_names) if vis_src == val ][0]
 
     ra = t[ra_col].data[src_idx]
     dec = t[de_col].data[src_idx]
