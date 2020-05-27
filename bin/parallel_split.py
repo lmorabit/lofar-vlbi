@@ -140,12 +140,14 @@ def source (coords,ncpu):
     source_thread.parallel = parallel_function(source_thread,ncpu)
     parallel_result = source_thread.parallel(coords)
 
-def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=999, nthreads=1 ):
+def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=999, nthreads=0 ):
 
     phaseup_cmd = str(phaseup_cmd)
     filter_cmd = str(filter_cmd)
     ncpu = int(ncpu)
     nthreads = int(nthreads)
+    if nthreads == 0:
+	nthreads = int(4)
     datacol = str(datacol)
     timestep = int(timestep)
     freqstep = int(freqstep)
@@ -201,7 +203,12 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*
         coords = tmp
 	## find number of sources to set right number of cpus
 	## each ndppp process will use 4 threads (this is hardcoded atm)
-	ncpu = int( np.min([len(coords),ncpu/nthreads]) )
+        if len(coords) > int(ncpu/nthreads):
+	    ncpu = int( len(coords) )
+        else:
+	    ncpu = int( ncpu/nthreads )
+        print( 'HELLOOOOOOOO' )
+        print( 'using ncpu: ', ncpu )
 
         #print( coords )
         starttime = datetime.datetime.now()

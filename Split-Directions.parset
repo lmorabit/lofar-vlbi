@@ -116,6 +116,7 @@ parallel_split.argument.datacol		= {{ data_col }}
 parallel_split.argument.timestep	= {{ cal_shift_avg_timestep }}
 parallel_split.argument.freqstep	= {{ cal_shift_avg_freqstep }}
 parallel_split.argument.nsbs		= 999
+parallel_split.argument.nthreads        = 0 ## 0 --> default of 4
 
 # make a mapfile of the directions to image
 caldata_map.control.kind		= plugin
