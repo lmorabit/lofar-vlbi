@@ -187,10 +187,14 @@ apply_tec.argument.msin			= msfiles
 apply_tec.argument.numthreads		= {{ max_dppp_threads }}
 apply_tec.argument.msin.datacolumn	= DATA
 apply_tec.argument.msout.datacolumn	= DATA
-apply_tec.argument.steps		= [applycal]
-apply_tec.argument.applycal.type	= applycal
-apply_tec.argument.applycal.correction	= tec000
-apply_tec.argument.applycal.parmdb	= h5parms
+apply_tec.argument.steps		= [applytec,applyphs]
+apply_tec.argument.applytec.type	= applycal
+apply_tec.argument.applytec.correction	= tec000
+apply_tec.argument.applytec.parmdb	= h5parms
+apply_tec.argument.applyphs.type	= applycal
+apply_tec.argument.applyphs.correction	= phase000
+apply_tec.argument.applyphs.parmdb	= h5parms
+
 
 # run self-calibration
 selfcal.control.type                    = pythonplugin
