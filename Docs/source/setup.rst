@@ -57,11 +57,38 @@ Before running the pipeline, you should check:
 Once all parameters are set, the pipeline can be run as, for example::
 
    genericpipeline.py -c pipeline.cfg Delay-Calibration.parset
+
+========================
+Using your own catalogue
+========================
+
+The pipeline will automatically try to download information from both the `LBCS catalogue server`_ and the `LoTSS catalogue server`_. Both of these are required to help select the best in-field calibrator. You can generate an appropriate catalogue to replace the LoTSS catalogue by running the `ddf-pipeline`_. The output catalogue will be named *image_full_ampphase_di_m.NS.offset_cat.fits*.  The only thing you need to do is convert this to a csv file, and then update the following line in **Delay-Calibration.parset**::
+
+    ! lotss_skymodel         = {{ results_directory }}/lotss_catalogue.csv
+
+to the absolute path for your csv file. It does not need to be named lotss_catalogue.csv.  You do not need to make any further changes to the catalogue.
+
+If there is no LBCS coverage for your field, please contact someone from the LOFAR-VLBI working group.
+
+===============================
+Setting the directions to image
+===============================
+
+The **Delay-Calibration** step generates some output catalogues, which are stored in its *results* directory. These include:
+
+* delay_calibrators.csv - a list of potential LBCS calibrators in the field 
+* best_delay_calibrators.csv - the best LBCS calibrator to use for the delay calibration
+* subtract_sources.csv - bright sources and LBCS calibrators that may need to be subtracted to improve image fidelity
+* image_catalogue.csv - everything else
+
+Once the **Delay-Calibration** step has run, you can simply edit or replace the *image_catalogue.csv* file to include only the source(s) you wish to image. The more directions you want to image, the longer the pipeline will take, so you should really limit this to your target of interest. The file needs to be in **csv format** with the **same column names** as *image_catalogue.csv* and flux densities in Janskys.
+
    
 .. _help:
 
 .. _LOFAR-VLBI: https://github.com/lmorabit/lofar-vlbi
 .. _LoTSS catalogue server: https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form
+.. _LBCS catalogue server: https://lofar-surveys.org/lbcs.html
 .. _Long Baseline Pipeline GitHub issues: https://github.com/lmorabit/lofar-vlbi/issues
 .. _prefactor: https://github.com/lofar-astron/prefactor
 .. _prefactor documentation: https://www.astron.nl/citt/prefactor/

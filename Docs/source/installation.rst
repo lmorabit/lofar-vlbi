@@ -1,6 +1,25 @@
-======================================
-Installation and software requirements
-======================================
+.. index:: Installation
+
+=================================================
+Installation, software, and hardware requirements
+=================================================
+
+Hardware Requirements
+^^^^^^^^^^^^^^^^^^^^^
+
+The pipeline is implemented in the `genericpipeline`_ framework. It is designed to run non-interactively on a cluster via submission to a job queue. Some of the steps in the pipeline require interaction between all running processes, and currently this means the pipeline is limited to running on a single node. The pipeline has been tested on the following type of computing node:
+
+* 2 socket x 16 core (32 threads) 2.10 GHz
+* 192 GB RAM
+* FDR Infiniband
+* 100 TB disk space
+
+With these specifications, the two steps of the pipeline (Delay-Calibration and Split-Directions) will take about 7-8 days and 1-3 days each. The first step can be shortened to about 2-3 days if aoflagging and A-team clipping is turned off. While the configuration can be adapted to your particular cluster specifications, **we recommend at least 32 cores and 192 GB RAM**. Larger number of cores will help reduce the runtime of the pipeline.
+
+The total data volume will reach about 2.5 times that of the raw dataset downloaded from the LTA. If the data is dysco compressed, it will be between 4-6 TB (depending on the number of international stations participating) meaning you will need 10 - 15 TB available. A pre-dysco compression dataset will be around 20 TB and you will need about 50 TB of available disk space. 
+
+.. note::
+    Do not forget to check whether your data is dysco compressed! When you stage your data at the LTA you will get a summary of how big it will be.  You will need 2.5 times this size in disk space.
 
 Software Requirements
 ^^^^^^^^^^^^^^^^^^^^^
@@ -20,7 +39,7 @@ The software dependencies for the LOFAR-VLBI pipeline and prefactor are listed b
 .. note::
     Fortunately, everything has been packaged into a singularity image, which can be found here:
 
-    https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp@e7512b7e92e5a3124e6ed177650e99a8c4eb2263.sif?action=show
+    https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp@e7512b7e92e5a3124e6ed177650e99a8c4eb2263_with_pyvo.sif
 
     This version has been tested, but does not work with the -H flag in the h5exp_gsm step in the prefactor Pre-Facet-Target.parset, so you have to remove that manually. 
 
@@ -57,3 +76,6 @@ These can both be installed from their respective repositories, or with pip via:
    
    git clone https://github.com/lofar-astron/RMextract
    pip install -e RMextract
+
+
+.. _genericpipeline: https://www.astron.nl/citt/genericpipeline/
