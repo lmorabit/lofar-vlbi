@@ -75,7 +75,7 @@
 
 pipeline.steps = [ setup, selfcal ]
  
-pipeline.steps.setup = [ targetdata_map, targetdata_map_list, parallel_split, caldata_map, cal_model, h5parm_map, sourcedb_map ]
+pipeline.steps.setup = [ targetdata_map, targetdata_map_list, parallel_split, caldata_map, correct_beam, cal_model, h5parm_map, sourcedb_map ]
 pipeline.steps.selfcal = [ tecsolve, plot_tec, apply_tec, selfcal ]
 
 ###########################################################################
@@ -126,6 +126,14 @@ caldata_map.control.mapfile_dir		= input.output.mapfile_dir
 caldata_map.control.filename		= caldata_map.mapfile
 caldata_map.control.folder		= {{ job_directory }}
 caldata_map.control.pattern		= *imdir.ms
+
+# correct the beam for the array_factor
+correct_beam.control.type                       = pythonplugin
+correct_beam.control.executable                 = {{ scripts }}/correct_array_factor.py
+correct_beam.control.mapfile_in                 = caldata_map.output.mapfile
+correct_beam.control.inputkey                   = msin
+correct_beam.argument.mslist                    = msin
+correct_beam.argument.results_dir               = {{ inspection_dir }}
 
 # generate point source models with skynet
 cal_model.control.type			= pythonplugin
