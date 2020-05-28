@@ -228,18 +228,20 @@ def chan2write (output, a):
     fo.write('\n')
     fo.close()
 
-def fake_telescope( msfile ):
+def fake_telescope( msfile, revert=False ):
     obs_table = ct.table( msfile + '::OBSERVATION', readonly=False )
-    obs_table.putcol('TELESCOPE_NAME','VLBA')
-    obs_table.flush()
+    if revert:
+        obs_table.putcell('TELESCOPE_NAME',0, 'LOFAR')
+    else:
+        obs_table.putcell('TELESCOPE_NAME',0, 'EVN')
     obs_table.close()
 
 def find_good_chans( fitsfile ):
-
     f = fits.open( fitsfile, readonly=False )
     ## get data
     mydata = f[0].data
     myvis = np.squeeze( mydata['DATA'] )
+    ## structure is: [time,bl,pol,X] where X = [real, imag, weight]
     real = myvis[:,:,0,0] * myvis[:,:,3,0]
     ## ms2uvfits converts nans to zeros, and flagged data to zeros (?) so search for zeros
     goodchans = [ x for x in np.arange(real.shape[1]) if np.sum(real[:,x]) != 0. ]
@@ -331,12 +333,18 @@ def file2fits(infile,datacolumn):
         if not os.path.isfile( fitsfile ):
             ## check length of fitsfile name
             nchar = len( fitsfile.split('/')[-1] )
-	    if nchar > 90:
+	    if nchar > 80:
 		tmp = fitsfile.split('/')
 		modname = tmp[-1].split('_')[0] + '.fits'
 		tmp[-1] = modname
 		fitsfile = '/'.join(tmp)
+	    ## fake the telescope name so ASTRON-specific format (which converts some real data to zeros) isn't written
+            #fake_telescope( infile, revert=False )
             os.system('ms2uvfits in=%s out=%s writesyscal=F'%(infile,fitsfile))
+            ## change telescope name back
+            #fake_telescope( infile, revert=True )
+            ## change telescope name in uvfits file
+            
 
     ## find the good channels (i.e., not empty) from the fits file
     chan_file = insert_into_filestem( fitsfile, 'dchan_' )
@@ -546,6 +554,7 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
 
     ## make a working directory, move the data, and chdir
     # get filestem to make unique name
+    infile = infile.rstrip('/')
     tmp = infile.split('/')
     filestem = tmp[-1].split('_')[0] 
     # working directory
@@ -579,7 +588,7 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
 
     ## get frequency axis
     myspw = ct.table( infile + '::SPECTRAL_WINDOW' )
-    freq_ax = np.squeeze( myspw.getcol('CHAN_FREQS') )
+    freq_ax = np.squeeze( myspw.getcol('CHAN_FREQ') )
     myspw.close()
 
     ## combine XX and YY information and reformat axes
@@ -671,7 +680,8 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
 
     ## run wsclean 
     wsclean_name = filestem + '_wsclean' 
-    ss = 'wsclean -j 16 -mem 40 -v -reorder -update-model-required -weight uniform -mf-weighting -weighting-rank-filter 3 -name {:s} -size 1024 1024 -padding 1.4 -scale 0.05asec -channels-out 6 -data-column CORRECTED_DATA -niter 10000 -auto-threshold 3 -auto-mask 5 -mgain 0.8 -join-channels -fit-spectral-pol 3 -fit-beam {:s}'.format( wsclean_name, infile )
+    ## convert the im params to wsclean format
+    ss = 'wsclean -j 16 -mem 20 -v -reorder -update-model-required -weight uniform -mf-weighting -weighting-rank-filter 3 -name {:s} -size {:s} {:s} -padding 1.4 -scale {:s}asec -channels-out 6 -data-column CORRECTED_DATA -niter 10000 -auto-threshold 3 -auto-mask 5 -mgain 0.8 -join-channels -fit-spectral-pol 3 -fit-beam {:s}'.format( wsclean_name, str(map_size), str(map_size), str(float(pix_size)*0.001), infile )
     os.system( ss )
 
     ## TO DO: move final files
@@ -686,6 +696,11 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
         ff = myfile.split('/')[-1]
         ss = 'mv {:s} {:s}'.format( myfile, os.path.join( current_dir, ff ) )
         os.system( ss )
+    ## move the infile back and rename it
+    tmp = infile.split('/')[-1]
+    new_file = tmp + '.selfcal'
+    selfcal_file = os.path.join( current_dir, new_file )
+    os.system( 'cp -r {:s} {:s}'.format( infile, selfcal_file ) )
 
     print( 'done' )
     
