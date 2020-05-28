@@ -25,13 +25,19 @@ Optional: ddf-pipeline
 
 This is an optional step which is only relevant if you wish to progress to wide-field imaging afterwards, and is not necessary to run the pipeline. It is also necessary in the case where your field has not been covered yet by LoTSS, to generate a catalogue of sources in the field, which is used by the LOFAR-VLBI pipeline to help select the best candidate for in-field calibration. If you can query sources in your field with the `LoTSS catalogue server`_ then you do not need to generate this catalogue. 
 
-Follow the instructions for the `ddf-pipeline`_ , using the LoTSS default settings. This operates on the results of Pre-Facet-Target and will provide:
+.. note::
+    The recommended singularity image works with prefactor and the LOFAR-VLBI pipeline, but not the ddf-pipeline.  Please refer to the `ddf-pipeline`_ documentation for its separate software requirements. 
+
+
+The ddf-pipeline requires some advanced user knowledge to set up and run. Surveys KSP data can be processed through the ddf-pipeline for you; please contact lofar-admin@strw.leidenuniv.nl . Collaborative projects with the Surveys KSP are also possible, if you have your own data and want it processing through the SKSP infrastructure. Please contact lofar-admin@strw.leidenuniv.nl for more details.  The `ddf-pipeline`_  repository includes instructions. Please use the LoTSS default settings. This operates on the results of Pre-Facet-Target and will provide:
 
 * additional phase solutions for core and remote stations
 * a self-calibrated image at 6" resolution
-* a catalogue of sources in the field
+* an initial catalogue of sources in the field
 
-The long baseline pipeline **requires** the information on the sources, either from this output catalogue or the `LoTSS catalogue server`_ , and if you run the ddf-pipeline it can use the additional phase solutions (but this is not required). We recommend skipping this step if your field is already in the `LoTSS catalogue server`_ unless you wish do do wide-field imaging at high resolution, rather than imaging science targets in a few (or one) directions. 
+To generate the final catalogue, use the *quality_pipeline.py* script (found in the `ddf-pipeline`_ *scripts* sub-directory) with an appropriate configuration file (the example *quality-example.cfg* is in the *examples* sub-directory). The bootstrap catalogues can be downloaded from here: https://www.extragalactic.info/bootstrap/ .
+
+The LOFAR-VLBI pipeline **requires** the information on the sources, either from this output catalogue or the `LoTSS catalogue server`_ , and if you run the ddf-pipeline it can use the additional phase solutions (but this is not required). We recommend skipping this step if your field is already in the `LoTSS catalogue server`_ unless you wish do do wide-field imaging at high resolution, rather than imaging science targets in a few (or one) directions. 
 
 
 ===============================
@@ -62,7 +68,7 @@ Once all parameters are set, the pipeline can be run as, for example::
 Using your own catalogue
 ========================
 
-The pipeline will automatically try to download information from both the `LBCS catalogue server`_ and the `LoTSS catalogue server`_. Both of these are required to help select the best in-field calibrator. You can generate an appropriate catalogue to replace the LoTSS catalogue by running the `ddf-pipeline`_. The output catalogue will be named *image_full_ampphase_di_m.NS.offset_cat.fits*.  The only thing you need to do is convert this to a csv file, and then update the following line in **Delay-Calibration.parset**::
+The pipeline will automatically try to download information from both the `LBCS catalogue server`_ and the `LoTSS catalogue server`_. Both of these are required to help select the best in-field calibrator. You can generate an appropriate catalogue to replace the LoTSS catalogue by running the `ddf-pipeline`_ and then the *quality_pipeline.py* script. The output catalogue will be named *image_full_ampphase_di_m.NS.cat.fits*.  The only thing you need to do is convert this to a csv file, and then update the following line in **Delay-Calibration.parset**::
 
     ! lotss_skymodel         = {{ results_directory }}/lotss_catalogue.csv
 
@@ -83,6 +89,16 @@ The **Delay-Calibration** step generates some output catalogues, which are store
 
 Once the **Delay-Calibration** step has run, you can simply edit or replace the *image_catalogue.csv* file to include only the source(s) you wish to image. The more directions you want to image, the longer the pipeline will take, so you should really limit this to your target of interest. The file needs to be in **csv format** with the **same column names** as *image_catalogue.csv* and flux densities in Janskys.
 
+Selecting imaging parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, the pipeline will run self-calibration using difmap. This is an order of magnitude faster (usually ~30 min) than any self-calibration using native LOFAR tools, and already optimised for VLBI. Difmap operates on the XX and YY polarisations independently, but the self-calibration script converts these solutions to an h5parm, applies them, and makes a Stokes I image from the corrected data using wsclean. The final self-calibrated dataset will have TEC-corrected, un-self-calibrated data in the **DATA** column and TEC + self-cal corrected data in the **CORRECTED_DATA** column. The user is free to perform more self-calibration, or re-do the self-calibration, using any tools they wish. The data at this point is already corrected for beam effects (including the array factor), so you are free to use any imaging / gain calibration software you like.
+
+The self-calibration script run by the pipeline has the following default parameters:
+* Number of pixels = 512
+* Pixel scale = 50 milli-arcsec
+
+This gives an image which is 25.6 x 25.6 arcseconds. If your source is larger than this, you will need to adjust the number of pixels, following the convention of using powers of 2 (512,1024,2048,... etc.). 
    
 .. _help:
 
