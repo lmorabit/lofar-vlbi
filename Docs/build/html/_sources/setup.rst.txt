@@ -23,13 +23,17 @@ The LOFAR-VLBI pipeline makes use of prefactor solutions to apply to the data. T
 Optional: ddf-pipeline
 ======================
 
-This is an optional step which is only relevant if you wish to progress to wide-field imaging afterwards, and is not necessary to run the pipeline. It is also necessary in the case where your field has not been covered yet by LoTSS, to generate a catalogue of sources in the field, which is used by the LOFAR-VLBI pipeline to help select the best candidate for in-field calibration. If you can query sources in your field with the `LoTSS catalogue server`_ then you do not need to generate this catalogue. 
+This is an optional step and is not necessary to run the pipeline unless you do not have a LoTSS-style catalogue for your field. The ddf-pipeline requires some advanced user knowledge to set up and run, so please contact lofar-admin@strw.leidenuniv.nl if you are considering doing this step. If you are using Surveys data it may have already been run for your pointing; if not, we can help. 
+Collaborative projects with the Surveys KSP are also possible, if you have your own data and want it processed through the SKSP infastructure to carry out this step. Contact lofar-admin@strw.leidenuniv.nl for more details. 
+
+
+This step is only necessary in the case where your field has not been covered yet by LoTSS, to generate a catalogue of sources in the field which is used by the LOFAR-VLBI pipeline to help select the best candidate for in-field calibration. If you can query sources in your field with the `LoTSS catalogue server`_ then you do not need to generate this catalogue. 
 
 .. note::
-    The recommended singularity image works with prefactor and the LOFAR-VLBI pipeline, but not the ddf-pipeline.  Please refer to the `ddf-pipeline`_ documentation for its separate software requirements. 
+    The recommended singularity image works with prefactor and the LOFAR-VLBI pipeline, but not the ddf-pipeline.  Please refer to the `ddf-pipeline`_ documentation for its separate software requirements, or contact lofar-admin@strw.leidenuniv.nl .
 
 
-The ddf-pipeline requires some advanced user knowledge to set up and run. Surveys KSP data can be processed through the ddf-pipeline for you; please contact lofar-admin@strw.leidenuniv.nl . Collaborative projects with the Surveys KSP are also possible, if you have your own data and want it processing through the SKSP infrastructure. Please contact lofar-admin@strw.leidenuniv.nl for more details.  The `ddf-pipeline`_  repository includes instructions. Please use the LoTSS default settings. This operates on the results of Pre-Facet-Target and will provide:
+The `ddf-pipeline`_  operates on the results of Pre-Facet-Target and provides:
 
 * additional phase solutions for core and remote stations
 * a self-calibrated image at 6" resolution
