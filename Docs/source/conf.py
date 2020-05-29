@@ -22,7 +22,7 @@ copyright = '2020, Leah Morabito'
 author = 'Leah Morabito'
 
 # The full version, including alpha/beta/rc tags
-release = 'V2.5'
+release = 'V3.0.0'
 
 
 # -- General configuration ---------------------------------------------------
