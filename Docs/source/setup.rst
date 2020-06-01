@@ -2,6 +2,20 @@
 Setting Up and Running the LOFAR-VLBI pipeline
 **********************************************
 
+=================
+Selecting a field 
+=================
+
+Before beginning any data processing, it is important to keep several things in mind. First, the pipeline assumes that you are giving it something sensible, and it does not (yet) make any quality checks. That means if you give it data which it cannot handle, you will not get quality results. Before you select a field, please follow these guidelines:
+
+* **Ionosphere:** should not be particularly bad. Check inspection plots from the observatory.  If it's been processed successfully by the Surveys KSP infrastructure, it should be okay.
+* **Field of View:** The Surveys standard averaging is 16 channels/SB and 1 sec, which limits the Field of View (FoV) to ~1.25 deg from the centre. Your target and LBCS calibrators should be inside this.
+* **Distance between calibrator and target:** An acceptable value will vary based on ionosphere and the distribution of sources in the field. As a rule of thumb, 1 degree separation *should* be okay, but it is safer to look for a calibrator within 0.5 degrees. The pipeline will pick the best in-field calibrator if there are multiple choices, but you can always manually phase reference a calibrator closer to your target from a more distant calibrator.
+* **Flux Density:** In principle the limiting rms noise will be ~100 uJy/bm for an 8 hour observation. In practice, the quality of your image / amount you have to self-calibrate will depend on all of the factors above, including the distance from the phase centre of the observation. 
+* **Source structure:** Keep in mind that not all point sources at 6" resolution are point sources at 0.3" resolution. If you expect your 1 mJy/bm source to break equally into 4 components, each component will only be 250 uJy/bm and therefore only a 2.5 sigma detection for 100 uJy/bm rms. 
+
+As an example, a good field will have: the target within ~ 1 degree from the pointing centre, an LBCS calibrator < 0.5 degrees from your target, no bright (> 1 Jy) sources within ~ 1 degree, and reasonable to good ionospheric conditions.
+
 =============================
 Preparing the data: Prefactor
 =============================
