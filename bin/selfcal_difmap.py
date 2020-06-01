@@ -16,177 +16,174 @@ from astropy.coordinates.representation import UnitSphericalRepresentation
 #     and PGPLOT_DIR=/soft/pgplot  (or wherever pgplot lives)
 #  these are both in the singularity image!!
 
-
-def find_first_unflagged_ant( msfile ):
-    ant_t = ct.taql( 'select ANTENNA1 from {:s} where all(FLAG) limit 1'.format(msfile) )
-    ant_idx = ant_t.getcol('ANTENNA1')[0]
-    ant_table = ct.table( msfile + '::ANTENNA' )
-    ant_names = ant_table.getcol('NAME')
-    first_ant = ant_names[ant_idx]
-    ant_table.close()
-    return( first_ant )
-
 def make_ant_table( station_list ):
 
     tied = {'ST001': np.array([3826557.5, 461029.06, 5064908],
-                              dtype='float32')}
+                              dtype='float64')}
 
     core = {'CS001HBA0': np.array([3826896.235, 460979.455, 5064658.203],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS001HBA1': np.array([3826979.384, 460897.597, 5064603.189],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS002HBA0': np.array([3826600.961, 460953.402, 5064881.136],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS002HBA1': np.array([3826565.594, 460958.110, 5064907.258],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS003HBA0': np.array([3826471.348, 461000.138, 5064974.201],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS003HBA1': np.array([3826517.812, 461035.258, 5064936.15],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS004HBA0': np.array([3826585.626, 460865.844, 5064900.561],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS004HBA1': np.array([3826579.486, 460917.48, 5064900.502],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS005HBA0': np.array([3826701.16, 460989.25, 5064802.685],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS005HBA1': np.array([3826631.194, 461021.815, 5064852.259],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS006HBA0': np.array([3826653.783, 461136.440, 5064824.943],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS006HBA1': np.array([3826612.499, 461080.298, 5064861.006],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS007HBA0': np.array([3826478.715, 461083.720, 5064961.117],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS007HBA1': np.array([3826538.021, 461169.731, 5064908.827],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS011HBA0': np.array([3826637.421, 461227.345, 5064829.134],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS011HBA1': np.array([3826648.961, 461354.241, 5064809.003],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS013HBA0': np.array([3826318.954, 460856.125, 5065101.85],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS013HBA1': np.array([3826402.103, 460774.267, 5065046.836],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS017HBA0': np.array([3826405.095, 461507.460, 5064978.083],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS017HBA1': np.array([3826499.783, 461552.498, 5064902.938],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS021HBA0': np.array([3826463.502, 460533.094, 5065022.614],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS021HBA1': np.array([3826368.813, 460488.057, 5065097.759],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS024HBA0': np.array([3827218.193, 461403.898, 5064378.79],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS024HBA1': np.array([3827123.504, 461358.861, 5064453.935],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS026HBA0': np.array([3826418.227, 461805.837, 5064941.199],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS026HBA1': np.array([3826335.078, 461887.696, 5064996.213],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS028HBA0': np.array([3825573.134, 461324.607, 5065619.039],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS028HBA1': np.array([3825656.283, 461242.749, 5065564.025],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS030HBA0': np.array([3826041.577, 460323.374, 5065357.614],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS030HBA1': np.array([3825958.428, 460405.233, 5065412.628],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS031HBA0': np.array([3826383.037, 460279.343, 5065105.85],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS031HBA1': np.array([3826477.725, 460324.381, 5065030.705],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS032HBA0': np.array([3826864.262, 460451.924, 5064730.006],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS032HBA1': np.array([3826947.411, 460370.066, 5064674.992],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS101HBA0': np.array([3825899.977, 461698.906, 5065339.205],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS101HBA1': np.array([3825805.288, 461653.869, 5065414.35],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS103HBA0': np.array([3826331.59, 462759.074, 5064919.62],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS103HBA1': np.array([3826248.441, 462840.933, 5064974.634],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS201HBA0': np.array([3826679.281, 461855.243, 5064741.38],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS201HBA1': np.array([3826690.821, 461982.139, 5064721.249],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS301HBA0': np.array([3827442.564, 461050.814, 5064242.391],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS301HBA1': np.array([3827431.025, 460923.919, 5064262.521],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS302HBA0': np.array([3827973.226, 459728.624, 5063975.3],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS302HBA1': np.array([3827890.077, 459810.483, 5064030.313],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS401HBA0': np.array([3826795.752, 460158.894, 5064808.929],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS401HBA1': np.array([3826784.211, 460031.993, 5064829.062],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS501HBA0': np.array([3825568.82, 460647.62, 5065683.028],
-                                  dtype='float32'),
+                                  dtype='float64'),
             'CS501HBA1': np.array([3825663.508, 460692.658, 5065607.883],
-                                  dtype='float32')}
+                                  dtype='float64')}
 
     antenna_soltab = {'RS106HBA': np.array([3829205.598, 469142.533000,
-                                            5062181.002], dtype='float32'),
+                                            5062181.002], dtype='float64'),
                       'RS205HBA': np.array([3831479.67, 463487.529000,
-                                            5060989.903], dtype='float32'),
+                                            5060989.903], dtype='float64'),
                       'RS208HBA': np.array([3847753.31, 466962.809000,
-                                            5048397.244], dtype='float32'),
+                                            5048397.244], dtype='float64'),
                       'RS210HBA': np.array([3877827.56186, 467536.604956,
-                                            5025445.584], dtype='float32'),
+                                            5025445.584], dtype='float64'),
                       'RS305HBA': np.array([3828732.721, 454692.421000,
-                                            5063850.334], dtype='float32'),
+                                            5063850.334], dtype='float64'),
                       'RS306HBA': np.array([3829771.249, 452761.702000,
-                                            5063243.181], dtype='float32'),
+                                            5063243.181], dtype='float64'),
                       'RS307HBA': np.array([3837964.52, 449627.261000,
-                                            5057357.585], dtype='float32'),
+                                            5057357.585], dtype='float64'),
                       'RS310HBA': np.array([3845376.29, 413616.564000,
-                                            5054796.341], dtype='float32'),
+                                            5054796.341], dtype='float64'),
                       'RS404HBA': np.array([0.0, 0.0, 0.0],
-                                           dtype='float32'),  # not operational
+                                           dtype='float64'),  # not operational
                       'RS406HBA': np.array([3818424.939, 452020.269000,
-                                            5071817.644], dtype='float32'),
+                                            5071817.644], dtype='float64'),
                       'RS407HBA': np.array([3811649.455, 453459.894000,
-                                            5076728.952], dtype='float32'),
+                                            5076728.952], dtype='float64'),
                       'RS409HBA': np.array([3824812.621, 426130.330000,
-                                            5069251.754], dtype='float32'),
+                                            5069251.754], dtype='float64'),
                       'RS410HBA': np.array([0.0, 0.0, 0.0],
-                                           dtype='float32'),  # not operational
+                                           dtype='float64'),  # not operational
                       'RS503HBA': np.array([3824138.566, 459476.972,
-                                            5066858.578], dtype='float32'),
+                                            5066858.578], dtype='float64'),
                       'RS508HBA': np.array([3797136.484, 463114.447,
-                                            5086651.286], dtype='float32'),
+                                            5086651.286], dtype='float64'),
                       'RS509HBA': np.array([3783537.525, 450130.064,
-                                            5097866.146], dtype='float32'),
+                                            5097866.146], dtype='float64'),
                       'DE601HBA': np.array([4034101.522, 487012.757,
-                                            4900230.499], dtype='float32'),
+                                            4900230.499], dtype='float64'),
                       'DE602HBA': np.array([4152568.006, 828789.153,
-                                            4754362.203], dtype='float32'),
+                                            4754362.203], dtype='float64'),
                       'DE603HBA': np.array([3940295.706, 816722.865,
-                                            4932394.416], dtype='float32'),
+                                            4932394.416], dtype='float64'),
                       'DE604HBA': np.array([3796379.823, 877614.13,
-                                            5032712.528], dtype='float32'),
+                                            5032712.528], dtype='float64'),
                       'DE605HBA': np.array([4005681.02, 450968.643,
-                                            4926458.211], dtype='float32'),
+                                            4926458.211], dtype='float64'),
                       'FR606HBA': np.array([4324016.708, 165545.525,
-                                            4670271.363], dtype='float32'),
+                                            4670271.363], dtype='float64'),
                       'SE607HBA': np.array([3370271.657, 712125.881,
-                                            5349991.165], dtype='float32'),
+                                            5349991.165], dtype='float64'),
                       'UK608HBA': np.array([4008461.941, -100376.609,
-                                            4943716.874], dtype='float32'),
+                                            4943716.874], dtype='float64'),
                       'DE609HBA': np.array([3727217.673, 655109.175,
-                                            5117003.123], dtype='float32'),
+                                            5117003.123], dtype='float64'),
                       'PL610HBA': np.array([3738462.416, 1148244.316,
-                                            5021710.658], dtype='float32'),
+                                            5021710.658], dtype='float64'),
                       'PL611HBA': np.array([3850980.881, 1438994.879,
-                                            4860498.993], dtype='float32'),
+                                            4860498.993], dtype='float64'),
                       'PL612HBA': np.array([3551481.817, 1334203.573,
-                                            5110157.41], dtype='float32'),
+                                            5110157.41], dtype='float64'),
                       'IE613HBA': np.array([3801692.0, -528983.94,
-                                            5076958.0], dtype='float32')}
+                                            5076958.0], dtype='float64')}
 
+
+    for a in station_list:
+        if a[:2] == 'ST':
+            antenna_soltab.update(tied)  # there will only be the tied station
+        if a[:2] == 'CS':
+            antenna_soltab.update(core)
+            break  # only add the core stations to the antenna table once
 
     keys_to_remove = []
     for key in antenna_soltab:
@@ -196,14 +193,8 @@ def make_ant_table( station_list ):
     for k in keys_to_remove:
         antenna_soltab.pop(k, None)
 
-    for a in station_list:
-        if a[:2] == 'ST':
-            antenna_soltab.update(tied)  # there will only be the tied station
-        if a[:2] == 'CS':
-            antenna_soltab.update(core)
-            break  # only add the core stations to the antenna table once
-
     return( antenna_soltab )
+
 
 def insert_into_filestem( infile, insert ):
     tmp = infile.split('/')
@@ -266,20 +257,43 @@ def find_chan_ms (filename,datacolumn="CORRECTED_DATA",flagname="FLAG"):
     ms.close()
     return goodchans
 
-# convert corplt output to an amp/phase array - note
-# that the UTs are arbitrary **** needs fixing ****
+# convert corplt output to an amp/phase array 
 def corplt2array(corpltfile):
     f = open(corpltfile)
     fc = f.readlines()
     f.close()
     ut=[]
+    ## get a list of stations and indices
+    ss = "grep 'Stn' {:s} > ant_list.txt".format( corpltfile )
+    os.system( ss )
+    with open( 'ant_list.txt', 'r' ) as f:
+        lines = []
+        for l in f:
+            lines.append(l.rstrip('\n'))
+    ant_idx = []
+    ant_name = []
+    tmp_name = 'fred'
+    for l in lines:
+        ant_idx.append(l.split()[1])
+        tmp = l.split()[3]
+        if tmp[0:2] == 'CS':
+            if tmp == tmp_name:
+                ant_name.append(tmp+'1')
+            else:
+                ant_name.append(tmp+'0')
+                tmp_name = tmp
+        else:
+            ant_name.append(l.split()[3])
     stn = np.array([],dtype='S')
     for l in fc:
         ls = l.split()
         if not len(ls):
             continue
         if ls[0]=='Stn':
-            stn = np.append(stn,ls[3])
+            ## reference antenna list to get the right name
+            tmp_idx = ls[1]
+            tmp_stn = [ y for x,y in zip(ant_idx,ant_name) if x == tmp_idx ][0]
+            stn = np.append(stn,tmp_stn)
         if len(ls)==4 and ls[0] in ['Amp','Phs']:
             ut.append(float(ls[1]))  # faster than numpy append    
     ut = np.unique(np.asarray(ut,dtype=np.float64))
