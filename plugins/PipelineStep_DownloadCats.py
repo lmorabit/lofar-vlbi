@@ -259,16 +259,16 @@ def find_close_objs(lo, lbcs, tolerance=5.):
                     total_ft.append( sum_digits( tmp ) )
 
 	        ## pick the one with the highest number of P's -- if tie, use total_ft
-		best_idx = np.where( num_P == np.max( num_P ) )[0]
+		best_idx = np.where( num_P == np.max( num_P ) )[0]  ## this is an array
 	        if len( best_idx ) == 1:
-		    good_idx.append(idx[best_idx][0])
+		    good_idx.append(idx[best_idx][0])  ## idx[best_idx][0] is a number
 		if len( best_idx ) > 1:
 		    currentmax = 0.0 
                     for i in range(0,len(best_idx)):
 		        if total_ft[best_idx[i]] > currentmax:
 			    currentmax = total_ft[best_idx[i]]
                             ft_idx = i
-		    good_idx.append( idx[best_idx[ft_idx]][0] )
+		    good_idx.append( idx[best_idx[ft_idx]] )
             else:
 		good_idx.append(idx[0])
 
