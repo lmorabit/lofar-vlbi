@@ -134,6 +134,8 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
         tb_final['Resolved'] = resolved
         tb_final.rename_column('Source_Name', 'Source_id')
 
+        tb_final.write( outfile, format='csv' )
+
     return tb_final
 
 def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
@@ -200,6 +202,8 @@ def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
                 ft_total.append( sum_digits( tb[xx]['FT_Goodness'] ) )
             ft_col = Column( ft_total, name='FT_total' )
             tb.add_column( ft_col )
+
+        tb.write( outfile, format='csv' )
 
     return tb
 
