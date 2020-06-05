@@ -62,7 +62,10 @@ def main (vis, delayCalFile='' ):
     src_names = []
     for src_id in src_ids:
 	if type( src_id ) != str:
-            val = 'S'+str(src_id)
+            if str(src_id)[0:1] == 'I':
+		val = str(src_id)
+            else:
+                val = 'S'+str(src_id)
 	else:
 	    val = src_id
         src_names.append(val)
