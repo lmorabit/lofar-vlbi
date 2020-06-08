@@ -9,6 +9,8 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from astropy.coordinates import angle_utilities
 from astropy.coordinates.representation import UnitSphericalRepresentation
+from astropy.table import Table
+import bdsf
 
 #  The difmap installation must be built with the modified corplt.c 
 #     from  https://github.com/nealjackson/loop3_difmap
@@ -368,7 +370,7 @@ def file2fits(infile,datacolumn):
     return fitsfile
 
 # Write and execute the difmap script
-def dif_script (infile,pol='XX',aipsno=340,clean_sigma=6,map_size=512,\
+def dif_script (infile,pol='I',aipsno=340,clean_sigma=6,map_size=512,\
                 pixel_size=100,obs_length=900,datacolumn='CORRECTED_DATA',\
                 startmod=True):
 
@@ -386,6 +388,7 @@ def dif_script (infile,pol='XX',aipsno=340,clean_sigma=6,map_size=512,\
     fsel = open (chan_file)
     fs.write('%s'%fsel.readline().replace('I',pol))
     fsel.close()
+    fs.write('selftaper 0.5,0.025\n')
     fs.write('mapsize map_size,pixel_size\n')
     fs.write('startmod "",1\n' if startmod else 'clean\n')
     fs.write('peakwin 1.5\nselfcal false,false,0\n')
@@ -418,9 +421,19 @@ def dif_script (infile,pol='XX',aipsno=340,clean_sigma=6,map_size=512,\
     local_fits = fitsfile.split('/')[-1]
     fs.write('device %s.ps/vps\ncorplot\n'%local_fits.replace('.fits','_auto%s.p'%pol))
     fs.write('device /NULL\nmapl\ncmul=3*imstat(rms)\n')
-    fs.write('device %s.ps/vps\nmapl clean,false\n' % \
-             local_fits.replace('.fits','_auto%s'%pol))
-    fs.write('save %s\nquit\n' % local_fits.replace('.fits','_auto%s'%pol))
+    fs.write('device %s.ps/vps\nmapl clean,false\n' % local_fits.replace('.fits','_auto%s'%pol))
+    fs.write('save %s\n' % local_fits.replace('.fits','_auto%s'%pol) )
+    ## make a 6 arcsec ish image
+    fs.write('selftaper 0\n')
+    fs.write('uvrange 0,0.05\n')
+    fs.write('uvtaper 0.1,0.03\n')
+    fs.write('device %s_uvcut.ps/vps\n'%local_fits.replace('.fits','_auto%s'%pol))
+    fs.write('mapsize 256,1000\n')
+    fs.write('restore 6000\n')
+    fs.write('mapl clean,false\n')
+    fs.write('device /NULL\n' )
+    fs.write('wmap %s_uvcut.fits\n'%local_fits.replace('.fits','_auto%s'%pol) )
+    fs.write('quit\n')
     fs.close()
     os.system('difmap <dif_script')
     return fitsfile
@@ -561,11 +574,10 @@ def lof_coords( myskycoord ):
 #    in AIPS and mapped, *If no AIPS and no good-channel file, exit with error*.
 # We assume that XX and YY have the same number of telescopes and UTs, and also
 #    the same bad/missing channels, and image separately for separate XX/YY corrs
-def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False ):
+def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False, pols='I', catalogue=None ):
 
     # current working directory
     current_dir = os.getcwd()
-
     ## make a working directory, move the data, and chdir
     # get filestem to make unique name
     infile = infile.rstrip('/')
@@ -578,26 +590,82 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
     os.chdir( work_dir )
     ## redefine infile
     infile = glob.glob( os.path.join( work_dir, tmp[-1] ) )[0]
-    # write a difmap script for the XX polarisation and run
-    fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
-    ## plot solutions and get values
-    corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
-    ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array(corpltfile)
-    corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_XX'), filestem )
-    os.system('mv {:s} {:s}'.format( corpltfile, corpltout ) )
-    ## write a difmap script for the YY polarisation and run
-    fitsfile = dif_script(infile, pol='YY', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
-    ## plot solutions and get values
-    corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
-    ampYY,amperrYY,phsYY,phserrYY,utYY,stnYY = corplt2array(corpltfile)
-    corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_YY'), filestem )
-    os.system('mv {:s} {:s}'.format( corpltfile, corpltout ) )
+
+    ## if a catalogue is specified, override the imaging parameters
+    if catalogue is not None:
+        print( 'Catalogue is specified, reading information to set imaging parameters.' )
+        ## get ra and dec
+        [[[ra,dec]]] = ct.table( infile + '::FIELD', readonly=True ).getcol('PHASE_DIR' )
+        # => shift for the negative angles before the conversion to deg (so that RA in [0;2pi])
+        if ra<0:
+            ra=ra+2*np.pi
+        # convert radians to degrees
+        ra_deg =  ra/np.pi*180.
+        dec_deg = dec/np.pi*180.
+        tgt_coords = SkyCoord( ra_deg, dec_deg, unit='deg' )       
+
+	t = Table.read( catalogue, format='csv' )
+        coords = SkyCoord( t['RA'], t['DEC'], unit='deg' )
+        seps = coords.separation(tgt_coords).value
+	src_idx = np.where( seps == np.min(seps) )[0]
+	src_tmp = t[src_idx]
+	## use LGZ_Size if available, otherwise use DC_Maj
+	if 'LGZ_Size' in src_tmp.colnames:
+	    ## in arcsec
+	    size_asec = src_tmp['LGZ_Size'][0]
+        else:
+            size_asec = src_tmp['DC_Maj'][0] * 60. * 60.
+
+	padding = 1.5
+	possible_map_sizes = np.array([512,1024,2048,4096,8192])
+        possible_map_asec = possible_map_sizes * float(pix_size) * 1e-3  ## convert to arcsec
+	possible_idx = np.where( size_asec*padding <= possible_map_asec )[0] 
+        if len( possible_idx ) >= 1:
+            map_size = possible_map_sizes[np.min( possible_idx )]
+            print( 'Estimated source size {:s}, making image with {:s}x{:s} pixels ({:s}x{:s} arcsec)'.format( str(size_asec), str(map_size), str(map_size), str(map_size*float(pix_size)*1e-3), str(map_size*float(pix_size)*1e-3) ) )
+	else:
+	    print( 'Image size exceeds {:s} arcseconds! Are you sure you want to make this image?'.format( str(np.max(possible_map_asec)) ) )
+            print( 'Image size too large, aborting.' )
+            return
+
+        total_flux = src_tmp['Total_flux'][0]
+
+    if pols == 'I':
+        ## use stokes I only for self-cal and imaging (best option)
+        fitsfile = dif_script( infile, pol=pols, clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
+        corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
+        ampI,amperrI,phsI,phserrI,utI,stnI = corplt2array(corpltfile)
+        corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_I'), filestem )
+        os.system('mv {:s} {:s}'.format( corpltfile, corpltout ) )
+    else:
+        ## self-cal the polarisations separately
+        ## create a difmap script
+        fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
+        ## plot solutions and get values
+        corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
+        ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array(corpltfile)
+        corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_XX'), filestem )
+        os.system('mv {:s} {:s}'.format( corpltfile, corpltout ) )
+        ## write a difmap script for the YY polarisation and run
+        fitsfile = dif_script(infile, pol='YY', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
+        ## plot solutions and get values
+        corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
+        ampYY,amperrYY,phsYY,phserrYY,utYY,stnYY = corplt2array(corpltfile)
+        corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_YY'), filestem )
+        os.system('mv {:s} {:s}'.format( corpltfile, corpltout ) )
+
+    if pols == 'I':
+        ut = utI
+        stn = stnI
+    else:
+        ut = utXX
+        stn = stnXX
 
     ## convert time axis to lofar times
     myms = ct.table( infile )
     lof_times = myms.getcol('TIME')
     myms.close()
-    utvec = utXX - np.min(utXX)
+    utvec = ut - np.min(ut)
     time_ax = utvec + np.min(lof_times)
 
     ## get frequency axis
@@ -605,9 +673,14 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
     freq_ax = np.squeeze( myspw.getcol('CHAN_FREQ') )
     myspw.close()
 
-    ## combine XX and YY information and reformat axes
-    tmp_amp = np.rollaxis(np.dstack((ampXX,ampYY)),1,0)
-    tmp_phs = np.rollaxis(np.dstack((phsXX,phsYY)),1,0)
+    if pols == 'I':
+	## split the stokes I correction across XX and YY
+        tmp_amp = np.rollaxis(np.dstack((np.sqrt(ampI/2.),np.sqrt(ampI/2.))),1,0)
+        tmp_phs = np.rollaxis(np.dstack((phsI,phsI)),1,0)
+    else:
+        ## combine XX and YY information and reformat axes
+        tmp_amp = np.rollaxis(np.dstack((ampXX,ampYY)),1,0)
+        tmp_phs = np.rollaxis(np.dstack((phsXX,phsYY)),1,0)
     ## expand to fill frequency axis
     tmp_amp2 = np.expand_dims( tmp_amp, axis=1 )
     tmp_phs2 = np.expand_dims( tmp_phs, axis=1 )
@@ -616,7 +689,7 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
     phs = phs * -1.0 ## difmap has a different convention
 
     ## get antenna information
-    new_ants = make_ant_table( stnXX )
+    new_ants  = make_ant_table( stn )
 
     ## get pointing information
     ptg = ct.table( infile + '::FIELD' )
@@ -632,8 +705,8 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
     antenna_table = out_solset.obj._f_get_child('antenna')
     antenna_table.append(new_ants.items())
     out_solset.obj.source.append(new_dir.items())
-    out_solset.makeSoltab('amplitude',axesNames=['time','freq','ant','pol'], axesVals=[time_ax,freq_ax,stnXX,['XX','YY']], vals=amp, weights=np.ones_like(amp))   
-    out_solset.makeSoltab('phase',axesNames=['time','freq','ant','pol'], axesVals=[time_ax,freq_ax,stnYY,['XX','YY']], vals=phs, weights=np.ones_like(phs))   
+    out_solset.makeSoltab('amplitude',axesNames=['time','freq','ant','pol'], axesVals=[time_ax,freq_ax,stn,['XX','YY']], vals=amp, weights=np.ones_like(amp))   
+    out_solset.makeSoltab('phase',axesNames=['time','freq','ant','pol'], axesVals=[time_ax,freq_ax,stn,['XX','YY']], vals=phs, weights=np.ones_like(phs))   
     out_h5.close()
 
     ## apply the solutions
@@ -666,7 +739,10 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
     ref_freq = rf.getcol('REF_FREQUENCY')[0]
     # find the model file
     modfiles = glob.glob( filestem + '*.mod' )
-    xx_file = [mf for mf in modfiles if 'XX' in mf ][0]
+    if pols == 'I':
+        xx_file = modfiles[0]
+    else:
+        xx_file = [mf for mf in modfiles if 'XX' in mf ][0]
     ## read the model
     xx_mod = read_mod( xx_file )
     ## find central point
@@ -692,20 +768,23 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
     ss = 'makesourcedb in={:s} out={:s} format="<"'.format( outfile, outfile.replace('mod','skymodel') )
     os.system( ss )
 
+    
+
     ## run wsclean 
-    wsclean_name = filestem + '_wsclean' 
+    #wsclean_name = filestem + '_wsclean' 
     ## convert the im params to wsclean format
-    ss = 'wsclean -j 16 -mem 20 -v -reorder -update-model-required -weight uniform -mf-weighting -weighting-rank-filter 3 -name {:s} -size {:s} {:s} -padding 1.4 -scale {:s}asec -channels-out 6 -data-column CORRECTED_DATA -niter 10000 -auto-threshold 3 -auto-mask 5 -mgain 0.8 -join-channels -fit-spectral-pol 3 -fit-beam {:s}'.format( wsclean_name, str(map_size), str(map_size), str(float(pix_size)*0.001), infile )
-    os.system( ss )
+    #ss = 'wsclean -j 16 -mem 20 -v -reorder -update-model-required -weight uniform -mf-weighting -weighting-rank-filter 3 -name {:s} -size {:s} {:s} -padding 1.4 -scale {:s}asec -channels-out 6 -data-column CORRECTED_DATA -niter 10000 -auto-threshold 3 -auto-mask 5 -mgain 0.8 -join-channels -fit-spectral-pol 3 -fit-beam {:s}'.format( wsclean_name, str(map_size), str(map_size), str(float(pix_size)*0.001), infile )
+    #os.system( ss )
 
     ## TO DO: move final files
     ## h5parm, images, log files, and skymodel
     image_files = glob.glob( os.path.join( work_dir, '*.ps') )
     log_files = glob.glob( os.path.join( work_dir, '*log') )
-    wsclean_ims = glob.glob( os.path.join( work_dir, '*wsclean*MFS*fits' ) )
+    #wsclean_ims = glob.glob( os.path.join( work_dir, '*wsclean*MFS*fits' ) )
     myh5parm = glob.glob( os.path.join( work_dir, '*h5' ) )
     skymodel = glob.glob( os.path.join( work_dir, '*skymodel' ) )
-    file_list = image_files + log_files + wsclean_ims + myh5parm + skymodel
+    #file_list = image_files + log_files + wsclean_ims + myh5parm + skymodel
+    file_list = image_files + log_files + myh5parm + skymodel
     for myfile in file_list:
         ff = myfile.split('/')[-1]
         ss = 'mv {:s} {:s}'.format( myfile, os.path.join( current_dir, ff ) )
@@ -731,6 +810,8 @@ if __name__ == "__main__":
     parser.add_argument("--obs_length",help="Observation length, default 900",required=False,default=900)
     parser.add_argument("--colname",type=str,help="Name of the data column. Default is CORRECTED_DATA.",required=False,default="CORRECTED_DATA")
     parser.add_argument("--startmod",help="Generate a starting model. Default is True",required=False,action="store_false")
+    parser.add_argument("--pols",type=str,help="polarisations to self-calibrate. Default is Stokes I.",required=False,default="I")
+    parser.add_argument("--catalogue",type=str,help="catalogue to help determine imaging parameters.",required=False,default=None)
 
     ## positionals
     parser.add_argument("filename",type=str,help="Name of the measurement set")
@@ -738,6 +819,6 @@ if __name__ == "__main__":
     args=parser.parse_args()
 
     main( args.filename, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
-	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose )
+	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose, pols=args.pols, catalogue=args.catalogue )
 
 
