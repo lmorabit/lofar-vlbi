@@ -154,7 +154,7 @@ def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
     print( outfile )
     if os.path.isfile( outfile ):
         print("LBCS Skymodel for the target field exists on disk, reading in.")
-        tb_out = Table.read( outfile, format='csv' )
+        tb = Table.read( outfile, format='csv' )
     else:
         print("DOWNLOADING LBCS Skymodel for the target field")
 
@@ -306,7 +306,7 @@ def plugin_main( args, **kwargs ):
 
     mslist = DataMap.load(mapfile_in)
     MSname = mslist[0].file
-
+ 
     ## first check for a valid delay_calibrator file
     if os.path.isfile(delay_cals_file):
 	print( 'Delay calibrators file {:s} exists! returning.'.format(delay_cals_file) )
@@ -363,7 +363,7 @@ def plugin_main( args, **kwargs ):
 	best_idx = np.where( mystat == np.min( mystat ) )[0]
 	tmp = result['Source_id'][best_idx].data
 	tmp2 = result['Select_stat'][best_idx].data
-	print( 'Best delay calibrator candidate is {:s} with a stastic of {:f}'.format(tmp[0],tmp2[0]) )
+	print( 'Best delay calibrator candidate is {:s} with a stastic of {:f}'.format(str(tmp[0]),tmp2[0]) )
 
         ## Write catalogues
         ## 1 - delay calibrators -- from lbcs_catalogue
@@ -388,14 +388,13 @@ def plugin_main( args, **kwargs ):
 	
 	subtract_sources = vstack( [subtract_cals, lotss_bright], join_type='outer' )
 
-        print( subtract_sources )
 	unique_srcs = np.unique( subtract_sources['Source_id'] )
 	if len( unique_srcs ) != len( subtract_sources ):
 	    ## remove duplicates, keep LBCS information
             ## this is untested and will probably fail ...
 	    good_idx = []
 	    for src_id in unique_srcs:
-		idx = np.where( subtract_sources == src_id )[0]
+		idx = np.where( subtract_sources['Source_id'] == src_id )[0]
 		if len( idx ) > 1:
 		    tmp = subtract_sources[idx]
 		    lbcs_idx = np.where( tmp['RA_LBCS'] > 0 )[0]
@@ -418,7 +417,10 @@ def plugin_main( args, **kwargs ):
         ## find unresolved
         nsrcs = float( len( sources_to_image ) )
 	print "There are "+str(nsrcs)+" sources above "+str(image_limit_Jy)+" mJy."
-        unresolved_index = np.where( sources_to_image['Resolved'] == 'U' )[0]
+        try:
+            unresolved_index = np.where( sources_to_image['Resolved'] == 'U' )[0]
+	except:
+	    unresolved_index = np.where( is_resolved(sources_to_image['Total_flux'],  sources_to_image['Peak_flux'], sources_to_image['Isl_rms'] ) )[0]
         if nsrcs==0:
             print "Did not find any unresolved objects."
         else:
