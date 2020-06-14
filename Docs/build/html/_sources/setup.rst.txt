@@ -53,7 +53,7 @@ The `ddf-pipeline`_  operates on the results of Pre-Facet-Target and provides:
 * a self-calibrated image at 6" resolution
 * an initial catalogue of sources in the field
 
-To generate the final catalogue, use the *quality_pipeline.py* script (found in the `ddf-pipeline`_ *scripts* sub-directory) with an appropriate configuration file (the example *quality-example.cfg* is in the *examples* sub-directory). The bootstrap catalogues can be downloaded from here: https://www.extragalactic.info/bootstrap/ .
+To generate the final catalogue, use the *quality_pipeline.py* script (found in the `ddf-pipeline`_ *scripts* sub-directory) with an appropriate configuration file (the example *quality-example.cfg* is in the *examples* sub-directory). The bootstrap catalogues can be downloaded from here: https://www.extragalactic.info/bootstrap/ . Note that you will also need to convert all your flux values from Jy to mJy.
 
 The LOFAR-VLBI pipeline **requires** the information on the sources, either from this output catalogue or the `LoTSS catalogue server`_ , and if you run the ddf-pipeline it can use the additional phase solutions (but this is not required). We recommend skipping this step if your field is already in the `LoTSS catalogue server`_ unless you wish do do wide-field imaging at high resolution, rather than imaging science targets in a few (or one) directions. 
 
