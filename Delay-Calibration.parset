@@ -42,7 +42,7 @@
 ! cal_shift_avg_timestep    = 8
 
 ## flagging and a-team clipping settings
-! rfistrategy                       =  HBAdefault
+! rfistrategy                       =  HBAdefault.rfis
 ! min_separation                    =  30         ## minimal accepted distance to an A-team source on the sky in degrees (will raise a WARNING)
 
 ###########################################################
@@ -409,7 +409,7 @@ aoflag.control.error_tolerance                                 =   {{ error_tole
 aoflag.control.mapfiles_in                                     =   [ms_concat_target_map.output.concatmap,expand_memory_map.output.mapfile]
 aoflag.control.inputkeys                                       =   [msin,memory]
 aoflag.control.args_format                                     =   wsclean
-aoflag.argument.strategy                                       =   {{ prefactor_directory }}/rfistrategies/{{ rfistrategy }}
+aoflag.argument.strategy                                       =   {{ prefactor_dir }}/rfistrategies/{{ rfistrategy }}
 aoflag.argument.flags                                          =   [-v,memory,-combine-spws,msin]
 
 ###################################################################
