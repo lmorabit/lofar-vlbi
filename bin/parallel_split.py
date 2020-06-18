@@ -97,7 +97,10 @@ def lotss2coords (lotssfile):
 	## check if the source_id needs to be converted to a string
 	src = tmp['Source_id']
 	if type(src) != str:
-	    src = 'S'+str(src)
+            if str(src)[0:1] == 'I':
+                src = str(src)
+            else:
+                src = 'S'+str(src)
 	tmp_1 = ','.join([str(tmp['RA']),str(tmp['DEC']),src])
         coords=np.append(coords,tmp_1)
     return coords
