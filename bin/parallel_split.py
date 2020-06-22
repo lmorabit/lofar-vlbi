@@ -61,7 +61,8 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
 	ismissing = False
     else:
 	ismissing = True
-    with open('NDPPP_%s'%nameout.replace('MS','parset'),'w') as fo:
+    parset_name = 'NDPPP_%s.parset'%nameout.replace('MS','').replace('ms','')
+    with open(parset_name,'w') as fo:
         fo.write('msin = [')
         for i in range(len(in2array)):
             fo.write('\'%s\''%in2array[i])
@@ -73,20 +74,21 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
             fo.write('msin.missingdata=True\n')
             fo.write('msin.orderms=False\n')
         fo.write('numthreads=%s\n'%str(nthreads))
-        fo.write('steps = [shift,avg,sadder,filter]\n')
+#        fo.write('steps = [shift,avg,sadder,filter]\n')
+        fo.write('steps = [shift,avg]\n')
         fo.write('shift.phasecenter = [%s]\n'%phasecenter)
         fo.write('shift.type = phaseshift\n')
         fo.write('avg.type = average\n')
         fo.write('avg.timestep = '+str(tstep)+'\n')
-        fo.write('avg.freqstep = '+str(fstep)+'\n')
-        fo.write('sadder.type = stationadder\n')
-        fo.write("sadder.stations = %s\n"%phscmd)
-        fo.write('filter.type = \'filter\'\n')
-        fo.write("filter.baseline = %s\n"%filcmd)
-        fo.write('filter.remove = True')
+#        fo.write('avg.freqstep = '+str(fstep)+'\n')
+#        fo.write('sadder.type = stationadder\n')
+#        fo.write("sadder.stations = %s\n"%phscmd)
+#        fo.write('filter.type = \'filter\'\n')
+#        fo.write("filter.baseline = %s\n"%filcmd)
+#        fo.write('filter.remove = True')
     fo.close()
-    os.system('NDPPP NDPPP_%s'%nameout.replace('MS','parset'))  # run with NDPPP
-    os.system('rm NDPPP_%s'%nameout.replace('MS','parset')) # remove the parset
+    os.system('NDPPP %s'%parset_name)  # run with NDPPP
+    os.system('rm NDPPP_%s'%parset_name) # remove the parset
     
 def lotss2coords (lotssfile):
 
