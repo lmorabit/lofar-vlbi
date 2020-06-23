@@ -605,7 +605,18 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
         tgt_coords = SkyCoord( ra_deg, dec_deg, unit='deg' )       
 
 	t = Table.read( catalogue, format='csv' )
-        coords = SkyCoord( t['RA'], t['DEC'], unit='deg' )
+	## more flexible RA/DEC column naming
+    	mycols = t.colnames
+	ra_col = [ val for val in mycols if val == 'RA' ]
+	de_col = [ val for val in mycols if val == 'DEC' ]
+    	if len(ra_col) == 1:
+            ra_col = ra_col[0]
+            de_col = de_col[0]
+        else:
+            ## pick LoTSS position
+            ra_col = [ val for val in mycols if val == 'RA_LOTSS' ][0]
+            de_col = [ val for val in mycols if val == 'DEC_LOTSS' ][0]
+        coords = SkyCoord( t[ra_col], t[de_col], unit='deg' )
         seps = coords.separation(tgt_coords).value
 	src_idx = np.where( seps == np.min(seps) )[0]
 	src_tmp = t[src_idx]
@@ -619,7 +630,7 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
 	padding = 1.5
 	possible_map_sizes = np.array([512,1024,2048,4096,8192])
         possible_map_asec = possible_map_sizes * float(pix_size) * 1e-3  ## convert to arcsec
-	possible_idx = np.where( size_asec*padding <= possible_map_asec )[0] 
+	possible_idx = np.where( size_asec*adding <= possible_map_asec )[0] 
         if len( possible_idx ) >= 1:
             map_size = possible_map_sizes[np.min( possible_idx )]
             print( 'Estimated source size {:s}, making image with {:s}x{:s} pixels ({:s}x{:s} arcsec)'.format( str(size_asec), str(map_size), str(map_size), str(map_size*float(pix_size)*1e-3), str(map_size*float(pix_size)*1e-3) ) )
