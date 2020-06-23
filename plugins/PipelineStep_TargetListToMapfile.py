@@ -50,9 +50,9 @@ def plugin_main(args, **kwargs):
     RA_val = t['RA_LOTSS'].data[0]
     DEC_val = t['DEC_LOTSS'].data[0]
     Source_id = t['Source_id'].data[0]
-    if Source_id[0:1] == 'I':
+    if str(Source_id)[0:1] == 'I':
 	pass
-    elif Source_id[0:1] == 'S':
+    elif str(Source_id)[0:1] == 'S':
 	pass
     else:
 	Source_id = 'S' + str(Source_id)
