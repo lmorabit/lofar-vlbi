@@ -129,6 +129,7 @@ caldata_map.control.pattern		= *imdir.ms
 
 # correct the beam for the array_factor
 correct_beam.control.type                       = pythonplugin
+correct_beam.control.max_per_node		= {{ num_proc_per_node_limit }}
 correct_beam.control.executable                 = {{ scripts }}/correct_array_factor.py
 correct_beam.control.mapfile_in                 = caldata_map.output.mapfile
 correct_beam.control.inputkey                   = msin

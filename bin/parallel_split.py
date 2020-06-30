@@ -61,7 +61,7 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
 	ismissing = False
     else:
 	ismissing = True
-    parset_name = 'NDPPP_%s.parset'%nameout.replace('MS','').replace('ms','')
+    parset_name = 'NDPPP_%s.parset'%nameout.replace('.MS','').replace('.ms','')
     with open(parset_name,'w') as fo:
         fo.write('msin = [')
         for i in range(len(in2array)):
