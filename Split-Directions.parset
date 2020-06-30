@@ -30,6 +30,7 @@
 ! base_directory                        = input.output.working_directory
 ! job_directory                         = input.output.job_directory
 ! delaycal_directory                    = {{ job_directory }}/../Delay-Calibration
+! results_directory                     = {{ job_directory }}/results
 
 ##########################################################
 ## These parameters may need to be updated.		##
@@ -75,7 +76,7 @@
 
 pipeline.steps = [ setup, selfcal ]
  
-pipeline.steps.setup = [ targetdata_map, targetdata_map_list, parallel_split, caldata_map, correct_beam, cal_model, h5parm_map, sourcedb_map ]
+pipeline.steps.setup = [ mk_results_dir, targetdata_map, targetdata_map_list, parallel_split, caldata_map, correct_beam, cal_model, h5parm_map, sourcedb_map ]
 pipeline.steps.selfcal = [ tecsolve, plot_tec, apply_tec, selfcal ]
 
 ###########################################################################
@@ -86,6 +87,11 @@ pipeline.steps.selfcal = [ tecsolve, plot_tec, apply_tec, selfcal ]
 ##			BEGIN PIPELINE: DO NOT UPDATE BELOW THIS LINE!						##
 ##														##
 ##################################################################################################################
+
+# create the results directory if needed
+mk_results_dir.control.kind               = plugin
+mk_results_dir.control.type               = makeDirectory
+mk_results_dir.control.directory          = {{ results_directory }}
 
 # generate a mapfile of the delay-calibrated subbands
 targetdata_map.control.kind             = plugin
@@ -134,7 +140,7 @@ correct_beam.control.executable                 = {{ scripts }}/correct_array_fa
 correct_beam.control.mapfile_in                 = caldata_map.output.mapfile
 correct_beam.control.inputkey                   = msin
 correct_beam.argument.mslist                    = msin
-correct_beam.argument.results_dir               = {{ inspection_dir }}
+correct_beam.argument.results_dir               = {{ results_directory }}
 
 # generate point source models with skynet
 cal_model.control.type			= pythonplugin
