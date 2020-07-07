@@ -43,6 +43,8 @@ The software dependencies for the LOFAR-VLBI pipeline and prefactor are listed b
 
     This version has been tested, but does not work with the -H flag in the h5exp_gsm step in the prefactor Pre-Facet-Target.parset, so you have to remove that manually. 
 
+    The singularity image was built with singularity version 2.5.  Users have reported that it also works with singularity version 3.3.
+
 If you do not wish to use this singularity image, the following software must be installed locally:
 
    * AOFlagger >= 2.14.0
