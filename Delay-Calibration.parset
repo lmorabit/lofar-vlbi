@@ -15,11 +15,10 @@
 ##########################################################
 
 # local software paths
-! lofar_vlbi_dir            		= /home/morabito/software/lofar_vlbi
+! lofar_vlbi_dir            		= /home/morabito/software/lofar-vlbi
 ! prefactor_dir                         = /home/morabito/software/prefactor
 # the following are in the singularity image and should not need to be changed
 ! losoto_directory                      = /opt/lofar/losoto
-! aoflagger                             = /opt/lofar/aoflagger/bin/aoflagger 
 ! lofar_directory                       = $LOFARROOT
 
 ## target data information
@@ -122,7 +121,7 @@ pipeline.steps.prep = [ ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconcat_list ]
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
-pipeline.steps.aoflagging = [ ms_concat_target, ms_concat_target_map, expand_memory_map, aoflag ]
+pipeline.steps.aoflagging = [ aoflag ]
 pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat, correct_beam ]
 pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, delay_cal_parmmap, delay_solve, make_losoto, process_losoto, apply_delay, selfcal ]
 pipeline.steps.applydelay = [ copyST_gains, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
@@ -376,41 +375,20 @@ dpppconcat_list.control.mapfile_in      = dpppconcat.output.mapfile
 #                                                               ##
 ##################################################################
 
-# virtually concatenate target subbands
-ms_concat_target.control.type                                  =   pythonplugin
-ms_concat_target.control.executable                            =   {{ prefactor_scripts }}/concat_MS.py
-ms_concat_target.control.error_tolerance                       =   {{ error_tolerance }}
-ms_concat_target.argument.filename                             =   concatmapfile.mapfile
-ms_concat_target.argument.mapfile_dir                          =   input.output.mapfile_dir
-ms_concat_target.argument.min_length                           =   {{ min_length }}
-ms_concat.target.argument.overhead                             =   {{ overhead }}
-ms_concat_target.argument.flags                                =   [dpppconcat_list.output.mapfile,outputkey]
-
-# convert the output of ms_concat_target into usable mapfiles
-ms_concat_target_map.control.kind                              =   plugin
-ms_concat_target_map.control.type                              =   mapfilenamesFromMapfiles
-ms_concat_target_map.control.mapfile_concatmap                 =   ms_concat_target.output.concatmapfile.mapfile
-
-## convert the output of ms_concat_target into usable mapfiles
-expand_memory_map.control.kind                                 =   plugin
-expand_memory_map.control.type                                 =   expandMapfile
-expand_memory_map.control.mapfile_in                           =   ms_concat_target.output.memory.mapfile
-expand_memory_map.control.mapfile_to_match                     =   ms_concat_target_map.output.concatmap
-expand_memory_map.control.mapfile_dir                          =   input.output.mapfile_dir
-expand_memory_map.control.filename                             =   expand_memory_map.mapfile
-
-# run aoflagger on the concatenated data
-aoflag.control.kind                                            =   recipe
-aoflag.control.type                                            =   executable_args
-aoflag.control.inplace                                         =   True
-aoflag.control.executable                                      =   {{ aoflagger }}
-aoflag.control.max_per_node                                    =   1
-aoflag.control.error_tolerance                                 =   {{ error_tolerance }}
-aoflag.control.mapfiles_in                                     =   [ms_concat_target_map.output.concatmap,expand_memory_map.output.mapfile]
-aoflag.control.inputkeys                                       =   [msin,memory]
-aoflag.control.args_format                                     =   wsclean
-aoflag.argument.strategy                                       =   {{ prefactor_dir }}/rfistrategies/{{ rfistrategy }}
-aoflag.argument.flags                                          =   [-v,memory,-combine-spws,msin]
+aoflag.control.type                                 =  dppp
+aoflag.control.max_per_node                         =  {{ num_proc_per_node_limit }}
+aoflag.control.error_tolerance                      =  {{ error_tolerance }}
+aoflag.control.mapfile_in                           =  dpppconcat.output.mapfile
+aoflag.control.inputkey                             =  input_file
+aoflag.control.inplace                              =  True
+aoflag.argument.numthreads                          =  {{ max_dppp_threads }}
+aoflag.argument.msin                                =  input_file
+aoflag.argument.msin.datacolumn                     =  DATA
+aoflag.argument.steps                               =  [aoflagger]
+aoflag.argument.aoflagger.type                      =  aoflagger
+aoflag.argument.aoflagger.memoryperc                =  15
+aoflag.argument.aoflagger.keepstatistics            =  true
+aoflag.argument.aoflagger.strategy                  =  {{ prefactor_dir }}/rfistrategies/{{ rfistrategy }}
 
 ###################################################################
 ##                                                               ##
