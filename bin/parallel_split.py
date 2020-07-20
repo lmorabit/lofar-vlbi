@@ -74,18 +74,20 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
             fo.write('msin.missingdata=True\n')
             fo.write('msin.orderms=False\n')
         fo.write('numthreads=%s\n'%str(nthreads))
-#        fo.write('steps = [shift,avg,sadder,filter]\n')
+	if phscmd != '000':
+            fo.write('steps = [shift,avg,sadder,filter]\n')
         fo.write('steps = [shift,avg]\n')
         fo.write('shift.phasecenter = [%s]\n'%phasecenter)
         fo.write('shift.type = phaseshift\n')
         fo.write('avg.type = average\n')
         fo.write('avg.timestep = '+str(tstep)+'\n')
-#        fo.write('avg.freqstep = '+str(fstep)+'\n')
-#        fo.write('sadder.type = stationadder\n')
-#        fo.write("sadder.stations = %s\n"%phscmd)
-#        fo.write('filter.type = \'filter\'\n')
-#        fo.write("filter.baseline = %s\n"%filcmd)
-#        fo.write('filter.remove = True')
+        fo.write('avg.freqstep = '+str(fstep)+'\n')
+	if phscmd != '000':
+            fo.write('sadder.type = stationadder\n')
+            fo.write("sadder.stations = %s\n"%phscmd)
+            fo.write('filter.type = \'filter\'\n')
+            fo.write("filter.baseline = %s\n"%filcmd)
+            fo.write('filter.remove = True')
     fo.close()
     os.system('NDPPP %s'%parset_name)  # run with NDPPP
     os.system('rm NDPPP_%s'%parset_name) # remove the parset
