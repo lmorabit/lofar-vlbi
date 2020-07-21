@@ -53,7 +53,7 @@ def addghost (inarray):        # deal with missing frequencies between subbands
         outarray=np.append(outarray,inarray[i])
     return outarray   
 
-def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phscmd, filcmd, nthreads):
+def combine_subbands (inarray, nameout, datacol, phasecenter, fres, tres, phscmd, filcmd, nthreads):
 
     # get datacolumn
     in2array = addghost(inarray)
@@ -80,8 +80,8 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fstep, tstep, phsc
         fo.write('shift.phasecenter = [%s]\n'%phasecenter)
         fo.write('shift.type = phaseshift\n')
         fo.write('avg.type = average\n')
-        fo.write('avg.timestep = '+str(tstep)+'\n')
-        fo.write('avg.freqstep = '+str(fstep)+'\n')
+        fo.write('avg.timeresolution = '+str(tres)+'\n')
+        fo.write('avg.freqresolution = '+str(fres)+'\n')
 	if phscmd != '000':
             fo.write('sadder.type = stationadder\n')
             fo.write("sadder.stations = %s\n"%phscmd)
@@ -132,14 +132,14 @@ def source_thread (i):
     print 'PROCESSING SOURCE %s - combining subbands and shifting' % src
     inarray = i['inarray']
     datacol = i['datacol']
-    freqstep = i['freqstep']
-    timestep = i['timestep']
+    freqres = i['freqres']
+    timeres = i['timeres']
     phasecen = i['phasecen']    
     phaseupcmd = i['phaseup_cmd']
     filtercmd = i['filter_cmd']
     nameout = i['outname']
     nthreads = i['nthreads']
-    combine_subbands(inarray,nameout,datacol,phasecen,freqstep,timestep,phaseupcmd,filtercmd,nthreads)
+    combine_subbands(inarray,nameout,datacol,phasecen,freqres,timeres,phaseupcmd,filtercmd,nthreads)
     print 'PROCESSING SOURCE %s - finished' % src
 
 
@@ -147,7 +147,7 @@ def source (coords,ncpu):
     source_thread.parallel = parallel_function(source_thread,ncpu)
     parallel_result = source_thread.parallel(coords)
 
-def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*', ncpu=10, datacol='DATA', timestep=8, freqstep=8, nsbs=999, nthreads=0 ):
+def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*', ncpu=10, datacol='DATA', timeres=8, freqres='97.64kHz', nsbs=999, nthreads=0 ):
 
     phaseup_cmd = str(phaseup_cmd)
     filter_cmd = str(filter_cmd)
@@ -156,8 +156,8 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*
     if nthreads == 0:
 	nthreads = int(4)
     datacol = str(datacol)
-    timestep = int(timestep)
-    freqstep = int(freqstep)
+    timeres = int(timeres)
+    freqres = str(freqres)
     nsbs = int(nsbs)
 
     if type(ms_input) == str:
@@ -191,8 +191,8 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*
         coords = lotss2coords( lotss_file )
 	## add information like datacolumn, etc.
 	cal_dict['datacol'] = datacol
-	cal_dict['freqstep'] = str(freqstep)
-	cal_dict['timestep'] = str(timestep)
+	cal_dict['freqres'] = str(freqres)
+	cal_dict['timeres'] = str(timeres)
 	cal_dict['phaseup_cmd'] = phaseup_cmd
 	cal_dict['filter_cmd'] = filter_cmd
         cal_dict['nthreads'] = nthreads
@@ -236,11 +236,11 @@ if __name__ == "__main__":
     parser.add_argument('--ncpu',type=int,help='number of CPUs',required=True)
     parser.add_argument('--nthreads',type=int,help='number of threads',required=True,default=4)
     parser.add_argument('--datacol',type=str,help='datacolumn to use (default CORRECTED_DATA)',default='CORRECTED_DATA')
-    parser.add_argument('--timestep',type=int,default=8)
-    parser.add_argument('--freqstep',type=int,default=8)
+    parser.add_argument('--timeres',type=int,default=8)
+    parser.add_argument('--freqres',type=int,default=8)
     parser.add_argument('--nsbs',type=int,help='number of subbands to combine before combining all (default 999=all)',default=999)
     args = parser.parse_args()
 
     MS_input = glob.glob( args.MS_pattern )
 
-    main( MS_input, args.lotss_file, phaseup_cmd=args.phaseup_cmd, filter_cmd=args.filter_cmd, ncpu=args.ncpu, datacol=args.datacol, timestep=args.timestep, freqstep=args.freqstep, nsbs=args.nsbs )
+    main( MS_input, args.lotss_file, phaseup_cmd=args.phaseup_cmd, filter_cmd=args.filter_cmd, ncpu=args.ncpu, datacol=args.datacol, timeres=args.timeres, freqres=args.freqres, nsbs=args.nsbs )

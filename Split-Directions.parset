@@ -55,10 +55,8 @@
 ! data_col = CORRECTED_DATA 
 
 ## Averaging parameters
-! cal_shift_avg_timestep        = 8    ## Calibrator time averaging: output should be 8 seconds
-! cal_shift_avg_freqstep        = 8    ## Calibrator freq averaging: output should be 2 channels per subband
-! tgt_shift_avg_timestep        = 16   ## Target time averaging: output should be 16 seconds
-! tgt_shift_avg_freqstep        = 16   ## Target freq averaging: output should be 1 channel per subband
+! cal_avg_freqresolution    = 97.64kHz
+! cal_avg_timeresolution    = 8.
 
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use) -- set to string '000' to not combine anything
@@ -119,8 +117,8 @@ parallel_split.argument.phaseup_cmd	= {{ phaseup_command }}
 parallel_split.argument.filter_cmd	= {{ filter_command }}
 parallel_split.argument.ncpu		= {{ num_proc_per_node }}
 parallel_split.argument.datacol		= {{ data_col }}
-parallel_split.argument.timestep	= {{ cal_shift_avg_timestep }}
-parallel_split.argument.freqstep	= {{ cal_shift_avg_freqstep }}
+parallel_split.argument.timeres		= {{ cal_avg_timeresolution }}
+parallel_split.argument.freqres		= {{ cal_avg_freqresolution }}
 parallel_split.argument.nsbs		= 999
 parallel_split.argument.nthreads        = 0 ## 0 --> default of 4
 

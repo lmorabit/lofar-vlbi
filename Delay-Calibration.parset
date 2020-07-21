@@ -37,8 +37,8 @@
 ! filter_baselines	=   ## filter baselines that are flagged, e.g.: !CS013HBA*&&*
 
 ## averaging information -- do not touch unless you know what you are doing!
-! cal_shift_avg_freqstep    = 8
-! cal_shift_avg_timestep    = 8
+! cal_avg_freqresolution    = 97.64kHz
+! cal_avg_timeresolution    = 8.
 
 ## flagging and a-team clipping settings
 ! rfistrategy                       =  HBAdefault.rfis
@@ -517,8 +517,8 @@ dppp_phaseup.argument.steps                = [shift, avg, adder, filter]
 dppp_phaseup.argument.shift.type           = phaseshift
 dppp_phaseup.argument.shift.phasecenter    = prep_delay_dir.output.coords
 dppp_phaseup.argument.avg.type             = squash
-dppp_phaseup.argument.avg.freqstep         = {{ cal_shift_avg_freqstep }}
-dppp_phaseup.argument.avg.timestep         = {{ cal_shift_avg_timestep }}
+dppp_phaseup.argument.avg.freqresolution   = {{ cal_avg_freqresolution }}
+dppp_phaseup.argument.avg.timeresolution   = {{ cal_avg_timeresolution }}
 dppp_phaseup.argument.adder.type           = stationadder
 dppp_phaseup.argument.adder.stations       = {{ phaseup_command }}
 dppp_phaseup.argument.filter.type          = filter
