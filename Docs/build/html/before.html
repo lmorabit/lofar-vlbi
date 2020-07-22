@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Before you begin &#8212; lofar-vlbi V3.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation, software, and hardware requirements" href="installation.html" />
+    <link rel="prev" title="Documentation for the LOFAR-VLBI pipeline" href="index.html" /> 
+  </head><body>
+    <div class="header-wrapper" role="banner">
+      <div class="header">
+        <div class="headertitle"><a
+          href="index.html">lofar-vlbi V3.0.0 documentation</a></div>
+        <div class="rel" role="navigation" aria-label="related navigation">
+          <a href="index.html" title="Documentation for the LOFAR-VLBI pipeline"
+             accesskey="P">previous</a> |
+          <a href="installation.html" title="Installation, software, and hardware requirements"
+             accesskey="N">next</a> |
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="before-you-begin">
+<span id="index-0"></span><h1>Before you begin<a class="headerlink" href="#before-you-begin" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="selecting-a-field">
+<h2>Selecting a field<a class="headerlink" href="#selecting-a-field" title="Permalink to this headline">¶</a></h2>
+<p>Before beginning any data processing, it is important to keep several things in mind. First, the pipeline assumes that you are giving it something sensible, and it does not (yet) make any quality checks. That means if you give it data which it cannot handle, you will not get quality results. Before you select a field, please follow these guidelines:</p>
+<ul class="simple">
+<li><p><strong>Ionosphere:</strong> should not be particularly bad. Check inspection plots from the observatory.  If it’s been processed successfully by the Surveys KSP infrastructure, it should be okay.</p></li>
+<li><p><strong>Field of View:</strong> The Surveys standard averaging is 16 channels/SB and 1 sec, which limits the Field of View (FoV) to ~1.25 deg from the centre. Your target and LBCS calibrators should be inside this.</p></li>
+<li><p><strong>Distance between calibrator and target:</strong> An acceptable value will vary based on ionosphere and the distribution of sources in the field. As a rule of thumb, 1 degree separation <em>should</em> be okay, but it is safer to look for a calibrator within 0.5 degrees. The pipeline will pick the best in-field calibrator if there are multiple choices, but you can always manually phase reference a calibrator closer to your target from a more distant calibrator.</p></li>
+<li><p><strong>Flux Density:</strong> In principle the limiting rms noise will be ~100 uJy/bm for an 8 hour observation. In practice, the quality of your image / amount you have to self-calibrate will depend on all of the factors above, including the distance from the phase centre of the observation.</p></li>
+<li><p><strong>Source structure:</strong> Keep in mind that not all point sources at 6” resolution are point sources at 0.3” resolution. If you expect your 1 mJy/bm source to break equally into 4 components, each component will only be 250 uJy/bm and therefore only a 2.5 sigma detection for 100 uJy/bm rms.</p></li>
+<li><p><strong>Flux calibrator:</strong> 3C295 and 3C196 are commonly used as standard flux calibrators, but high-resolution models of them are not included in the pipeline. They are therefore currently not advisable to use as flux calibrators for LOFAR-VLBI.</p></li>
+</ul>
+<p>As an example, a good field will have: the target within ~ 1 degree from the pointing centre, an LBCS calibrator &lt; 0.5 degrees from your target, no bright (&gt; 1 Jy) sources within ~ 1 degree, reasonable to good ionospheric conditions, with 16 channels/SB and 1 second time resolution. If your data is averaged more than this, you may run into problems.</p>
+</div>
+<div class="section" id="helpful-information-and-links">
+<h2>Helpful information and links<a class="headerlink" href="#helpful-information-and-links" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline, while self-contained, works within a larger framework of LOFAR data processing.
+As the LOFAR software installation and maintenance can be quite complex, we also <strong>strongly recommend</strong> the use of <a class="reference external" href="https://sylabs.io/guides/3.6/user-guide/">Singularity</a> for your data processing. Before you begin, please take some time to familiarise yourself with the following:</p>
+<ul class="simple">
+<li><p><strong>Singularity</strong> is the way we <em>containerize</em> the LOFAR software. That means all the LOFAR software you need is included in one Singularity ‘image’ which you invoke to run the pipeline. You do not need to build your own image, but it is useful to understand how Singularity works: see <a class="reference external" href="https://sylabs.io/guides/3.6/user-guide/">Singularity</a> .</p></li>
+<li><p><strong>Prefactor</strong> is used for direction-independent calibration of the Dutch stations, prior to running the LOFAR-VLBI pipeline. It is useful to familiarise yourself with <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> before using it. A <a class="reference external" href="https://www.astron.nl/lofarschool2018/Documents/Thursday/prefactor_tutorial.pdf">prefactor tutorial</a> and the <a class="reference external" href="https://www.astron.nl/citt/prefactor/">prefactor documentation</a> are helpful places to start.</p></li>
+</ul>
+<p>The <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline makes use of two catalogue servers. It is a good idea to check whether or not there is coverage of your field beforehand:</p>
+<ul class="simple">
+<li><p><strong>LBCS:</strong> The Long Baseline Calibrator Survey (LBCS) is now complete, and provides information on LOFAR-VLBI in-field calibrators across the sky. You should check that there is coverage for your field before you process your data. The catalogue can be searched here: <a class="reference external" href="https://lofar-surveys.org/lbcs.html">LBCS catalogue server</a></p></li>
+<li><p><strong>LoTSS:</strong> Useful information is collected from the LOFAR Two-metre Sky Survey (LoTSS) on the sources in your field. If LoTSS does not cover your field, you will have to manually produce a catalogue at 6 arcsecond resolution using the Dutch array before you run the LOFAR-VLBI pipeline. You can check the LoTSS catalogue here: <a class="reference external" href="https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form">LoTSS catalogue server</a></p></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          
+          <h3>Table of Contents</h3>
+          <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Before you begin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#selecting-a-field">Selecting a field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#helpful-information-and-links">Helpful information and links</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation, software, and hardware requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Installation, software, and hardware requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Setting Up and Running the LOFAR-VLBI pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">Getting help</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
+</ul>
+
+          <div role="search">
+            <h3 style="margin-top: 1.5em;">Search</h3>
+            <form class="search" action="search.html" method="get">
+                <input type="text" name="q" />
+                <input type="submit" value="Go" />
+            </form>
+          </div>
+
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <div role="navigation" aria-label="related navigaton">
+            <a href="index.html" title="Documentation for the LOFAR-VLBI pipeline"
+              >previous</a> |
+            <a href="installation.html" title="Installation, software, and hardware requirements"
+              >next</a> |
+            <a href="genindex.html" title="General Index"
+              >index</a>
+          </div>
+          <div role="note" aria-label="source link">
+              <br/>
+              <a href="_sources/before.rst.txt"
+                rel="nofollow">Show Source</a>
+          </div>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Leah Morabito.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>

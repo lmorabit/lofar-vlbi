@@ -14,8 +14,10 @@ Table of Contents
 .. toctree::
    :maxdepth: 2
 
+   before
    installation
-   setup
+   configuration
+   running
    license
    help
    acknowledgements

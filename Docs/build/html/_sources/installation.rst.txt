@@ -1,7 +1,7 @@
 .. index:: Installation
 
 =================================================
-Installation, software, and hardware requirements
+Installation
 =================================================
 
 Hardware Requirements
@@ -21,31 +21,42 @@ The total data volume will reach about 2.5 times that of the raw dataset downloa
 .. note::
     Do not forget to check whether your data is dysco compressed! When you stage your data at the LTA you will get a summary of how big it will be.  You will need 2.5 times this size in disk space.
 
-Software Requirements
-^^^^^^^^^^^^^^^^^^^^^
+Software Requirements -- with Singularity
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the recommended method to run the pipeline. You will need:
+* The recommended Singularity image
+* The lofar-vlbi github repository (master branch)
+* The prefactor github repository (commit 7e9103d10c8e37ee2ac2203b678af295ed03e4fd)
+
+and that's it! Specific instructions on how to get these are below.
+
+**Singularity**
+
+The LOFAR-VLBI pipeline and prefactor (specific commit listed above) have been successfully tested against a specific singularity image. You can download this image by running::
+
+       $ wget https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp@e7512b7e92e5a3124e6ed177650e99a8c4eb2263_with_pyvo.sif
+
+The singularity image was built with singularity version 2.5.  Users have reported that it also works with singularity version 3.3.
+
+**LOFAR-VLBI pipeline**
 
 To get the LOFAR-VLBI pipeline, run::
 
     $ git clone https://github.com/lmorabit/lofar-vlbi
 
-You will also need a local copy of prefactor, run::
+**Prefactor**
+
+To get the specific version of prefactor you will need, run::
 
     $ git clone https://github.com/lofar-astron/prefactor
     $ cd prefactor
     $ git checkout 7e9103d10c8e37ee2ac2203b678af295ed03e4fd
 
-The software dependencies for the LOFAR-VLBI pipeline and prefactor are listed below. 
+Software Requirements -- without Singularity
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note::
-    Fortunately, everything has been packaged into a singularity image, which can be found here:
-
-    https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp@e7512b7e92e5a3124e6ed177650e99a8c4eb2263_with_pyvo.sif
-
-    This version has been tested, but does not work with the -H flag in the h5exp_gsm step in the prefactor Pre-Facet-Target.parset, so you have to remove that manually. 
-
-    The singularity image was built with singularity version 2.5.  Users have reported that it also works with singularity version 3.3.
-
-If you do not wish to use this singularity image, the following software must be installed locally:
+If for some reason you are not able to use Singularity, the following software must be installed locally, *in addition to* the LOFAR-VLBI and Prefactor github repositories listed above:
 
    * AOFlagger >= 2.14.0
    * DP3 >= 4.0
@@ -54,30 +65,25 @@ If you do not wish to use this singularity image, the following software must be
    * prefactor (commit 7e9103d10c8e37ee2ac2203b678af295ed03e4fd)
    * PGPLOT
    * Difmap (built with modified version of corplt.c found here: https://github.com/nealjackson/loop3_difmap/corplt.c)
-   
-The following software is **optional**, but must be installed for their respective features to work:
 
-   * The ddf-pipeline (https://github.com/mhardcastle/ddf-pipeline) and its software prerequisites (listed in docs/manual.md)
-
-
-Python packages
-^^^^^^^^^^^^^^^
-
-These are all included in the singularity image, which we strongly recommend using. If you wish to run the pipeline locally, the required Python packages are listed in requirements.txt. One can easily install these using::
-
-   pip install -r requirements.txt
-
-The exceptions are:
-
+Along with the following python packages:
+   * packages listed in requirements.txt from https://github.com/lmorabit/lofar-vlbi
    * PyBDSF
    * RMextract
 
-These can both be installed from their respective repositories, or with pip via::
+The PyBDSF and RMextract python packages can be installed either by cloning the github repositories, or via pip::
 
-   pip install https://github.com/lofar-astron/PyBDSF/archive/v1.9.1.tar.gz
+   $ pip install https://github.com/lofar-astron/PyBDSF/archive/v1.9.1.tar.gz
    
-   git clone https://github.com/lofar-astron/RMextract
-   pip install -e RMextract
+   $ git clone https://github.com/lofar-astron/RMextract
+   $ pip install -e RMextract
 
+The other packages can be installed by running::
+
+   $ pip install -r requirements.txt
+
+The following software is **optional**, but must be installed for their respective features to work:
+
+   * The ddf-pipeline (https://github.com/mhardcastle/ddf-pipeline) and its software prerequisites (listed in docs/manual.md)
 
 .. _genericpipeline: https://www.astron.nl/citt/genericpipeline/
