@@ -18,6 +18,16 @@ The LOFAR-VLBI pipeline makes use of prefactor solutions to apply to the data. T
 
 * The **Pre-Facet-Target.parset** should be run with all the standard defaults. This will copy over the solutions from Pre-Facet-Calibrator and add the self-cal phase solutions for the core and remote stations, which are necessary for the LOFAR-VLBI pipeline. Please check the outputs to make sure they are sensible!  Also note any stations which were flagged as 'bad' as you will need to pre-flag these for the LOFAR-VLBI pipeline.
 
+* There is a mismatch between the version of losoto in the Singularity image and the one expected by the pipeline. The result is that the ``-H`` flat is not recognized in the ``h5exp_gsm`` step of ``Pre-Facet-Target.parset``.  Before running, please change the following line::
+
+        h5exp_gsm.argument.flags                                       =   [-q,-v,-H,h5in]
+
+to::
+
+        h5exp_gsm.argument.flags                                       =   [-q,-v,h5in]
+
+otherwise you will get an error.
+
 .. note::
     Processing of interleaved datasets is not currently supported.
 

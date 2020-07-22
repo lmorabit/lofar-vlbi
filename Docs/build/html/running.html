@@ -52,9 +52,19 @@
 <p class="admonition-title">Note</p>
 <p>If your standard calibrator is either 3C 295 or 3C 196, the standard models in the prefactor github repository do not have sufficiently high resolution, but high-resolution models do exist. Please contact the long baseline working group for help.</p>
 </div>
-<ul class="simple">
+<ul>
 <li><p>The <strong>Pre-Facet-Target.parset</strong> should be run with all the standard defaults. This will copy over the solutions from Pre-Facet-Calibrator and add the self-cal phase solutions for the core and remote stations, which are necessary for the LOFAR-VLBI pipeline. Please check the outputs to make sure they are sensible!  Also note any stations which were flagged as ‘bad’ as you will need to pre-flag these for the LOFAR-VLBI pipeline.</p></li>
+<li><p>There is a mismatch between the version of losoto in the Singularity image and the one expected by the pipeline. The result is that the <code class="docutils literal notranslate"><span class="pre">-H</span></code> flat is not recognized in the <code class="docutils literal notranslate"><span class="pre">h5exp_gsm</span></code> step of <code class="docutils literal notranslate"><span class="pre">Pre-Facet-Target.parset</span></code>.  Before running, please change the following line:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">h5exp_gsm</span><span class="o">.</span><span class="n">argument</span><span class="o">.</span><span class="n">flags</span>                                       <span class="o">=</span>   <span class="p">[</span><span class="o">-</span><span class="n">q</span><span class="p">,</span><span class="o">-</span><span class="n">v</span><span class="p">,</span><span class="o">-</span><span class="n">H</span><span class="p">,</span><span class="n">h5in</span><span class="p">]</span>
+</pre></div>
+</div>
+</li>
 </ul>
+<p>to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">h5exp_gsm</span><span class="o">.</span><span class="n">argument</span><span class="o">.</span><span class="n">flags</span>                                       <span class="o">=</span>   <span class="p">[</span><span class="o">-</span><span class="n">q</span><span class="p">,</span><span class="o">-</span><span class="n">v</span><span class="p">,</span><span class="n">h5in</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>otherwise you will get an error.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Processing of interleaved datasets is not currently supported.</p>
