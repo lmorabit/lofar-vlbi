@@ -14,7 +14,7 @@
     <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Setting Up and Running the LOFAR-VLBI pipeline" href="running.html" />
+    <link rel="next" title="Running the pipeline" href="running.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
   </head><body>
     <div class="header-wrapper" role="banner">
@@ -24,7 +24,7 @@
         <div class="rel" role="navigation" aria-label="related navigation">
           <a href="installation.html" title="Installation"
              accesskey="P">previous</a> |
-          <a href="running.html" title="Setting Up and Running the LOFAR-VLBI pipeline"
+          <a href="running.html" title="Running the pipeline"
              accesskey="N">next</a> |
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a>
@@ -42,64 +42,74 @@
             
   <div class="section" id="configuration">
 <span id="index-0"></span><h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="preparing-the-data-prefactor">
-<h2>Preparing the data: Prefactor<a class="headerlink" href="#preparing-the-data-prefactor" title="Permalink to this headline">¶</a></h2>
-<p>The LOFAR-VLBI pipeline makes use of prefactor solutions to apply to the data. Therefore you must pre-process your data through prefactor, both the calibrator and target pipelines. For instructions how to run prefactor on your data, please look at the <a class="reference external" href="https://www.astron.nl/citt/prefactor/">prefactor documentation</a>. For any issues you encounter with prefactor, please open an issue on the <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> repository.</p>
-<ul class="simple">
-<li><p>The default is now for <strong>Pre-Facet-Calibrator.parset</strong> to process all stations, including the international stations. You can run this with the default settings. Please check the outputs to make sure they are sensible!</p></li>
+<div class="section" id="running-singularity">
+<h2>Running singularity<a class="headerlink" href="#running-singularity" title="Permalink to this headline">¶</a></h2>
+<p>Depending on the installation of <a class="reference external" href="https://sylabs.io/guides/3.6/user-guide/">Singularity</a> you have access to, the syntax may change slightly. The following instructions are for Singularity version 3.1.</p>
+<p>You can either start a Singularity shell, which you can then use interactively just as you would any other shell (e.g., bash, csh, etc.), or you can execute a script using Singularity. In both cases, you need to:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>provide an image for Singularity to use</p></li>
+<li><p>‘bind’ directories that will need to be used</p></li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If your standard calibrator is either 3C 295 or 3C 196, the standard models in the prefactor github repository do not have sufficiently high resolution, but high-resolution models do exist. Please contact the long baseline working group for help.</p>
-</div>
-<ul class="simple">
-<li><p>The <strong>Pre-Facet-Target.parset</strong> should be run with all the standard defaults. This will copy over the solutions from Pre-Facet-Calibrator and add the self-cal phase solutions for the core and remote stations, which are necessary for the LOFAR-VLBI pipeline. Please check the outputs to make sure they are sensible!  Also note any stations which were flagged as ‘bad’ as you will need to pre-flag these for the LOFAR-VLBI pipeline.</p></li>
-</ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Processing of interleaved datasets is not currently supported.</p>
-</div>
-</div>
-<div class="section" id="optional-ddf-pipeline">
-<h2>Optional: ddf-pipeline<a class="headerlink" href="#optional-ddf-pipeline" title="Permalink to this headline">¶</a></h2>
-<p>This is an optional step and is not necessary to run the pipeline unless you do not have a LoTSS-style catalogue for your field. The ddf-pipeline requires some advanced user knowledge to set up and run, so please contact <a class="reference external" href="mailto:lofar-admin&#37;&#52;&#48;strw&#46;leidenuniv&#46;nl">lofar-admin<span>&#64;</span>strw<span>&#46;</span>leidenuniv<span>&#46;</span>nl</a> if you are considering doing this step. If you are using Surveys data it may have already been run for your pointing; if not, we can help.
-Collaborative projects with the Surveys KSP are also possible, if you have your own data and want it processed through the SKSP infastructure to carry out this step. Contact <a class="reference external" href="mailto:lofar-admin&#37;&#52;&#48;strw&#46;leidenuniv&#46;nl">lofar-admin<span>&#64;</span>strw<span>&#46;</span>leidenuniv<span>&#46;</span>nl</a> for more details.</p>
-<p>This step is only necessary in the case where your field has not been covered yet by LoTSS, to generate a catalogue of sources in the field which is used by the LOFAR-VLBI pipeline to help select the best candidate for in-field calibration. If you can query sources in your field with the <a class="reference external" href="https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form">LoTSS catalogue server</a> then you do not need to generate this catalogue.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The recommended singularity image works with prefactor and the LOFAR-VLBI pipeline, but not the ddf-pipeline.  Please refer to the <a class="reference external" href="https://github.com/mhardcastle/ddf-pipeline">ddf-pipeline</a> documentation for its separate software requirements, or contact <a class="reference external" href="mailto:lofar-admin&#37;&#52;&#48;strw&#46;leidenuniv&#46;nl">lofar-admin<span>&#64;</span>strw<span>&#46;</span>leidenuniv<span>&#46;</span>nl</a> .</p>
-</div>
-<p>The <a class="reference external" href="https://github.com/mhardcastle/ddf-pipeline">ddf-pipeline</a>  operates on the results of Pre-Facet-Target and provides:</p>
-<ul class="simple">
-<li><p>additional phase solutions for core and remote stations</p></li>
-<li><p>a self-calibrated image at 6” resolution</p></li>
-<li><p>an initial catalogue of sources in the field</p></li>
-</ul>
-<p>To generate the final catalogue, use the <em>quality_pipeline.py</em> script (found in the <a class="reference external" href="https://github.com/mhardcastle/ddf-pipeline">ddf-pipeline</a> <em>scripts</em> sub-directory) with an appropriate configuration file (the example <em>quality-example.cfg</em> is in the <em>examples</em> sub-directory). The bootstrap catalogues can be downloaded from here: <a class="reference external" href="https://www.extragalactic.info/bootstrap/">https://www.extragalactic.info/bootstrap/</a> . Note that you will also need to convert all your flux values from Jy to mJy.</p>
-<p>The LOFAR-VLBI pipeline <strong>requires</strong> the information on the sources, either from this output catalogue or the <a class="reference external" href="https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form">LoTSS catalogue server</a> , and if you run the ddf-pipeline it can use the additional phase solutions (but this is not required). We recommend skipping this step if your field is already in the <a class="reference external" href="https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form">LoTSS catalogue server</a> unless you wish do do wide-field imaging at high resolution, rather than imaging science targets in a few (or one) directions.</p>
-</div>
-<div class="section" id="running-the-lofar-vlbi-pipeline">
-<h2>Running the LOFAR-VLBI pipeline<a class="headerlink" href="#running-the-lofar-vlbi-pipeline" title="Permalink to this headline">¶</a></h2>
-<p>The LOFAR-VLBI pipeline uses the same <code class="docutils literal notranslate"><span class="pre">genericpipeline</span></code> framework as prefactor. You can see the prefactor <a class="reference external" href="file:///media/quasarfix/media/cep3/prefactor/docs/build/html/parset.html">documentation</a> on how to modify the <code class="docutils literal notranslate"><span class="pre">pipeline.cfg</span></code> and the corresponding parset files before you start the pipeline, although you should already be familiar with this if you’ve done it for prefactor.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The pipeline.cfg file in the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> repository already contains paths for the singularity image, although some paths will need to be local. Please check this file carefully before making changes.</p>
-</div>
-<p>The LOFAR-VLBI pipeline is broken into two steps: <strong>Delay-Calibration.parset</strong> and <strong>Split-Directions.parset</strong>. The first parset does all the heavy lifting; it applies the prefactor solutions, splits out best in-field calibrator candidate, performs the delay calibration on it, and applies these corrections back to the data. The second parset takes the resulting CORRECTED_DATA, splits out the directions in which you wish to image, and runs self-calibration on them.</p>
-<p>Before running the pipeline, you should check:</p>
-<ul class="simple">
-<li><p>If there are any bad stations flagged by prefactor. These will need to be manually input into the parsets. Follow exactly the syntax for the example given in the parset.</p></li>
-<li><p>Check the rest of the “Please update these parameters” section. Comments in the parset(s) describe what they are.</p></li>
-<li><p>Optional: if you have run the ddf-pipeline, please update the DDF options as well. If you are only using the catalogue, update the lotss_skymodel parameter to point to your output file.</p></li>
-</ul>
-<p>Once all parameters are set, the pipeline can be run as, for example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">genericpipeline</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">c</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">cfg</span> <span class="n">Delay</span><span class="o">-</span><span class="n">Calibration</span><span class="o">.</span><span class="n">parset</span>
+</div></blockquote>
+<p>For example, to start a Singularity shell:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ singularity shell --bind /scratch/data/,/home/username/software my_singularity_image.sif
 </pre></div>
 </div>
+<p>This will return a prompt where you will be ‘inside’ the Singularity image – i.e., have access to everything in it.</p>
+<p>To run a script (which is generally how you will run the pipeline), you would do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ singularity exec --bind /scratch/data,/home/username/software my_singularity_image.sif myscript.py arg1
+</pre></div>
+</div>
+<p>These are just examples; please refer to the documentation for your specific version of <a class="reference external" href="https://sylabs.io/guides/3.6/user-guide/">Singularity</a> for further information.</p>
+</div>
+<div class="section" id="running-a-generic-pipeline-parset">
+<h2>Running a Generic Pipeline parset<a class="headerlink" href="#running-a-generic-pipeline-parset" title="Permalink to this headline">¶</a></h2>
+<p>Both <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> and the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline use the <a class="reference external" href="https://www.astron.nl/citt/genericpipeline/">genericpipeline</a> framework. The instructions for a pipeline are written in a specific format in a <em>parset</em>, which is passed along with a configuration file, to the generic pipeline. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ genericpipeline.py -c pipeline.cfg pipeline.parset
+</pre></div>
+</div>
+<p>Each parset will contain different instructions, relating to what that part of the pipeline is doing. The <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> parsets consist of:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Pre-Facet-Calibrator.parset</p></li>
+<li><p>Pre-Facet-Target.parset</p></li>
+</ul>
+</div></blockquote>
+<p>And the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> parsets are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Delay-Calibration.parset</p></li>
+<li><p>Split-Directions.parset</p></li>
+</ul>
+</div></blockquote>
+<p>These can all use the same configuration file (see next section).</p>
+</div>
+<div class="section" id="pipeline-configuration-file">
+<h2>Pipeline configuration file<a class="headerlink" href="#pipeline-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>If you are using the recommended Singularity image, the configuration file is relatively straightforward to set up. The <em>pipeline.cfg</em> file from the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> github repository is already configured for the Singularity image. You only need to change the following lines:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">runtime_directory</span><span class="o">=</span>
+<span class="n">recipe_directories</span><span class="o">=</span><span class="p">[</span><span class="o">%</span><span class="p">(</span><span class="n">pythonpath</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="n">lofarpipe</span><span class="o">/</span><span class="n">recipes</span><span class="p">,</span><span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">lofar</span><span class="o">/</span><span class="n">losoto</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Set the <code class="docutils literal notranslate"><span class="pre">runtime_directory</span></code> to wherever your parent directory is for the pipeline to run; e.g if you set this to <code class="docutils literal notranslate"><span class="pre">runtime_directory=/scratch/myusername/</span></code> then running the <em>Pre-Facet-Calibrator.parset</em> will create the directory <code class="docutils literal notranslate"><span class="pre">/scratch/myusername/Pre-Facet-Calibrator</span></code> and run in that directory.</p>
+<p>To the <code class="docutils literal notranslate"><span class="pre">recipe_directories</span></code> list you need to add where you cloned the <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> and <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> repositories, e.g. if you put them in <code class="docutils literal notranslate"><span class="pre">/scratch/</span></code> then:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">recipe_directories</span><span class="o">=</span><span class="p">[</span><span class="o">%</span><span class="p">(</span><span class="n">pythonpath</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="n">lofarpipe</span><span class="o">/</span><span class="n">recipes</span><span class="p">,</span><span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">lofar</span><span class="o">/</span><span class="n">losoto</span><span class="p">,</span><span class="o">/</span><span class="n">scratch</span><span class="o">/</span><span class="n">prefactor</span><span class="p">,</span><span class="o">/</span><span class="n">scratch</span><span class="o">/</span><span class="n">lofar</span><span class="o">-</span><span class="n">vlbi</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The settings at the bottom of the configuration file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">remote</span><span class="p">]</span>
+<span class="n">method</span> <span class="o">=</span> <span class="n">local</span>
+<span class="n">max_per_node</span> <span class="o">=</span> <span class="mi">32</span>
+</pre></div>
+</div>
+<p>Are sensible for running on a single node with 32 cores available. Please consult your system administrator if you think this needs to be changed.</p>
+<p>If you are using a local version of the LOFAR software instead of the Singularity image, please consult your system administrator for help on setting up the configuration file.</p>
 </div>
 <div class="section" id="using-your-own-catalogue">
 <h2>Using your own catalogue<a class="headerlink" href="#using-your-own-catalogue" title="Permalink to this headline">¶</a></h2>
-<p>The pipeline will automatically try to download information from both the <a class="reference external" href="https://lofar-surveys.org/lbcs.html">LBCS catalogue server</a> and the <a class="reference external" href="https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form">LoTSS catalogue server</a>. Both of these are required to help select the best in-field calibrator. You can generate an appropriate catalogue to replace the LoTSS catalogue by running the <a class="reference external" href="https://github.com/mhardcastle/ddf-pipeline">ddf-pipeline</a> and then the <em>quality_pipeline.py</em> script. The output catalogue will be named <em>image_full_ampphase_di_m.NS.cat.fits</em>.  The only thing you need to do is convert this to a csv file, and then update the following line in <strong>Delay-Calibration.parset</strong>:</p>
+<p>The <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline will automatically try to download information from both the <a class="reference external" href="https://lofar-surveys.org/lbcs.html">LBCS catalogue server</a> and the <a class="reference external" href="https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form">LoTSS catalogue server</a>. Both of these are required to help select the best in-field calibrator. As described in the <a class="reference external" href="before.html">Before you begin</a> section, if LoTSS coverage for your field does not yet exist, you can manually make your own field catalogue.
+This is done by running the <a class="reference external" href="https://github.com/mhardcastle/ddf-pipeline">ddf-pipeline</a> and then the <em>quality_pipeline.py</em> script. The output catalogue will be named <em>image_full_ampphase_di_m.NS.cat.fits</em>.  The only thing you need to do is convert this to a csv file, and then update the following line in <strong>Delay-Calibration.parset</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>! lotss_skymodel         = {{ results_directory }}/lotss_catalogue.csv
 </pre></div>
 </div>
@@ -111,8 +121,6 @@ Collaborative projects with the Surveys KSP are also possible, if you have your 
 <p>The <strong>Delay-Calibration</strong> step generates some output catalogues, which are stored in its <em>results</em> directory. These include:</p>
 <ul class="simple">
 <li><p>delay_calibrators.csv - a list of potential LBCS calibrators in the field</p></li>
-<li><p>best_delay_calibrators.csv - the best LBCS calibrator to use for the delay calibration</p></li>
-<li><p>subtract_sources.csv - bright sources and LBCS calibrators that may need to be subtracted to improve image fidelity</p></li>
 <li><p>image_catalogue.csv - everything else</p></li>
 </ul>
 <p>Once the <strong>Delay-Calibration</strong> step has run, you can simply edit or replace the <em>image_catalogue.csv</em> file to include only the source(s) you wish to image. The more directions you want to image, the longer the pipeline will take, so you should really limit this to your target of interest. The file needs to be in <strong>csv format</strong> with the <strong>same column names</strong> as <em>image_catalogue.csv</em> and flux densities in Janskys.</p>
@@ -139,14 +147,14 @@ Collaborative projects with the Surveys KSP are also possible, if you have your 
 <li class="toctree-l1"><a class="reference internal" href="before.html">Before you begin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#preparing-the-data-prefactor">Preparing the data: Prefactor</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#optional-ddf-pipeline">Optional: ddf-pipeline</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#running-the-lofar-vlbi-pipeline">Running the LOFAR-VLBI pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-singularity">Running singularity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-a-generic-pipeline-parset">Running a Generic Pipeline parset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-configuration-file">Pipeline configuration file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#using-your-own-catalogue">Using your own catalogue</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#setting-the-directions-to-image">Setting the directions to image</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="running.html">Setting Up and Running the LOFAR-VLBI pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Running the pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 <li class="toctree-l1"><a class="reference internal" href="help.html">Getting help</a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
@@ -171,7 +179,7 @@ Collaborative projects with the Surveys KSP are also possible, if you have your 
           <div role="navigation" aria-label="related navigaton">
             <a href="installation.html" title="Installation"
               >previous</a> |
-            <a href="running.html" title="Setting Up and Running the LOFAR-VLBI pipeline"
+            <a href="running.html" title="Running the pipeline"
               >next</a> |
             <a href="genindex.html" title="General Index"
               >index</a>

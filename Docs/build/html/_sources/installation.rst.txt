@@ -37,7 +37,7 @@ The LOFAR-VLBI pipeline and prefactor (specific commit listed above) have been s
 
        $ wget https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp@e7512b7e92e5a3124e6ed177650e99a8c4eb2263_with_pyvo.sif
 
-The singularity image was built with singularity version 2.5.  Users have reported that it also works with singularity version 3.3.
+The singularity image was built with singularity version 2.5.  Users have reported that it also works with singularity versions 3.1 and 3.3.
 
 **LOFAR-VLBI pipeline**
 

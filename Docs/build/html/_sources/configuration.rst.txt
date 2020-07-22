@@ -4,77 +4,80 @@
 Configuration
 *************
 
-=============================
-Preparing the data: Prefactor
-=============================
+===================
+Running singularity
+===================
 
-The LOFAR-VLBI pipeline makes use of prefactor solutions to apply to the data. Therefore you must pre-process your data through prefactor, both the calibrator and target pipelines. For instructions how to run prefactor on your data, please look at the `prefactor documentation`_. For any issues you encounter with prefactor, please open an issue on the `prefactor`_ repository.
+Depending on the installation of `Singularity`_ you have access to, the syntax may change slightly. The following instructions are for Singularity version 3.1. 
 
+You can either start a Singularity shell, which you can then use interactively just as you would any other shell (e.g., bash, csh, etc.), or you can execute a script using Singularity. In both cases, you need to:
 
-* The default is now for **Pre-Facet-Calibrator.parset** to process all stations, including the international stations. You can run this with the default settings. Please check the outputs to make sure they are sensible! 
+ * provide an image for Singularity to use
+ * 'bind' directories that will need to be used
 
-.. note::
-    If your standard calibrator is either 3C 295 or 3C 196, the standard models in the prefactor github repository do not have sufficiently high resolution, but high-resolution models do exist. Please contact the long baseline working group for help. 
+For example, to start a Singularity shell::
 
-* The **Pre-Facet-Target.parset** should be run with all the standard defaults. This will copy over the solutions from Pre-Facet-Calibrator and add the self-cal phase solutions for the core and remote stations, which are necessary for the LOFAR-VLBI pipeline. Please check the outputs to make sure they are sensible!  Also note any stations which were flagged as 'bad' as you will need to pre-flag these for the LOFAR-VLBI pipeline.
+        $ singularity shell --bind /scratch/data/,/home/username/software my_singularity_image.sif
 
-.. note::
-    Processing of interleaved datasets is not currently supported.
+This will return a prompt where you will be 'inside' the Singularity image -- i.e., have access to everything in it.
 
-======================
-Optional: ddf-pipeline
-======================
+To run a script (which is generally how you will run the pipeline), you would do::
 
-This is an optional step and is not necessary to run the pipeline unless you do not have a LoTSS-style catalogue for your field. The ddf-pipeline requires some advanced user knowledge to set up and run, so please contact lofar-admin@strw.leidenuniv.nl if you are considering doing this step. If you are using Surveys data it may have already been run for your pointing; if not, we can help. 
-Collaborative projects with the Surveys KSP are also possible, if you have your own data and want it processed through the SKSP infastructure to carry out this step. Contact lofar-admin@strw.leidenuniv.nl for more details. 
+        $ singularity exec --bind /scratch/data,/home/username/software my_singularity_image.sif myscript.py arg1
 
+These are just examples; please refer to the documentation for your specific version of `Singularity`_ for further information.
 
-This step is only necessary in the case where your field has not been covered yet by LoTSS, to generate a catalogue of sources in the field which is used by the LOFAR-VLBI pipeline to help select the best candidate for in-field calibration. If you can query sources in your field with the `LoTSS catalogue server`_ then you do not need to generate this catalogue. 
+=================================
+Running a Generic Pipeline parset
+=================================
 
-.. note::
-    The recommended singularity image works with prefactor and the LOFAR-VLBI pipeline, but not the ddf-pipeline.  Please refer to the `ddf-pipeline`_ documentation for its separate software requirements, or contact lofar-admin@strw.leidenuniv.nl .
+Both `prefactor`_ and the `LOFAR-VLBI`_ pipeline use the `genericpipeline`_ framework. The instructions for a pipeline are written in a specific format in a *parset*, which is passed along with a configuration file, to the generic pipeline. For example::
 
+   $ genericpipeline.py -c pipeline.cfg pipeline.parset
 
-The `ddf-pipeline`_  operates on the results of Pre-Facet-Target and provides:
+Each parset will contain different instructions, relating to what that part of the pipeline is doing. The `prefactor`_ parsets consist of:
 
-* additional phase solutions for core and remote stations
-* a self-calibrated image at 6" resolution
-* an initial catalogue of sources in the field
+ * Pre-Facet-Calibrator.parset
+ * Pre-Facet-Target.parset
 
-To generate the final catalogue, use the *quality_pipeline.py* script (found in the `ddf-pipeline`_ *scripts* sub-directory) with an appropriate configuration file (the example *quality-example.cfg* is in the *examples* sub-directory). The bootstrap catalogues can be downloaded from here: https://www.extragalactic.info/bootstrap/ . Note that you will also need to convert all your flux values from Jy to mJy.
+And the `LOFAR-VLBI`_ parsets are:
 
-The LOFAR-VLBI pipeline **requires** the information on the sources, either from this output catalogue or the `LoTSS catalogue server`_ , and if you run the ddf-pipeline it can use the additional phase solutions (but this is not required). We recommend skipping this step if your field is already in the `LoTSS catalogue server`_ unless you wish do do wide-field imaging at high resolution, rather than imaging science targets in a few (or one) directions. 
+ * Delay-Calibration.parset
+ * Split-Directions.parset
 
+These can all use the same configuration file (see next section).
 
-===============================
-Running the LOFAR-VLBI pipeline
-===============================
+===========================
+Pipeline configuration file
+===========================
 
-The LOFAR-VLBI pipeline uses the same ``genericpipeline`` framework as prefactor. You can see the prefactor `documentation`_ on how to modify the ``pipeline.cfg`` and the corresponding parset files before you start the pipeline, although you should already be familiar with this if you've done it for prefactor.
+If you are using the recommended Singularity image, the configuration file is relatively straightforward to set up. The *pipeline.cfg* file from the `LOFAR-VLBI`_ github repository is already configured for the Singularity image. You only need to change the following lines::
 
-.. note::
-    The pipeline.cfg file in the `LOFAR-VLBI`_ repository already contains paths for the singularity image, although some paths will need to be local. Please check this file carefully before making changes. 
+        runtime_directory=
+        recipe_directories=[%(pythonpath)s/lofarpipe/recipes,/opt/lofar/losoto] 
 
-The LOFAR-VLBI pipeline is broken into two steps: **Delay-Calibration.parset** and **Split-Directions.parset**. The first parset does all the heavy lifting; it applies the prefactor solutions, splits out best in-field calibrator candidate, performs the delay calibration on it, and applies these corrections back to the data. The second parset takes the resulting CORRECTED_DATA, splits out the directions in which you wish to image, and runs self-calibration on them. 
+Set the ``runtime_directory`` to wherever your parent directory is for the pipeline to run; e.g if you set this to ``runtime_directory=/scratch/myusername/`` then running the *Pre-Facet-Calibrator.parset* will create the directory ``/scratch/myusername/Pre-Facet-Calibrator`` and run in that directory.
 
+To the ``recipe_directories`` list you need to add where you cloned the `prefactor`_ and `LOFAR-VLBI`_ repositories, e.g. if you put them in ``/scratch/`` then::
 
-Before running the pipeline, you should check:
+        recipe_directories=[%(pythonpath)s/lofarpipe/recipes,/opt/lofar/losoto,/scratch/prefactor,/scratch/lofar-vlbi] 
 
-* If there are any bad stations flagged by prefactor. These will need to be manually input into the parsets. Follow exactly the syntax for the example given in the parset.
+The settings at the bottom of the configuration file::
 
-* Check the rest of the "Please update these parameters" section. Comments in the parset(s) describe what they are. 
+        [remote]
+        method = local
+        max_per_node = 32
 
-* Optional: if you have run the ddf-pipeline, please update the DDF options as well. If you are only using the catalogue, update the lotss_skymodel parameter to point to your output file. 
+Are sensible for running on a single node with 32 cores available. Please consult your system administrator if you think this needs to be changed.  
 
-Once all parameters are set, the pipeline can be run as, for example::
-
-   genericpipeline.py -c pipeline.cfg Delay-Calibration.parset
+If you are using a local version of the LOFAR software instead of the Singularity image, please consult your system administrator for help on setting up the configuration file.
 
 ========================
 Using your own catalogue
 ========================
 
-The pipeline will automatically try to download information from both the `LBCS catalogue server`_ and the `LoTSS catalogue server`_. Both of these are required to help select the best in-field calibrator. You can generate an appropriate catalogue to replace the LoTSS catalogue by running the `ddf-pipeline`_ and then the *quality_pipeline.py* script. The output catalogue will be named *image_full_ampphase_di_m.NS.cat.fits*.  The only thing you need to do is convert this to a csv file, and then update the following line in **Delay-Calibration.parset**::
+The `LOFAR-VLBI`_ pipeline will automatically try to download information from both the `LBCS catalogue server`_ and the `LoTSS catalogue server`_. Both of these are required to help select the best in-field calibrator. As described in the `Before you begin`_ section, if LoTSS coverage for your field does not yet exist, you can manually make your own field catalogue. 
+This is done by running the `ddf-pipeline`_ and then the *quality_pipeline.py* script. The output catalogue will be named *image_full_ampphase_di_m.NS.cat.fits*.  The only thing you need to do is convert this to a csv file, and then update the following line in **Delay-Calibration.parset**::
 
     ! lotss_skymodel         = {{ results_directory }}/lotss_catalogue.csv
 
@@ -89,8 +92,6 @@ Setting the directions to image
 The **Delay-Calibration** step generates some output catalogues, which are stored in its *results* directory. These include:
 
 * delay_calibrators.csv - a list of potential LBCS calibrators in the field 
-* best_delay_calibrators.csv - the best LBCS calibrator to use for the delay calibration
-* subtract_sources.csv - bright sources and LBCS calibrators that may need to be subtracted to improve image fidelity
 * image_catalogue.csv - everything else
 
 Once the **Delay-Calibration** step has run, you can simply edit or replace the *image_catalogue.csv* file to include only the source(s) you wish to image. The more directions you want to image, the longer the pipeline will take, so you should really limit this to your target of interest. The file needs to be in **csv format** with the **same column names** as *image_catalogue.csv* and flux densities in Janskys.
@@ -108,6 +109,10 @@ This gives an image which is 25.6 x 25.6 arcseconds. If your source is larger th
    
 .. _help:
 
+
+.. _Before you begin: before.html
+.. _genericpipeline: https://www.astron.nl/citt/genericpipeline/
+.. _Singularity: https://sylabs.io/guides/3.6/user-guide/
 .. _LOFAR-VLBI: https://github.com/lmorabit/lofar-vlbi
 .. _LoTSS catalogue server: https://vo.astron.nl/lofartier1/lofartier1.xml/cone/form
 .. _LBCS catalogue server: https://lofar-surveys.org/lbcs.html
