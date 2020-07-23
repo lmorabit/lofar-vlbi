@@ -42,6 +42,17 @@
             
   <div class="section" id="running-the-pipeline">
 <span id="index-0"></span><h1>Running the pipeline<a class="headerlink" href="#running-the-pipeline" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview-of-the-steps">
+<h2>Overview of the steps<a class="headerlink" href="#overview-of-the-steps" title="Permalink to this headline">¶</a></h2>
+<p>To produce high resolution images, there are four steps you need to run. Two of these are from <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> and two are from the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline.</p>
+<p><strong>Prefactor steps</strong>
+* Pre-Facet-Calibrator
+* Pre-Facet-Target</p>
+<p><strong>LOFAR-VLBI steps</strong>
+* Delay-Calibration
+* Split-Directions</p>
+<p>Prefactor in particular has many other steps you can run. These are not required for running the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline and therefore will <em>not</em> be covered here.</p>
+</div>
 <div class="section" id="running-prefactor">
 <h2>Running Prefactor<a class="headerlink" href="#running-prefactor" title="Permalink to this headline">¶</a></h2>
 <p>The LOFAR-VLBI pipeline makes use of prefactor solutions to apply to the data. Therefore you must pre-process your data through prefactor, both the calibrator and target pipelines. For instructions how to run prefactor on your data, please look at the <a class="reference external" href="https://www.astron.nl/citt/prefactor/">prefactor documentation</a>. For any issues you encounter with prefactor, please open an issue on the <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> repository.</p>
@@ -103,6 +114,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Running the pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview-of-the-steps">Overview of the steps</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#running-prefactor">Running Prefactor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#running-the-lofar-vlbi-pipeline">Running the LOFAR-VLBI pipeline</a></li>
 </ul>

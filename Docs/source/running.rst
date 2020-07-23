@@ -3,6 +3,22 @@
 ********************
 Running the pipeline
 ********************
+=====================
+Overview of the steps
+=====================
+
+To produce high resolution images, there are four steps you need to run. Two of these are from `prefactor`_ and two are from the `LOFAR-VLBI`_ pipeline.
+
+**Prefactor steps**
+* Pre-Facet-Calibrator 
+* Pre-Facet-Target
+
+**LOFAR-VLBI steps**
+* Delay-Calibration
+* Split-Directions
+
+Prefactor in particular has many other steps you can run. These are not required for running the `LOFAR-VLBI`_ pipeline and therefore will *not* be covered here. 
+
 
 =================
 Running Prefactor
