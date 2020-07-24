@@ -630,7 +630,7 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
 	padding = 1.5
 	possible_map_sizes = np.array([512,1024,2048,4096,8192])
         possible_map_asec = possible_map_sizes * float(pix_size) * 1e-3  ## convert to arcsec
-	possible_idx = np.where( size_asec*adding <= possible_map_asec )[0] 
+	possible_idx = np.where( size_asec*padding <= possible_map_asec )[0] 
         if len( possible_idx ) >= 1:
             map_size = possible_map_sizes[np.min( possible_idx )]
             print( 'Estimated source size {:s}, making image with {:s}x{:s} pixels ({:s}x{:s} arcsec)'.format( str(size_asec), str(map_size), str(map_size), str(map_size*float(pix_size)*1e-3), str(map_size*float(pix_size)*1e-3) ) )
