@@ -42,15 +42,26 @@
             
   <div class="section" id="running-the-pipeline">
 <span id="index-0"></span><h1>Running the pipeline<a class="headerlink" href="#running-the-pipeline" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="overview-of-the-steps">
-<h2>Overview of the steps<a class="headerlink" href="#overview-of-the-steps" title="Permalink to this headline">¶</a></h2>
-<p>To produce high resolution images, there are four steps you need to run. Two of these are from <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> and two are from the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline.</p>
-<p><strong>Prefactor steps</strong>
-* Pre-Facet-Calibrator
-* Pre-Facet-Target</p>
-<p><strong>LOFAR-VLBI steps</strong>
-* Delay-Calibration
-* Split-Directions</p>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>To produce high resolution images, there are four parsets you need to run. Two of these are from <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> and two are from the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline. After you finish running the <a class="reference external" href="https://github.com/lofar-astron/prefactor">prefactor</a> parsets you will need to assess the outputs before starting the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> parsets. These three sections are described in more detail below.</p>
+<dl class="simple">
+<dt><strong>Running Prefactor</strong></dt><dd><ul class="simple">
+<li><p>Pre-Facet-Calibrator</p></li>
+<li><p>Pre-Facet-Target</p></li>
+</ul>
+</dd>
+<dt><strong>Assessment of Prefactor output</strong></dt><dd><ul class="simple">
+<li><p>See guidance below</p></li>
+</ul>
+</dd>
+<dt><strong>Running the LOFAR-VLBI pipeline</strong></dt><dd><ul class="simple">
+<li><p>If necessary, configuring to use your own catalogue (see <a class="reference external" href="configuration.html#using-your-own-catalogue">Using your own catalogue</a> )</p></li>
+<li><p>Delay-Calibration</p></li>
+<li><p>Split-Directions</p></li>
+</ul>
+</dd>
+</dl>
 <p>Prefactor in particular has many other steps you can run. These are not required for running the <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline and therefore will <em>not</em> be covered here.</p>
 </div>
 <div class="section" id="running-prefactor">
@@ -79,6 +90,24 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Processing of interleaved datasets is not currently supported.</p>
+</div>
+</div>
+<div class="section" id="assessment-of-prefactor-output">
+<h2>Assessment of Prefactor output<a class="headerlink" href="#assessment-of-prefactor-output" title="Permalink to this headline">¶</a></h2>
+<p><strong>1.</strong> In the parent directory for your <em>Pre-Facet-Target</em> directory, there should be a <em>Pre-Facet-Target.log</em> file. This will tell you if any stations were deemed to be bad and automatically flagged.
+The <a class="reference external" href="https://github.com/lmorabit/lofar-vlbi">LOFAR-VLBI</a> pipeline doesn’t have this information, so you have to manually set information in <em>Delay-Calibration.parset</em> manually to flag and filter any bad stations. The lines to change are <code class="docutils literal notranslate"><span class="pre">!</span> <span class="pre">flag_baselines</span> <span class="pre">=</span></code> and <code class="docutils literal notranslate"><span class="pre">!</span> <span class="pre">filter_baselines</span> <span class="pre">=</span></code>. Here is an example of the expecte syntax for flagging CS013HBA and removing it from the data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>## Stations to flag and filter
+! flag_baselines        = [ CS013HBA*&amp;&amp;* ]
+! filter_baselines      = !CS013HBA*&amp;&amp;*
+</pre></div>
+</div>
+<p>Please note that the syntax is different for <em>flagging</em>, which sets the FLAG value to 1 to indicate bad data; and <em>filtering</em>, which is a selection function for NDPPP.
+In this example we flag CS013HBA and all auto- and cross-correlations to/from that antenna, and then filter, i.e., select every antenna that is not CS013HBA to remove it completely from the data.  The <code class="docutils literal notranslate"><span class="pre">!</span></code> in front of the CS013HBA on the filter line is a negation – i.e., telling NDPPP to select everything <em>except</em> CS013HBA.</p>
+<p>If you need to flag and filter multiple stations, here is an example of the syntax:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>## Stations to flag and filter
+! flag_baselines        = [ CS013HBA*&amp;&amp;*,RS508HBA*&amp;&amp;* ]
+! filter_baselines      = !CS013HBA*&amp;&amp;*,!RS508HBA*&amp;&amp;*
+</pre></div>
 </div>
 </div>
 <div class="section" id="running-the-lofar-vlbi-pipeline">
@@ -114,8 +143,9 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Running the pipeline</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#overview-of-the-steps">Overview of the steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#running-prefactor">Running Prefactor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#assessment-of-prefactor-output">Assessment of Prefactor output</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#running-the-lofar-vlbi-pipeline">Running the LOFAR-VLBI pipeline</a></li>
 </ul>
 </li>

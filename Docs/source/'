@@ -3,25 +3,42 @@
 ********************
 Running the pipeline
 ********************
-========
-Overview
-========
+=====================
+Overview of the steps
+=====================
 
-To produce high resolution images, there are four parsets you need to run. Two of these are from `prefactor`_ and two are from the `LOFAR-VLBI`_ pipeline. After you finish running the `prefactor`_ parsets you will need to assess the outputs before starting the `LOFAR-VLBI`_ parsets. These three sections are described in more detail below.
+To produce high resolution images, there are four parsets you need to run. Two of these are from `prefactor`_ and two are from the `LOFAR-VLBI`_ pipeline. After you finish running the `prefactor`_ parsets you will need to assess the outputs before starting the `LOFAR-VLBI`_ parsets.
 
-**Running Prefactor**
- * Pre-Facet-Calibrator 
- * Pre-Facet-Target
+**Prefactor steps**
+* Pre-Facet-Calibrator 
+* Pre-Facet-Target
 
 **Assessment of Prefactor output**
- * See guidance below
+* In the parent directory for your *Pre-Facet-Target* directory, there should be a *Pre-Facet-Target.log* file. This will tell you if any stations were deemed to be bad and automatically flagged. 
+The `LOFAR-VLBI`_ pipeline doesn't have this information, so you have to manually set information in *Delay-Calibration.parset* manually to flag and filter any bad stations. The lines to change are ``! flag_baselines =`` and ``! filter_baselines =``. Here is an example of the expecte syntax for flagging CS013HBA and removing it from the data::
 
-**Running the LOFAR-VLBI pipeline**
- * If necessary, configuring to use your own catalogue (see `Using your own catalogue`_ )
- * Delay-Calibration
- * Split-Directions
+        ## Stations to flag and filter
+        ! flag_baselines        = [ CS013HBA*&&* ]
+        ! filter_baselines      = !CS013HBA*&&*
+
+Please note that the syntax is different for *flagging*, which sets the FLAG value to 1 to indicate bad data; and *filtering*, which is a selection function for NDPPP.  
+In this example we flag CS013HBA and all auto- and cross-correlations to/from that antenna, and then filter, i.e., select every antenna that is not CS013HBA to remove it completely from the data.  The ``!`` in front of the CS013HBA on the filter line is a negation -- i.e., telling NDPPP to select "not CS013HBA".
+
+If you need to flag and filter multiple stations, here is an example of the syntax::
+
+        ## Stations to flag and filter
+        ! flag_baselines        = [ CS013HBA*&&*,RS508HBA*&&* ]
+        ! filter_baselines      = !CS013HBA*&&*,!RS508HBA*&&*
+
+
+
+
+**LOFAR-VLBI steps**
+* Delay-Calibration
+* Split-Directions
 
 Prefactor in particular has many other steps you can run. These are not required for running the `LOFAR-VLBI`_ pipeline and therefore will *not* be covered here. 
+
 
 =================
 Running Prefactor
@@ -50,27 +67,6 @@ otherwise you will get an error.
 .. note::
     Processing of interleaved datasets is not currently supported.
 
-==============================
-Assessment of Prefactor output
-==============================
-
-**1.** In the parent directory for your *Pre-Facet-Target* directory, there should be a *Pre-Facet-Target.log* file. This will tell you if any stations were deemed to be bad and automatically flagged.
-The `LOFAR-VLBI`_ pipeline doesn't have this information, so you have to manually set information in *Delay-Calibration.parset* manually to flag and filter any bad stations. The lines to change are ``! flag_baselines =`` and ``! filter_baselines =``. Here is an example of the expecte syntax for flagging CS013HBA and removing it from the data::
-
-        ## Stations to flag and filter
-        ! flag_baselines        = [ CS013HBA*&&* ]
-        ! filter_baselines      = !CS013HBA*&&*
-
-Please note that the syntax is different for *flagging*, which sets the FLAG value to 1 to indicate bad data; and *filtering*, which is a selection function for NDPPP.
-In this example we flag CS013HBA and all auto- and cross-correlations to/from that antenna, and then filter, i.e., select every antenna that is not CS013HBA to remove it completely from the data.  The ``!`` in front of the CS013HBA on the filter line is a negation -- i.e., telling NDPPP to select everything *except* CS013HBA.
-
-If you need to flag and filter multiple stations, here is an example of the syntax::
-
-        ## Stations to flag and filter
-        ! flag_baselines        = [ CS013HBA*&&*,RS508HBA*&&* ]
-        ! filter_baselines      = !CS013HBA*&&*,!RS508HBA*&&*
-
-
 ===============================
 Running the LOFAR-VLBI pipeline
 ===============================
@@ -98,7 +94,6 @@ This gives an image which is 25.6 x 25.6 arcseconds. If your source is larger th
    
 .. _help:
 
-.. _Using your own catalogue: configuration.html#using-your-own-catalogue
 .. _genericpipeline: https://www.astron.nl/citt/genericpipeline/
 .. _Singularity: https://sylabs.io/guides/3.6/user-guide/
 .. _LOFAR-VLBI: https://github.com/lmorabit/lofar-vlbi
