@@ -330,8 +330,38 @@ def plugin_main( args, **kwargs ):
 
     ## if the LoTSS catalogue is empty, write out the delay cals only and stop
     if len(lotss_catalogue) == 0:
-        print('Target field not in LoTSS coverage yet! Only writing {:s}'.format(delay_cals_file))
+        print('Target field not in LoTSS coverage yet! Only writing {:s} and best_{:s} based on LBCS'.format(delay_cals_file,delay_cals_file))
         lbcs_catalogue.write(delay_cals_file, format='csv')
+        ## pick the best calibrator based on LBCS information only
+        RATar, DECTar = grab_coo_MS(input2strlist_nomapfile(MSname)[0])
+        ptg_coords = SkyCoord( RATar, DECTar, frame='icrs', unit='deg' )
+
+        src_coords = SkyCoord( lbcs_catalogue['RA'], lbcs_catalogue['DEC'], frame='icrs', unit='deg' )
+        separations = src_coords.separation(ptg_coords )
+        seps = Column( separations.deg, name='Radius' )
+        lbcs_catalogue.add_column( seps )
+
+        ## highest FT_total; if tie use closest to phase centre
+        best_idx = np.where( lbcs_catalogue['FT_total'] == np.max( lbcs_catalogue['FT_total'] ) )[0]
+        if len( best_idx ) > 1:
+            tmp = seps[best_idx]
+            new_best_idx = np.where( tmp == np.min(tmp) )[0]
+            best_idx = best_idx[new_best_idx]
+
+        ## rename some columns 
+        lbcs_catalogue.rename_column('RA','RA_LOTSS')
+        lbcs_catalogue.rename_column('DEC','DEC_LOTSS')
+        lbcs_catalogue.rename_column('Observation','Source_id')
+        ## add in some dummy data
+        Total_flux = Column( np.ones(len(lbcs_catalogue)), name='Total_flux' )
+        lbcs_catalogue.add_column( Total_flux )
+        LGZ_Size = Column( np.ones( len(lbcs_catalogue) )*20., name='LGZ_Size' ) ## set to a default of 20 arcsec
+        lbcs_catalogue.add_column( LGZ_Size )
+
+        best_result = lbcs_catalogue[best_idx]
+        best_file = delay_cals_file.replace('delay_','best_delay_')
+        best_result.write( best_file, format='csv' )
+        print( 'Writing best delay calibrator information to file {:s}'.format(best_file) )
         return
 
     ## else continue 
