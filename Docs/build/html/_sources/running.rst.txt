@@ -103,7 +103,7 @@ Pipeline Block Diagram
 To aid the user, below is a block diagram of the pipeline.
 
 .. image:: images/LB_calibration-2.png
-   :width: 600
+   :width: 800
    :alt: LOFAR-VLBI block diagram
 
    
