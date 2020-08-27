@@ -95,6 +95,17 @@ The self-calibration script run by the pipeline has the following default parame
 * Pixel scale = 50 milli-arcsec
 
 This gives an image which is 25.6 x 25.6 arcseconds. If your source is larger than this, you will need to adjust the number of pixels, following the convention of using powers of 2 (512,1024,2048,... etc.). 
+
+======================
+Pipeline Block Diagram
+======================
+
+To aid the user, below is a block diagram of the pipeline.
+
+.. image:: images/LB_calibration-2.png
+   :width: 600
+   :alt: LOFAR-VLBI block diagram
+
    
 .. _help:
 
