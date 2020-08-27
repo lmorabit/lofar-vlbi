@@ -85,6 +85,37 @@ Before running the pipeline, you should check:
 
 * Optional: if you have run the ddf-pipeline, please update the DDF options as well. If you are only using the catalogue, update the lotss_skymodel parameter to point to your output file. 
 
+Trying a different Delay Calibrator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you find that the delay calibrator selected by the pipeline is not adequate, or you wish to try a different LBCS source, you can do this with a little manual input. 
+
+First, you will have to modify the statefile (see `prefactor documentation`_ ) to remove the *prep_delay_cal* step and everything afterwards. You will then be able to resume the pipeline after making your catalogue changes.
+
+Next, you need to modify (or insert) the *best_delay_calibrators.csv* file, which can be found in the **results** directory of your runtime directory. The name of the file must be *best_delay_calibrators.csv* and the following comma separated values, including the header, are required::
+
+        Source_id,RA_LOTSS,DEC_LOTSS,Date,Time,Goodness,Flags,FT_Goodness,Quality,FT_total,Radius,Total_flux,LGZ_Size,DC_Maj
+
+The columns *LGZ_Size* and *DC_Maj* provide complementary information, and only one of these two columns is required. The rest of the columns must be present, and it does not matter if you have more columns than what is listed above. 
+
+All of this inforamtion is available from a combination of LBCS and LoTSS queries, but if you do not have LoTSS information then you can input dummy information to fill out the required columns. The recommended way to do this is to start with LBCS information and do the following:
+
+* Rename *Observation* to *Source_id* 
+
+* Rename *RA* to *RA_LOTSS* and *DEC* to *DEC_LOTSS*
+
+* Find the radius from the pointing centre and add this (in degrees) as the *Radius* information
+
+* Input the *Total_flux* as *1.0*
+
+* Add an *LGZ_Size* of *20.*
+
+The last 2 parameters are read in by the pipeline, but can be dummy values. The *LGZ_Size* is used to calculate the imaging parameters, and should be sensible for LBCS calibrators.
+
+You should have **ONLY ONE** source in your *best_delay_calibrators.csv* file. A good way to create this new file from LBCS data is to copy the *delay_calibrators.csv* file to *best_delay_calibrators.csv*, delete all the targets except the one you wish to try, and then add the extra columns necessary. 
+
+
+
 Selecting imaging parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

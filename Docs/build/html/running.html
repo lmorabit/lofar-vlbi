@@ -120,6 +120,26 @@ In this example we flag CS013HBA and all auto- and cross-correlations to/from th
 <li><p>Check the rest of the “Please update these parameters” section. Comments in the parset(s) describe what they are.</p></li>
 <li><p>Optional: if you have run the ddf-pipeline, please update the DDF options as well. If you are only using the catalogue, update the lotss_skymodel parameter to point to your output file.</p></li>
 </ul>
+<div class="section" id="trying-a-different-delay-calibrator">
+<h3>Trying a different Delay Calibrator<a class="headerlink" href="#trying-a-different-delay-calibrator" title="Permalink to this headline">¶</a></h3>
+<p>If you find that the delay calibrator selected by the pipeline is not adequate, or you wish to try a different LBCS source, you can do this with a little manual input.</p>
+<p>First, you will have to modify the statefile (see <a class="reference external" href="https://www.astron.nl/citt/prefactor/">prefactor documentation</a> ) to remove the <em>prep_delay_cal</em> step and everything afterwards. You will then be able to resume the pipeline after making your catalogue changes.</p>
+<p>Next, you need to modify (or insert) the <em>best_delay_calibrators.csv</em> file, which can be found in the <strong>results</strong> directory of your runtime directory. The name of the file must be <em>best_delay_calibrators.csv</em> and the following comma separated values, including the header, are required:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Source_id</span><span class="p">,</span><span class="n">RA_LOTSS</span><span class="p">,</span><span class="n">DEC_LOTSS</span><span class="p">,</span><span class="n">Date</span><span class="p">,</span><span class="n">Time</span><span class="p">,</span><span class="n">Goodness</span><span class="p">,</span><span class="n">Flags</span><span class="p">,</span><span class="n">FT_Goodness</span><span class="p">,</span><span class="n">Quality</span><span class="p">,</span><span class="n">FT_total</span><span class="p">,</span><span class="n">Radius</span><span class="p">,</span><span class="n">Total_flux</span><span class="p">,</span><span class="n">LGZ_Size</span><span class="p">,</span><span class="n">DC_Maj</span>
+</pre></div>
+</div>
+<p>The columns <em>LGZ_Size</em> and <em>DC_Maj</em> provide complementary information, and only one of these two columns is required. The rest of the columns must be present, and it does not matter if you have more columns than what is listed above.</p>
+<p>All of this inforamtion is available from a combination of LBCS and LoTSS queries, but if you do not have LoTSS information then you can input dummy information to fill out the required columns. The recommended way to do this is to start with LBCS information and do the following:</p>
+<ul class="simple">
+<li><p>Rename <em>Observation</em> to <em>Source_id</em></p></li>
+<li><p>Rename <em>RA</em> to <em>RA_LOTSS</em> and <em>DEC</em> to <em>DEC_LOTSS</em></p></li>
+<li><p>Find the radius from the pointing centre and add this (in degrees) as the <em>Radius</em> information</p></li>
+<li><p>Input the <em>Total_flux</em> as <em>1.0</em></p></li>
+<li><p>Add an <em>LGZ_Size</em> of <em>20.</em></p></li>
+</ul>
+<p>The last 2 parameters are read in by the pipeline, but can be dummy values. The <em>LGZ_Size</em> is used to calculate the imaging parameters, and should be sensible for LBCS calibrators.</p>
+<p>You should have <strong>ONLY ONE</strong> source in your <em>best_delay_calibrators.csv</em> file. A good way to create this new file from LBCS data is to copy the <em>delay_calibrators.csv</em> file to <em>best_delay_calibrators.csv</em>, delete all the targets except the one you wish to try, and then add the extra columns necessary.</p>
+</div>
 <div class="section" id="selecting-imaging-parameters">
 <h3>Selecting imaging parameters<a class="headerlink" href="#selecting-imaging-parameters" title="Permalink to this headline">¶</a></h3>
 <p>By default, the pipeline will run self-calibration using difmap. This is an order of magnitude faster (usually ~30 min) than any self-calibration using native LOFAR tools, and already optimised for VLBI. Difmap operates on the XX and YY polarisations independently, but the self-calibration script converts these solutions to an h5parm, applies them, and makes a Stokes I image from the corrected data using wsclean. The final self-calibrated dataset will have TEC-corrected, un-self-calibrated data in the <strong>DATA</strong> column and TEC + self-cal corrected data in the <strong>CORRECTED_DATA</strong> column. The user is free to perform more self-calibration, or re-do the self-calibration, using any tools they wish. The data at this point is already corrected for beam effects (including the array factor), so you are free to use any imaging / gain calibration software you like.</p>
