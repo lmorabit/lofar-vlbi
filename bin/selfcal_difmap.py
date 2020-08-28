@@ -209,6 +209,13 @@ def insert_into_filestem( infile, insert ):
 def chan2write (output, a):
     nums=sorted(set(a))
     gaps = [[s, e] for s, e in zip(nums, nums[1:]) if s+1 < e]
+    if len(gaps) > 19:
+        ## standard difmap can't handle it
+        ## print('There are more than 19 chunks of channels, exiting.')
+        ## return(1)
+        print('WARNING: There are more than 19 chunks of channels, difmap will only read in the first 19!!!')
+        tmp = [ x for i,x in enumerate(gaps) if i < 19 ]
+        gaps = tmp
     edges = iter(nums[:1] + sum(gaps, []) + nums[-1:])
     seq = np.ravel(list(zip(edges,edges)))+1 # difmap first chan=1 not 0
     chan_file = insert_into_filestem( output, 'dchan_' )
