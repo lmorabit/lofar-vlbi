@@ -678,6 +678,7 @@ selfcal.argument.datacolumn		= DATA
 selfcal.argument.startmod		= True
 selfcal.argument.verbose		= False
 selfcal.argument.catalogue              = {{ best_delay_cat }}
+selfcal.argument.naturalwt		= True
 
 # in delay cal parmdb, copy ST values to CS values
 copyST_gains.control.type                            = pythonplugin

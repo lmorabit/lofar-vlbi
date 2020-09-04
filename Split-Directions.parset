@@ -223,6 +223,7 @@ selfcal.argument.datacolumn             = DATA
 selfcal.argument.startmod               = True
 selfcal.argument.verbose                = False
 selfcal.argument.catalogue		= {{ image_cat }}
+selfcal.argument.naturalwt		= True
 
 
 ##################################################################

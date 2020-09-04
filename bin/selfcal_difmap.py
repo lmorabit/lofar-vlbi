@@ -379,7 +379,7 @@ def file2fits(infile,datacolumn):
 # Write and execute the difmap script
 def dif_script (infile,pol='I',aipsno=340,clean_sigma=6,map_size=512,\
                 pixel_size=100,obs_length=900,datacolumn='CORRECTED_DATA',\
-                startmod=True):
+                startmod=True,do_natural_weighting=True):
 
     fitsfile = file2fits(infile,datacolumn)
     # Open script and declare variables
@@ -401,7 +401,10 @@ def dif_script (infile,pol='I',aipsno=340,clean_sigma=6,map_size=512,\
     fs.write('peakwin 1.5\nselfcal false,false,0\n')
     clean_selfcal_loop (fs,'2,0')
     clean_selfcal_loop (fs,'2,-1')
-    clean_selfcal_loop (fs,'0,-1')
+    if do_natural_weighting:
+        clean_selfcal_loop (fs,'0,-1')
+    else:
+        clean_selfcal_loop (fs,'2,-1')
     fs.write('gscale\n')
     fs.write('sn_p = peak(flux,max)/imstat(rms)\n')
     fs.write('repeat;\\\n')
@@ -581,7 +584,7 @@ def lof_coords( myskycoord ):
 #    in AIPS and mapped, *If no AIPS and no good-channel file, exit with error*.
 # We assume that XX and YY have the same number of telescopes and UTs, and also
 #    the same bad/missing channels, and image separately for separate XX/YY corrs
-def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False, pols='I', catalogue=None ):
+def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False, pols='I', catalogue=None, naturalwt=True ):
 
     # current working directory
     current_dir = os.getcwd()
@@ -650,7 +653,7 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
 
     if pols == 'I':
         ## use stokes I only for self-cal and imaging (best option)
-        fitsfile = dif_script( infile, pol=pols, clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
+        fitsfile = dif_script( infile, pol=pols, clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod, do_natural_weighting=naturalwt)
         corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
         ampI,amperrI,phsI,phserrI,utI,stnI = corplt2array(corpltfile)
         corpltout = insert_into_filestem( corpltfile.replace('CORPLT','_CORPLT_I'), filestem )
@@ -658,7 +661,7 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
     else:
         ## self-cal the polarisations separately
         ## create a difmap script
-        fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod)
+        fitsfile = dif_script(infile, pol='XX', clean_sigma=clean_sig, map_size=map_size, pixel_size=pix_size, obs_length=obs_length, datacolumn=datacolumn, startmod=startmod, do_natural_weighting=naturalwt)
         ## plot solutions and get values
         corpltfile = glob.glob( os.path.join( work_dir, 'CORPLT' ) )[0]
         ampXX,amperrXX,phsXX,phserrXX,utXX,stnXX = corplt2array(corpltfile)
@@ -830,6 +833,7 @@ if __name__ == "__main__":
     parser.add_argument("--startmod",help="Generate a starting model. Default is True",required=False,action="store_false")
     parser.add_argument("--pols",type=str,help="polarisations to self-calibrate. Default is Stokes I.",required=False,default="I")
     parser.add_argument("--catalogue",type=str,help="catalogue to help determine imaging parameters.",required=False,default=None)
+    parser.add_argument("--naturalwt",type=bool,default=True)
 
     ## positionals
     parser.add_argument("filename",type=str,help="Name of the measurement set")
@@ -837,6 +841,6 @@ if __name__ == "__main__":
     args=parser.parse_args()
 
     main( args.filename, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
-	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose, pols=args.pols, catalogue=args.catalogue )
+	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose, pols=args.pols, catalogue=args.catalogue, naturalwt=args.naturalw
 
 
