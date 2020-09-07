@@ -90,7 +90,7 @@ Trying a different Delay Calibrator
 
 If you find that the delay calibrator selected by the pipeline is not adequate, or you wish to try a different LBCS source, you can do this with a little manual input. 
 
-First, you will have to modify the statefile (see `prefactor documentation`_ ) to remove the *prep_delay_cal* step and everything afterwards. You will then be able to resume the pipeline after making your catalogue changes.
+First, you will have to modify the statefile (see `prefactor documentation`_ ) to remove the *prep_delay_dir* step and everything afterwards. You will then be able to resume the pipeline after making your catalogue changes.
 
 Next, you need to modify (or insert) the *best_delay_calibrators.csv* file, which can be found in the **results** directory of your runtime directory. The name of the file must be *best_delay_calibrators.csv* and the following comma separated values, including the header, are required::
 
