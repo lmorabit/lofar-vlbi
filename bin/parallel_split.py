@@ -75,7 +75,7 @@ def combine_subbands (inarray, nameout, datacol, phasecenter, fres, tres, phscmd
             fo.write('msin.orderms=False\n')
         fo.write('numthreads=%s\n'%str(nthreads))
         if phscmd != '000':
-            fo.write('steps = [shift,avg,sadder,filter]\n'
+            fo.write('steps = [shift,avg,sadder,filter]\n')
         else:
             fo.write('steps = [shift,avg]\n')
         fo.write('shift.phasecenter = [%s]\n'%phasecenter)
