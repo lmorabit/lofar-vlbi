@@ -842,5 +842,5 @@ if __name__ == "__main__":
 
     main( args.filename, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
 	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose, pols=args.pols, catalogue=args.catalogue, naturalwt=args.naturalw
-
+    )
 
