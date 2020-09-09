@@ -68,7 +68,7 @@ If you need to flag and filter multiple stations, here is an example of the synt
 
         ## Stations to flag and filter
         ! flag_baselines        = [ CS013HBA*&&*,RS508HBA*&&* ]
-        ! filter_baselines      = !CS013HBA*&&*,!RS508HBA*&&*
+        ! filter_baselines      = !CS013HBA*&&*;!RS508HBA*&&*
 
 
 ===============================
