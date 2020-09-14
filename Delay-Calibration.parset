@@ -616,6 +616,7 @@ delay_solve.argument.msin                  = msfiles
 delay_solve.argument.msin.datacolumn       = DATA
 delay_solve.argument.steps                 = [gaincal]
 delay_solve.argument.gaincal.caltype       = tecandphase
+delay_solve.argument.gaincal.uvlambdamin   = 50000
 delay_solve.argument.gaincal.solint        = 2
 delay_solve.argument.gaincal.nchan         = 2
 delay_solve.argument.gaincal.directions    = [ME0]
