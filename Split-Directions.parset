@@ -178,6 +178,7 @@ tecsolve.argument.msin			= msfiles
 tecsolve.argument.msin.datacolumn	= DATA
 tecsolve.argument.steps			= [gaincal]
 tecsolve.argument.gaincal.caltype	= tecandphase
+tecsolve.argument.gaincal.uvlambdamin   = 50000
 tecsolve.argument.gaincal.solint	= 2
 tecsolve.argument.gaincal.nchan		= 2
 tecsolve.argument.gaincal.directions	= [ME0]
