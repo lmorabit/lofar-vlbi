@@ -157,7 +157,7 @@ def main( ms_input, lotss_file, phaseup_cmd="{ST001:'CS*'}", filter_cmd='!CS*&&*
     if nthreads == 0:
 	nthreads = int(4)
     datacol = str(datacol)
-    timeres = int(timeres)
+    timeres = str(timeres)
     freqres = str(freqres)
     nsbs = int(nsbs)
 
@@ -237,8 +237,8 @@ if __name__ == "__main__":
     parser.add_argument('--ncpu',type=int,help='number of CPUs',required=True)
     parser.add_argument('--nthreads',type=int,help='number of threads',required=True,default=4)
     parser.add_argument('--datacol',type=str,help='datacolumn to use (default CORRECTED_DATA)',default='CORRECTED_DATA')
-    parser.add_argument('--timeres',type=int,default=8)
-    parser.add_argument('--freqres',type=int,default=8)
+    parser.add_argument('--timeres',type=str,default='8.')
+    parser.add_argument('--freqres',type=str,default='97.64kHz')
     parser.add_argument('--nsbs',type=int,help='number of subbands to combine before combining all (default 999=all)',default=999)
     args = parser.parse_args()
 
