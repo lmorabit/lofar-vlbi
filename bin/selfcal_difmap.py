@@ -584,7 +584,7 @@ def lof_coords( myskycoord ):
 #    in AIPS and mapped, *If no AIPS and no good-channel file, exit with error*.
 # We assume that XX and YY have the same number of telescopes and UTs, and also
 #    the same bad/missing channels, and image separately for separate XX/YY corrs
-def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False, pols='I', catalogue=None, naturalwt=True ):
+def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datacolumn='CORRECTED_DATA', startmod=True, verbose=False, pols='I', catalogue=None, naturalwt=True, force_size=False ):
 
     # current working directory
     current_dir = os.getcwd()
@@ -638,16 +638,19 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
             size_asec = src_tmp['DC_Maj'][0] * 60. * 60.
 
 	padding = 1.5
-	possible_map_sizes = np.array([512,1024,2048,4096,8192])
-        possible_map_asec = possible_map_sizes * float(pix_size) * 1e-3  ## convert to arcsec
-	possible_idx = np.where( size_asec*padding <= possible_map_asec )[0] 
-        if len( possible_idx ) >= 1:
-            map_size = possible_map_sizes[np.min( possible_idx )]
-            print( 'Estimated source size {:s}, making image with {:s}x{:s} pixels ({:s}x{:s} arcsec)'.format( str(size_asec), str(map_size), str(map_size), str(map_size*float(pix_size)*1e-3), str(map_size*float(pix_size)*1e-3) ) )
-	else:
-	    print( 'Image size exceeds {:s} arcseconds! Are you sure you want to make this image?'.format( str(np.max(possible_map_asec)) ) )
-            print( 'Image size too large, aborting.' )
-            return
+        if force_size:
+            print( 'force_size is set, using map size {:s}'.format( str(map_size) ) )
+        else:
+            possible_map_sizes = np.array([512,1024,2048,4096,8192])
+            possible_map_asec = possible_map_sizes * float(pix_size) * 1e-3  ## convert to arcsec
+            possible_idx = np.where( size_asec*padding <= possible_map_asec )[0] 
+            if len( possible_idx ) >= 1:
+                map_size = possible_map_sizes[np.min( possible_idx )]
+                print( 'Estimated source size {:s}, making image with {:s}x{:s} pixels ({:s}x{:s} arcsec)'.format( str(size_asec), str(map_size), str(map_size), str(map_size*float(pix_size)*1e-3), str(map_size*float(pix_size)*1e-3) ) )
+            else:
+	        print( 'Image size exceeds {:s} arcseconds! Are you sure you want to make this image?'.format( str(np.max(possible_map_asec)) ) )
+                print( 'Image size too large, aborting.' )
+                return
 
         total_flux = src_tmp['Total_flux'][0]
 
@@ -834,6 +837,7 @@ if __name__ == "__main__":
     parser.add_argument("--pols",type=str,help="polarisations to self-calibrate. Default is Stokes I.",required=False,default="I")
     parser.add_argument("--catalogue",type=str,help="catalogue to help determine imaging parameters.",required=False,default=None)
     parser.add_argument("--naturalwt",type=bool,default=True)
+    parser.add_argument("--force_size",action="store_true")
 
     ## positionals
     parser.add_argument("filename",type=str,help="Name of the measurement set")
@@ -841,5 +845,5 @@ if __name__ == "__main__":
     args=parser.parse_args()
 
     main( args.filename, clean_sig=args.clean_sig, map_size=args.map_size, pix_size=args.pix_size, 
-	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose, pols=args.pols, catalogue=args.catalogue, naturalwt=args.naturalwt )
+	obs_length=args.obs_length, datacolumn=args.colname, startmod=args.startmod, verbose=args.verbose, pols=args.pols, catalogue=args.catalogue, naturalwt=args.naturalwt, force_size=args.force_size )
 
