@@ -699,7 +699,7 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
 
     if pols == 'I':
 	## split the stokes I correction across XX and YY
-        tmp_amp = np.rollaxis(np.dstack((np.sqrt(ampI/2.),np.sqrt(ampI/2.))),1,0)
+        tmp_amp = np.rollaxis(np.dstack((np.sqrt(ampI),np.sqrt(ampI))),1,0)
         tmp_phs = np.rollaxis(np.dstack((phsI,phsI)),1,0)
     else:
         ## combine XX and YY information and reformat axes
@@ -791,14 +791,6 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
     ## convert to a sourcedb
     ss = 'makesourcedb in={:s} out={:s} format="<"'.format( outfile, outfile.replace('mod','skymodel') )
     os.system( ss )
-
-    
-
-    ## run wsclean 
-    #wsclean_name = filestem + '_wsclean' 
-    ## convert the im params to wsclean format
-    #ss = 'wsclean -j 16 -mem 20 -v -reorder -update-model-required -weight uniform -mf-weighting -weighting-rank-filter 3 -name {:s} -size {:s} {:s} -padding 1.4 -scale {:s}asec -channels-out 6 -data-column CORRECTED_DATA -niter 10000 -auto-threshold 3 -auto-mask 5 -mgain 0.8 -join-channels -fit-spectral-pol 3 -fit-beam {:s}'.format( wsclean_name, str(map_size), str(map_size), str(float(pix_size)*0.001), infile )
-    #os.system( ss )
 
     ## TO DO: move final files
     ## h5parm, images, log files, and skymodel
