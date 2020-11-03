@@ -254,6 +254,14 @@ def main(h5parmfile, MSfiles, cal_solset=None, solset_in='target', solset_out='t
                                 if soltab_type == 'amplitude':
                                     new_vals[:, i, :, :] = np.ones(shape=(len_time, len_freq, len_pol))
                                     new_weights[:, i, :, :] = np.ones(shape=(len_time, len_freq, len_pol))
+                                    # Cross hands should have amplitude 0
+                                    pols = soltab.getAxisValues('pol')
+                                    if len(pols) == 4:
+                                        # Dealing with fulljones solutions
+                                        idx1 = np.argwhere(pols=='XY')
+                                        idx2 = np.argwhere(pols=='YX')
+                                        new_vals[:, i, :, idx1] = np.zeros(shape=(len_time, len_freq))
+                                        new_vals[:, i, :, idx2] = np.zeros(shape=(len_time, len_freq))
                                 else:
                                     new_vals[:, i, :, :] = np.zeros(shape=(len_time, len_freq, len_pol))
                                     new_weights[:, i, :, :] = np.ones(shape=(len_time, len_freq, len_pol))
@@ -279,6 +287,14 @@ def main(h5parmfile, MSfiles, cal_solset=None, solset_in='target', solset_out='t
                                 if soltab_type == 'amplitude':
                                     new_vals[:, :, i, :, :] = np.ones(shape=(len_time, len_freq, len_dir, len_pol))
                                     new_weights[:, :, i, :, :] = np.ones(shape=(len_time, len_freq, len_dir, len_pol))
+                                    # Cross hands should have amplitude 0
+                                    pols = soltab.getAxisValues('pol')
+                                    if len(pols) == 4:
+                                        # Dealing with fulljones solutions
+                                        idx1 = np.argwhere(pols=='XY')
+                                        idx2 = np.argwhere(pols=='YX')
+                                        new_vals[:, :, i, :, idx1] = np.zeros(shape=(len_time, len_freq, len_dir))
+                                        new_vals[:, :, i, :, idx2] = np.zeros(shape=(len_time, len_freq, len_dir))
                                 else:
                                     new_vals[:, :, i, :, :] = np.zeros(shape=(len_time, len_freq, len_dir, len_pol))
                                     new_weights[:, :, i, :, :] = np.ones(shape=(len_time, len_freq, len_dir, len_pol))
