@@ -757,59 +757,16 @@ def main( infile, clean_sig=6, map_size=512, pix_size=100, obs_length=900, datac
         diflogout = insert_into_filestem( diflog, filestem+'_' )
         os.system( 'mv {:s} {:s}'.format( diflog, diflogout ) )
 
-    ## Make a BBS format skymodel from the difmap XX model
-    ## get reference frequency
-    rf = ct.taql('select REF_FREQUENCY from {:s}::SPECTRAL_WINDOW'.format(infile))
-    ref_freq = rf.getcol('REF_FREQUENCY')[0]
-    # find the model file
-    modfiles = glob.glob( filestem + '*.mod' )
-    if pols == 'I':
-        xx_file = modfiles[0]
-    else:
-        xx_file = [mf for mf in modfiles if 'XX' in mf ][0]
-    ## read the model
-    xx_mod = read_mod( xx_file )
-    ## find central point
-    xx_cen = find_centre( xx_mod )
-    ## and get the flux
-    xx_flux = []
-    for mykey in xx_mod.keys():
-        xx_flux.append( xx_mod[mykey][0] )
-    ## write the model file
-    outfile = os.path.join( work_dir, filestem + '_StokesI.mod' )
-    with open( outfile, 'w' ) as f:
-        f.write( "# (Name, Type, Patch, Ra, Dec, I, Q, U, V, MajorAxis, MinorAxis, Orientation, ReferenceFrequency='{:s}', SpectralIndex='[]') = format\n\n".format(str(ref_freq)))
-        ## patch name
-        patch_cen = lof_coords( SkyCoord( xx_cen[0], xx_cen[1], frame='icrs', unit='deg') )
-        f.write( ", , difmap_cc, {:s}\n".format(patch_cen) )
-        for mykey in xx_mod.keys():
-            flux = xx_mod[mykey][0]
-            coords = lof_coords( xx_mod[mykey][1] )
-            f.write("{:s}, POINT, difmap_cc, {:s}, {:s}, 0.0, 0.0, 0.0, 0.00000e+00, 0.00000e+00, 0.00000e+00, {:s}, [-0.8]\n".format(mykey, coords, str(flux), str(ref_freq) ) )
-    f.close()
-
-    ## convert to a sourcedb
-    ss = 'makesourcedb in={:s} out={:s} format="<"'.format( outfile, outfile.replace('mod','skymodel') )
-    os.system( ss )
-
     ## TO DO: move final files
     ## h5parm, images, log files, and skymodel
     image_files = glob.glob( os.path.join( work_dir, '*.ps') )
     log_files = glob.glob( os.path.join( work_dir, '*log') )
-    #wsclean_ims = glob.glob( os.path.join( work_dir, '*wsclean*MFS*fits' ) )
     myh5parm = glob.glob( os.path.join( work_dir, '*h5' ) )
-    skymodel = glob.glob( os.path.join( work_dir, '*skymodel' ) )
-    #file_list = image_files + log_files + wsclean_ims + myh5parm + skymodel
-    file_list = image_files + log_files + myh5parm + skymodel
+    file_list = image_files + log_files + myh5parm
     for myfile in file_list:
         ff = myfile.split('/')[-1]
         ss = 'mv {:s} {:s}'.format( myfile, os.path.join( current_dir, ff ) )
         os.system( ss )
-    ## move the infile back and rename it
-    tmp = infile.split('/')[-1]
-    new_file = tmp + '.selfcal'
-    selfcal_file = os.path.join( current_dir, new_file )
-    os.system( 'cp -r {:s} {:s}'.format( infile, selfcal_file ) )
 
     print( 'done' )
     
