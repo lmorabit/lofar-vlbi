@@ -236,6 +236,8 @@ def find_close_objs(lo, lbcs, tolerance=5.):
                 ## there's more than one match, pick the brightest
                 tmp = lo[match_idx[0]]
                 m_idx = np.where( tmp['Total_flux'] == np.max( tmp['Total_flux'] ) )[0]
+                if len(m_idx) > 1:
+		    m_idx = m_idx[0]
                 lbcs_idx.append(xx)
                 lotss_idx.append(m_idx) 
 
