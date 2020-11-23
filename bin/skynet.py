@@ -40,8 +40,8 @@ def main (vis, delayCalFile='' ):
 
     ## make sure the parameters are the correct format
     vis = vis.rstrip('/')
-    vis = vis.split('/')[-1]
-    vis_src = vis.split('_')[0]
+    tmp = vis.split('/')[-1]
+    vis_src = tmp.split('_')[0]
 
     ## get flux from best_delay_calibrators.csv
     t = Table.read( delayCalFile, format='csv' )
@@ -76,7 +76,7 @@ def main (vis, delayCalFile='' ):
 
     ra = t[ra_col].data[src_idx]
     dec = t[de_col].data[src_idx]
-    smodel = t['Total_flux'].data[src_idx]
+    smodel = t['Total_flux'].data[src_idx]*1.0e-3
 
     print 'generating point model'
     point_model = np.array( [ [0.0,0.0,smodel,0.1,0.0,0.0] ] )
