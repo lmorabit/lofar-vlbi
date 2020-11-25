@@ -29,7 +29,7 @@ def main( ms_input, h5pattern='S*_tec.h5' ):
         os.system( 'losoto -V %s %s > %s 2>&1'%(tec_h5parm, losoto_parset, losoto_parset.replace('parset','log') ) )
         ## remove parset and log
 	os.system( 'rm {:s}'.format(losoto_parset) )
-	os.system( 'rm {:s}'.format(losoto_parset.replace('parset','log') ) b)
+	os.system( 'rm {:s}'.format(losoto_parset.replace('parset','log') ) )
 
 
 
