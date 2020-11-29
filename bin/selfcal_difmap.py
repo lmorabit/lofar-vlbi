@@ -782,7 +782,7 @@ if __name__ == "__main__":
     parser.add_argument("--pix_size",help="pixel size in units of mas, default 100",required=False,default=100)
     parser.add_argument("--obs_length",help="Observation length, default 900",required=False,default=900)
     parser.add_argument("--colname",type=str,help="Name of the data column. Default is CORRECTED_DATA.",required=False,default="CORRECTED_DATA")
-    parser.add_argument("--startmod",help="Generate a starting model. Default is True",required=False,action="store_false")
+    parser.add_argument("--startmod",help="Generate a starting model from the data. Otherwise a point source of 1 Jy will be used.",required=False,action="store_false")
     parser.add_argument("--pols",type=str,help="polarisations to self-calibrate. Default is Stokes I.",required=False,default="I")
     parser.add_argument("--catalogue",type=str,help="catalogue to help determine imaging parameters.",required=False,default=None)
     parser.add_argument("--naturalwt",type=bool,default=True)
