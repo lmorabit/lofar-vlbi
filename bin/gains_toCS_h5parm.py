@@ -14,10 +14,10 @@ import logging
 import os
 
 from losoto.h5parm import h5parm
-from losoto.lib_operations import *
+from losoto.lib_operations import reorderAxes
 
 import numpy as np
-import pyrap.tables as pt
+import casacore.tables as ct
 
 
 def makesolset(MS, data, solset_name):
@@ -33,20 +33,22 @@ def makesolset(MS, data, solset_name):
 
     solset = data.makeSolset(solset_name)
 
-    antennaFile = MS + "/ANTENNA"
+    antennaFile = MS + "::ANTENNA"
     logging.info('Collecting information from the ANTENNA table.')
-    antennaTable = pt.table(antennaFile, ack=False)
+    antennaTable = ct.table(antennaFile, ack=False)
     antennaNames = antennaTable.getcol('NAME')
     antennaPositions = antennaTable.getcol('POSITION')
     antennaTable.close()
     antennaTable = solset.obj._f_get_child('antenna')
     antennaTable.append(zip(*(antennaNames, antennaPositions)))
 
-    fieldFile = MS + "/FIELD"
+    fieldFile = MS + "::FIELD"
     logging.info('Collecting information from the FIELD table.')
-    fieldTable = pt.table(fieldFile, ack=False)
+    fieldTable = ct.table(fieldFile, ack=False)
     phaseDir = fieldTable.getcol('PHASE_DIR')
     pointing = phaseDir[0, 0, :]
+    if pointing[0] < 0:
+	pointing[0] = pointing[0] + 2.*np.pi
     fieldTable.close()
 
     sourceTable = solset.obj._f_get_child('source')
@@ -56,7 +58,7 @@ def makesolset(MS, data, solset_name):
     return antennaNames
 
 
-def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_list='phase000,amplitude000', superstation='ST001', restrictToCS=True):
+def main(h5parmfile, MSfiles, solset_in='sol000', solset_out='sol001', soltab_list='phase000,amplitude000', superstation='ST001', restrictToCS=True, matchPtg=False ):
     ''' Copy the gains from the phased up core back to all core stations.
 
     Args:
@@ -232,6 +234,9 @@ if __name__ == "__main__":
     parser.add_argument('--restrictToCS',
                         help='Restrict the copy action to core stations only',
                         action='store_true', dest="restrictToCS")
+    parser.add_argument('--match_ptg',
+			help='Match the pointing direction of the MS, for transferring between directions',
+			action='store_true', dest='match_ptg')
 
     args = parser.parse_args()
 
@@ -247,5 +252,5 @@ if __name__ == "__main__":
     h5parmfile = args.h5parm
 
     main(h5parmfile, MSfiles, solset_in=args.solset_in, solset_out=args.solset_out,
-         soltab_list=args.soltab_list, superstation=args.superstation, restrictToCS=args.restrictToCS)
+         soltab_list=args.soltab_list, superstation=args.superstation, restrictToCS=args.restrictToCS, matchPtg=args.match_ptg)
 
