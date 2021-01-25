@@ -53,6 +53,12 @@ To get the specific version of prefactor you will need, run::
     $ cd prefactor
     $ git checkout 7e9103d10c8e37ee2ac2203b678af295ed03e4fd
 
+However, please be aware that this version does not have the high-resolution models necessary for 3C 196 and 3C 295. A fork of this specific branch, but updated with these high resolution models, can be retrieved by::
+
+    $ git clone https://github.com/lmorabit/prefactor
+
+We recommend you use this fork.
+
 Software Requirements -- without Singularity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
