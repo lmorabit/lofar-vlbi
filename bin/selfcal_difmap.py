@@ -208,16 +208,40 @@ def insert_into_filestem( infile, insert ):
 # given an array of OK channels, write difmap select line
 def chan2write (output, a):
     nums=sorted(set(a))
+    ## find the gaps
     gaps = [[s, e] for s, e in zip(nums, nums[1:]) if s+1 < e]
-    if len(gaps) > 19:
-        ## standard difmap can't handle it
-        ## print('There are more than 19 chunks of channels, exiting.')
-        ## return(1)
-        print('WARNING: There are more than 19 chunks of channels, difmap will only read in the first 19!!!')
-        tmp = [ x for i,x in enumerate(gaps) if i < 19 ]
-        gaps = tmp
-    edges = iter(nums[:1] + sum(gaps, []) + nums[-1:])
-    seq = np.ravel(list(zip(edges,edges)))+1 # difmap first chan=1 not 0
+    ## convert to edges
+    edges = []
+    for i in np.arange(len(gaps)-1):
+        if i == 0:
+            edges.append([nums[0],gaps[0][0]])
+        edges.append([gaps[i][1],gaps[i+1][0]])
+    edges.append([gaps[-1][1], nums[-1]])
+    ## calculate the number of channels in the chunks
+    chunk_widths = [ b-a for a,b in edges ]
+    ## check if number of chunks is larger than 20
+    if len(edges) > 19:
+        print('WARNING: There are more than 20 chunks of channels, difmap will only read in the first 20!!!')
+        ## first get rid of anything which is a lone channel
+        new_edges = [ a for i,a in enumerate(edges) if chunk_widths[i] > 1 ]
+    ## recheck length
+    if len(new_edges) > 19:
+        new_chunk_widths = [ b-a for a,b in new_edges ]
+        sorted_widths = np.sort( new_chunk_widths )
+        for x in sorted_widths:
+            ## if still too many chunks, get rid of starting with the smallest chunks
+            if len(new_edges) > 19:
+                idx = np.where( new_chunk_widths == x )[0]
+                if len(idx) > 0:
+                    del new_edges[idx[0]]
+                else:
+                    del new_edges[idx]
+            else:
+                pass
+    edges = new_edges
+    ## add one because difmap starts at one and not zero
+    difmap_edges = [ [a+1,b+1] for a,b in edges ]
+    seq = np.ravel(difmap_edges)
     chan_file = insert_into_filestem( output, 'dchan_' )
     fo=open(chan_file,'w')
     fo.write('select I,')
