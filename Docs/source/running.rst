@@ -152,7 +152,7 @@ To aid the user, below is a block diagram of the pipeline.
    
 .. _help:
 
-.. _Software Requirements: installation#software-requirements-with-singularity
+.. _Software Requirements: installation.html#software-requirements-with-singularity
 .. _Using your own catalogue: configuration.html#using-your-own-catalogue
 .. _genericpipeline: https://www.astron.nl/citt/genericpipeline/
 .. _Singularity: https://sylabs.io/guides/3.6/user-guide/
