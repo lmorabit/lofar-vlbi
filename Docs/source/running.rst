@@ -35,6 +35,9 @@ The LOFAR-VLBI pipeline makes use of prefactor solutions to apply to the data. T
 .. note::
     If your standard calibrator is either 3C 295 or 3C 196, the standard models in the prefactor github repository do not have sufficiently high resolution, but high-resolution models do exist. Please contact the long baseline working group for help. 
 
+.. note::
+    Some versions of prefactor will incorrectly apply a 'reference' 3C48 bandpass which will result in an incorrect flux scale, and possible problems with self-calibration of the international stations. Please check the `Software Requirements`_ section of this documentation for more information.
+
 * The **Pre-Facet-Target.parset** should be run with all the standard defaults. This will copy over the solutions from Pre-Facet-Calibrator and add the self-cal phase solutions for the core and remote stations, which are necessary for the LOFAR-VLBI pipeline. Please check the outputs to make sure they are sensible!  Also note any stations which were flagged as 'bad' as you will need to pre-flag these for the LOFAR-VLBI pipeline.
 
 * There is a mismatch between the version of losoto in the Singularity image and the one expected by the pipeline. The result is that the ``-H`` flat is not recognized in the ``h5exp_gsm`` step of ``Pre-Facet-Target.parset``.  Before running, please change the following line::
@@ -115,6 +118,15 @@ The last 2 parameters are read in by the pipeline, but can be dummy values. The 
 You should have **ONLY ONE** source in your *best_delay_calibrators.csv* file. A good way to create this new file from LBCS data is to copy the *delay_calibrators.csv* file to *best_delay_calibrators.csv*, delete all the targets except the one you wish to try, and then add the extra columns necessary. 
 
 
+Self-calibration or not?
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The pipeline by default will run self-calibration and imaging as described below. Currently this assumes a point source starting model, which may not be appropriate for all sources. In the case of fainter sources with lower signal to noise, this may drive the self-calibration to an incorrect source structure. You may therefore wish to adjust the **Split-Directions.parset** to only run the ``setup`` steps. This can be done by changing line 75 of the parset to::
+
+        pipeline.steps = [ setup ]
+
+The resulting measurement set will be appropriate to start imaging.
+
 
 Selecting imaging parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -140,6 +152,7 @@ To aid the user, below is a block diagram of the pipeline.
    
 .. _help:
 
+.. _Software Requirements: installation#software-requirements-with-singularity
 .. _Using your own catalogue: configuration.html#using-your-own-catalogue
 .. _genericpipeline: https://www.astron.nl/citt/genericpipeline/
 .. _Singularity: https://sylabs.io/guides/3.6/user-guide/
