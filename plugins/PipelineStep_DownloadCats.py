@@ -238,16 +238,14 @@ def find_close_objs(lo, lbcs, tolerance=5.):
                 m_idx = match_idx[0]
                 lbcs_idx.append(xx)
                 lotss_idx.append(m_idx)
-                print( 'match_idx == 1' )
-                print( m_idx )
             if len( match_idx ) > 1:
                 ## there's more than one match, pick the brightest
                 tmp = lo[match_idx[0]]
                 m_idx = np.where( tmp['Total_flux'] == np.max( tmp['Total_flux'] ) )[0]
+                print( 'life on earth' )
+                print( m_idx )
                 if len(m_idx) > 1:
 		    m_idx = m_idx[0]
-                print( 'match_idx > 1' )
-                print( m_idx )
                 lbcs_idx.append(xx)
                 lotss_idx.append(m_idx) 
     lbcs_matches = lbcs[lbcs_idx]
