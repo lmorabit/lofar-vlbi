@@ -129,11 +129,17 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
         flux_sort = tb.argsort('Total_flux')
         tb_sorted = tb[flux_sort[::-1]]
         ## and keep only some of the columns
-        tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'Isl_rms']
-        resolved = np.where(is_resolved(tb_final['Total_flux'], tb_final['Peak_flux'], tb_final['Isl_rms']), 'R', 'U')
-        tb_final['Resolved'] = resolved
+        colnames = tb_sorted.colnames
+        ## first check for a resolved column
+        if 'Resolved' not in colnames:
+            resolved = np.where(is_resolved(tb_sorted['Total_flux'], tb_sorted['Peak_flux'], tb_sorted['Isl_rms']), 'R', 'U')
+            tb_sorted['Resolved'] = resolved
+            
+        if 'LGZ_Size' in colnames:
+            tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'Isl_rms', 'Resolved']
+        else:
+            tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'Isl_rms', 'Resolved']
         tb_final.rename_column('Source_Name', 'Source_id')
-
         tb_final.write( outfile, format='csv' )
 
     return tb_final
