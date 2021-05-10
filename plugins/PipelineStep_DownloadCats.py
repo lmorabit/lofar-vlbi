@@ -223,12 +223,13 @@ def find_close_objs(lo, lbcs, tolerance=5.):
     search_rad = 5. / 60. / 60. * u.deg
 
     ## loop through the lbcs coordinates -- this will be much faster than looping through lotss
-    print( 'Starting search' )
     lotss_idx = []
     lbcs_idx = []    
     for xx in range(len(lbcs)):
         seps = lbcs_coords[xx].separation(lotss_coords)
         match_idx = np.where( seps < search_rad )[0]
+        print( 'HELLLOOOOOOOOO' )
+        print( match_idx )
 	if len( match_idx ) == 0:
             # there's no match, move on to the next source
             m_idx = [-1]
@@ -328,8 +329,6 @@ def plugin_main( args, **kwargs ):
     print("Attempting to find or download LoTSS catalogue.")
     lotss_catalogue = my_lotss_catalogue( MSname, Radius=lotss_radius, bright_limit_Jy=bright_limit_Jy, outfile=lotss_catalogue )
 
-    print( 'Success!!! I have downloaded both catalogues.' )
-
     ## if lbcs exists, and either lotss exists or continue_without_lotss = True, process the catalogue(s).
     ## else provide an error message and stop
     if len(lbcs_catalogue) == 0:
@@ -376,7 +375,6 @@ def plugin_main( args, **kwargs ):
         return
 
     ## else continue 
-    print( 'Here I am' )
     result = find_close_objs( lotss_catalogue, lbcs_catalogue, tolerance=match_tolerance )
 
     ## check if there are any matches
