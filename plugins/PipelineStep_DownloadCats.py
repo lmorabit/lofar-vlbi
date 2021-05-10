@@ -228,8 +228,6 @@ def find_close_objs(lo, lbcs, tolerance=5.):
     for xx in range(len(lbcs)):
         seps = lbcs_coords[xx].separation(lotss_coords)
         match_idx = np.where( seps < search_rad )[0]
-        print( 'HELLLOOOOOOOOO' )
-        print( match_idx )
 	if len( match_idx ) == 0:
             # there's no match, move on to the next source
             m_idx = [-1]
@@ -248,9 +246,12 @@ def find_close_objs(lo, lbcs, tolerance=5.):
 		    m_idx = m_idx[0]
                 lbcs_idx.append(xx)
                 lotss_idx.append(m_idx) 
-
+    print( 'Whew! made it through the loop' )
+    print( lbcs_idx )
+    print( lotss_idx )
     lbcs_matches = lbcs[lbcs_idx]
     lotss_matches = lo[lotss_idx]
+    print( 'and now ive indexed things' )
 
     combined = hstack( [lbcs_matches, lotss_matches], join_type='exact' )
     ## check if there are duplicate lbcs observations for a lotss source
