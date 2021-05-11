@@ -241,6 +241,8 @@ def find_close_objs(lo, lbcs, tolerance=5.):
             if len( match_idx ) > 1:
                 ## there's more than one match, pick the brightest
                 tmp = lo[match_idx[0]]
+                print( 'here are the matches' )
+                print( tmp )
                 m_idx = np.where( tmp['Total_flux'] == np.max( tmp['Total_flux'] ) )[0]
                 print( 'life on earth' )
                 print( m_idx )
