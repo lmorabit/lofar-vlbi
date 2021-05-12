@@ -228,6 +228,9 @@ def find_close_objs(lo, lbcs, tolerance=5.):
     for xx in range(len(lbcs)):
         seps = lbcs_coords[xx].separation(lotss_coords)
         match_idx = np.where( seps < search_rad )[0]
+        print( 'fred' )
+        print( match_idx )
+        print( 'length of match_idx: {:s}'.format(str(len(match_idx))) )
 	if len( match_idx ) == 0:
             # there's no match, move on to the next source
             m_idx = [-1]
