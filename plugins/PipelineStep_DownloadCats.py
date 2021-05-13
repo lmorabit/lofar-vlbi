@@ -102,6 +102,9 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
     if os.path.isfile( outfile ):
 	print("LOTSS Skymodel for the target field exists on disk, reading in.")
 	tb_final = Table.read( outfile, format='csv' )
+        if 'Source_Name' in tb_final.colnames:
+            tb_final.rename_column('Source_Name','Source_id')
+            tb_final.write( outfile, format='csv' )
     else:
         print("DOWNLOADING LOTSS Skymodel for the target field")
 
@@ -134,12 +137,13 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
         if 'Resolved' not in colnames:
             resolved = np.where(is_resolved(tb_sorted['Total_flux'], tb_sorted['Peak_flux'], tb_sorted['Isl_rms']), 'R', 'U')
             tb_sorted['Resolved'] = resolved
-            
+        ## rename source_id column if necessary   
+        if 'Source_Name' in tb_sorted.colnames:
+            tb_sorted.rename_column('Source_Name', 'Source_id')
+        keep_cols = ['Source_id', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'Isl_rms', 'Resolved']
         if 'LGZ_Size' in colnames:
-            tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'Isl_rms', 'Resolved']
-        else:
-            tb_final = tb_sorted['Source_Name', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'Isl_rms', 'Resolved']
-        tb_final.rename_column('Source_Name', 'Source_id')
+            keep_cols = keep_cols + ['LGZ_Size', 'LGZ_Width', 'LGZ_PA']
+
         tb_final.write( outfile, format='csv' )
 
     return tb_final
@@ -228,9 +232,7 @@ def find_close_objs(lo, lbcs, tolerance=5.):
     for xx in range(len(lbcs)):
         seps = lbcs_coords[xx].separation(lotss_coords)
         match_idx = np.where( seps < search_rad )[0]
-        print( 'length of match_idx: {:s}'.format(str(len(match_idx))) )
 	if len( match_idx ) == 0:
-            print( ' pass' )
             # there's no match, move on to the next source
             m_idx = [-1]
             pass
