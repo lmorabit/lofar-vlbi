@@ -240,14 +240,11 @@ def find_close_objs(lo, lbcs, tolerance=5.):
                 m_idx = match_idx[0]
                 lbcs_idx.append(xx)
                 lotss_idx.append(m_idx)
-                print( 'one, index: {:s}'.format(str(m_idx)) )
             if len( match_idx ) > 1:
                 ## there's more than one match, pick the brightest
                 tmp = lo[match_idx]
                 m_idx = np.where( tmp['Total_flux'] == np.max( tmp['Total_flux'] ) )[0]
-                print( 'more than one' )
-                print( m_idx, len(m_idx) )
-                if len(m_idx) > 1:
+                if not isinstance(m_idx,int):
 		    m_idx = m_idx[0]
                 lbcs_idx.append(xx)
                 lotss_idx.append(m_idx) 
