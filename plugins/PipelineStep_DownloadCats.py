@@ -228,10 +228,9 @@ def find_close_objs(lo, lbcs, tolerance=5.):
     for xx in range(len(lbcs)):
         seps = lbcs_coords[xx].separation(lotss_coords)
         match_idx = np.where( seps < search_rad )[0]
-        print( 'fred' )
-        print( match_idx )
         print( 'length of match_idx: {:s}'.format(str(len(match_idx))) )
 	if len( match_idx ) == 0:
+            print( ' pass' )
             # there's no match, move on to the next source
             m_idx = [-1]
             pass
@@ -241,14 +240,13 @@ def find_close_objs(lo, lbcs, tolerance=5.):
                 m_idx = match_idx[0]
                 lbcs_idx.append(xx)
                 lotss_idx.append(m_idx)
+                print( 'one, index: {:s}'.format(str(m_idx)) )
             if len( match_idx ) > 1:
                 ## there's more than one match, pick the brightest
                 tmp = lo[match_idx]
-                print( 'here are the matches' )
-                print( tmp )
                 m_idx = np.where( tmp['Total_flux'] == np.max( tmp['Total_flux'] ) )[0]
-                print( 'life on earth' )
-                print( m_idx )
+                print( 'more than one' )
+                print( m_idx, len(m_idx) )
                 if len(m_idx) > 1:
 		    m_idx = m_idx[0]
                 lbcs_idx.append(xx)
