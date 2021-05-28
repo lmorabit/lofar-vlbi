@@ -144,6 +144,8 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
         if 'LGZ_Size' in colnames:
             keep_cols = keep_cols + ['LGZ_Size', 'LGZ_Width', 'LGZ_PA']
 
+        tb_final = tb_sorted[keep_cols]
+
         tb_final.write( outfile, format='csv' )
 
     return tb_final
