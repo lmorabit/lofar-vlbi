@@ -54,8 +54,11 @@ def plugin_main(args, **kwargs):
         ## reading ANTENNA information from calibrator
         solset = data.getSolset('calibrator')
         station_names = solset.getAnt().keys()
-        int_ants = [ xx for xx in station_names if 'CS' not in xx and 'RS' not in xx ]    
-        station_names = dutch_ants + int_ants
+        int_ants = [ xx for xx in station_names if 'CS' not in xx and 'RS' not in xx ]
+        cal_dutch = [ xx for xx in station_names if 'CS' in xx or 'RS' in xx ]
+        ## remove core/remote stations not present for calibrator
+        all_dutch_ants = [ xx for xx in dutch_ants if xx in cal_dutch ]
+        station_names = all_dutch_ants + int_ants
     else:
         ## reading ANTENNA information of h5parm
         data   = h5parm(h5parmdb, readonly = True)
