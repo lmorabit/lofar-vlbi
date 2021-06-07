@@ -41,7 +41,7 @@ def plugin_main(args, **kwargs):
     antennaTable = pt.table(MS + "::ANTENNA", ack = False)
     antennaNames = antennaTable.getcol('NAME')
 
-    if solset_name == 'vlbi'
+    if solset_name == 'vlbi':
         ## reading in h5parm
         data   = h5parm(h5parmdb, readonly = True)   
         ## reading ANTENNA information from target / phase
