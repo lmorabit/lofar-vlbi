@@ -184,6 +184,7 @@ cp_cal_solutions.argument.flags               = [{{ cal_solutions }}, {{ solutio
 check_station_mismatch.control.kind                            =   plugin
 check_station_mismatch.control.type                            =   compareStationListVLBI
 check_station_mismatch.control.mapfile_in                      =   createmap_target.output.mapfile
+check_station_mismatch.control.solset_name		       =   vlbi
 check_station_mismatch.control.h5parmdb                        =   {{ solutions }}
 check_station_mismatch.control.filter                          =   {{ filter_baselines }}
 
