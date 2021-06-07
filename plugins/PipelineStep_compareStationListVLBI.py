@@ -67,7 +67,7 @@ def plugin_main(args, **kwargs):
         filter += ';!' + missing_station + '*'
         pass
 
-    missing_stations = missing_stations.lstrip(';')
+    filter = filter.lstrip(';')
 
     data.close()
     
