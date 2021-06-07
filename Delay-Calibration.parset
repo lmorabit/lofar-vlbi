@@ -116,7 +116,7 @@
 
 pipeline.steps = [ setup, prep, {{ substep_clip }} concat {{ substep_ddf }} {{ substep_flag }} ,phaseup {{ substep_delay }} {{ substep_apply }} {{ substep_cleanup }} ]
 
-pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, createmap_target, createmap_target_list, cp_cal_solutions, download_cats ]
+pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, createmap_target, createmap_target_list, cp_cal_solutions, check_station_mismatch, download_cats ]
 pipeline.steps.prep = [ ndppp_prep_target, ndppp_prep_target_list ]
 pipeline.steps.clipATeam   =  [ create_ateam_model_map, make_sourcedb_ateam, expand_sourcedb_ateam, predict_ateam, ateamcliptar]
 pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconcat_list ]
@@ -180,6 +180,13 @@ cp_cal_solutions.control.skip_infile          = True
 cp_cal_solutions.control.mapfile_in           = createmap_target_list.output.mapfile
 cp_cal_solutions.argument.flags               = [{{ cal_solutions }}, {{ solutions }}]
 
+# check for station mismatch 
+check_station_mismatch.control.kind                            =   plugin
+check_station_mismatch.control.type                            =   compareStationListVLBI
+check_station_mismatch.control.mapfile_in                      =   createmap_target.output.mapfile
+check_station_mismatch.control.h5parmdb                        =   {{ solutions }}
+check_station_mismatch.control.filter                          =   {{ filter_baselines }}
+
 # download the relevant catalogues
 download_cats.control.kind                    = plugin
 download_cats.control.type                    = DownloadCats
@@ -204,7 +211,7 @@ ndppp_prep_target.control.error_tolerance               = {{ error_tolerance }}
 ndppp_prep_target.argument.numthreads                   = 2
 ndppp_prep_target.argument.msin                         = createmap_target.output.mapfile  
 ndppp_prep_target.argument.msin.datacolumn              = DATA
-ndppp_prep_target.argument.msin.baseline                = {{ filter_baselines }}
+ndppp_prep_target.argument.msin.baseline                = check_station_mismatch.output.filter
 ndppp_prep_target.argument.msout.datacolumn             = DATA
 ndppp_prep_target.argument.msout.storagemanager         = dysco
 ndppp_prep_target.argument.msout.writefullresflag       = False
@@ -215,7 +222,7 @@ ndppp_prep_target.argument.flag.baseline                = {{ flag_baselines }}
 ndppp_prep_target.argument.flagamp.type                 = preflagger
 ndppp_prep_target.argument.flagamp.amplmin              = 1e-30
 ndppp_prep_target.argument.filter.type                  = filter
-ndppp_prep_target.argument.filter.baseline              = {{ filter_baselines }}
+ndppp_prep_target.argument.filter.baseline              = check_station_mismatch.output.filter
 ndppp_prep_target.argument.filter.remove                = true
 ndppp_prep_target.argument.applyclock.type              = applycal
 ndppp_prep_target.argument.applyclock.parmdb            = {{ solutions }}
