@@ -224,21 +224,21 @@ def chan2write (output, a):
         print('WARNING: There are more than 20 chunks of channels, difmap will only read in the first 20!!!')
         ## first get rid of anything which is a lone channel
         new_edges = [ a for i,a in enumerate(edges) if chunk_widths[i] > 1 ]
-    ## recheck length
-    if len(new_edges) > 19:
-        new_chunk_widths = [ b-a for a,b in new_edges ]
-        sorted_widths = np.sort( new_chunk_widths )
-        for x in sorted_widths:
-            ## if still too many chunks, get rid of starting with the smallest chunks
-            if len(new_edges) > 19:
-                idx = np.where( new_chunk_widths == x )[0]
-                if len(idx) > 0:
-                    del new_edges[idx[0]]
+        ## recheck length
+        if len(new_edges) > 19:
+            new_chunk_widths = [ b-a for a,b in new_edges ]
+            sorted_widths = np.sort( new_chunk_widths )
+            for x in sorted_widths:
+                ## if still too many chunks, get rid of starting with the smallest chunks
+                if len(new_edges) > 19:
+                    idx = np.where( new_chunk_widths == x )[0]
+                    if len(idx) > 0:
+                        del new_edges[idx[0]]
+                    else:
+                        del new_edges[idx]
                 else:
-                    del new_edges[idx]
-            else:
-                pass
-    edges = new_edges
+                    pass
+        edges = new_edges
     ## add one because difmap starts at one and not zero
     difmap_edges = [ [a+1,b+1] for a,b in edges ]
     seq = np.ravel(difmap_edges)
