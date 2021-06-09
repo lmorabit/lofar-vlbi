@@ -39,6 +39,17 @@ def count_p(n):
     norm = float(s)/float(c)
     return(norm)
 
+def count_s(n):
+    s = 0
+    c = 0
+    for ii in n:
+        if ii != '-':
+            c += 1
+            if ii == 'S':
+                s += 1
+    norm = float(s)/float(c)
+    return(norm)
+
 def grab_coo_MS(MS):
     """
     Read the coordinates of a field from one MS corresponding to the selection given in the parameters
@@ -274,18 +285,21 @@ def find_close_objs(lo, lbcs, tolerance=5.):
 
 		    tmp = combined[idx[yy]]['FT_Goodness']
                     total_ft.append( sum_digits( tmp ) )
-
-	        ## pick the one with the highest number of P's -- if tie, use total_ft
-		best_idx = np.where( num_P == np.max( num_P ) )[0]  ## this is an array
-	        if len( best_idx ) == 1:
-		    good_idx.append(idx[best_idx][0])  ## idx[best_idx][0] is a number
-		if len( best_idx ) > 1:
-		    currentmax = 0.0 
-                    for i in range(0,len(best_idx)):
-		        if total_ft[best_idx[i]] > currentmax:
-			    currentmax = total_ft[best_idx[i]]
-                            ft_idx = i
-		    good_idx.append( idx[best_idx[ft_idx]] )
+                ## check that the total_ft values are non-zero before looking for a best cal
+                if np.max( total_ft ) > 0:
+	            ## pick the one with the highest number of P's -- if tie, use total_ft
+		    best_idx = np.where( num_P == np.max( num_P ) )[0]  ## this is an array
+	            if len( best_idx ) == 1:
+		        good_idx.append(idx[best_idx][0])  ## idx[best_idx][0] is a number
+		    if len( best_idx ) > 1:
+		        currentmax = 0.0 
+                        for i in range(0,len(best_idx)):
+		            if total_ft[best_idx[i]] > currentmax:
+			        currentmax = total_ft[best_idx[i]]
+                                ft_idx = i
+		        good_idx.append( idx[best_idx[ft_idx]] )
+                else:
+                    print( 'Duplicate sources have total_ft = 0, removing from results.' )
             else:
 		good_idx.append(idx[0])
 
