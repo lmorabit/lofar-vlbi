@@ -34,7 +34,7 @@
 
 ## Stations to flag and filter
 ! flag_baselines        = [ ] ## flag baselines, eg: [ CS013HBA*&&* ]
-! filter_baselines	=   ## filter baselines that are flagged, e.g.: !CS013HBA*&&*
+! filter_baselines	= *&  ## filter baselines that are flagged, e.g.: !CS013HBA*&&*
 
 ## averaging information -- do not touch unless you know what you are doing!
 ! cal_avg_freqresolution    = 97.64kHz
