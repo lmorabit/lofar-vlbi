@@ -449,7 +449,6 @@ def dif_script (infile,pol='I',aipsno=340,clean_sigma=6,map_size=512,\
     fs.write('        obs_length=obs_length/2\n')
     fs.write('    end if\n')
     fs.write('until(obs_length < 2)\n')
-    fs.write('selfcal true,true,0\n')
     fs.write('delwin\n')
     fs.write('clean 1000,0.01\n')
     local_fits = fitsfile.split('/')[-1]
