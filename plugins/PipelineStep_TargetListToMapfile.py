@@ -78,8 +78,8 @@ def plugin_main(args, **kwargs):
 	    map_out.data.append(DataProduct(data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip))
     # save the file
     map_out.save(fileid)
-
     result = {'coordfile': coordfileid,
      'coords': current_coords,
+     'name': current_name,
      'mapfile': fileid}
     return result

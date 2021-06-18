@@ -15,15 +15,15 @@
 ##########################################################
 
 # local software paths
-! lofar_vlbi_dir            		= /home/morabito/software/lofar-vlbi
-! prefactor_dir                         = /home/morabito/software/prefactor
+! lofar_vlbi_dir            		= /home/longbaseline/lofar-vlbi
+! prefactor_dir                         = /home/longbaseline/prefactor
 # the following are in the singularity image and should not need to be changed
 ! losoto_directory                      = /opt/lofar/losoto
 ! lofar_directory                       = $LOFARROOT
 
 ## target data information
-! target_input_path             = /data/scratch/lb_bw/targetdata
-! target_input_pattern          = L*.MS
+! target_input_path             = /home/longbaseline/3C263/L590157/
+! target_input_pattern          = L590163*.MS
 
 ## Prefactor solution information
 ## assumes the job directory and Pre-Facet-Target will be in the same parent directory
