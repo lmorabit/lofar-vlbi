@@ -15,15 +15,16 @@
 ##########################################################
 
 # local software paths
-! lofar_vlbi_dir            		= /home/longbaseline/lofar-vlbi
-! prefactor_dir                         = /home/longbaseline/prefactor
+! lofar_vlbi_dir            		= /home/morabito/software/lofar-vlbi
+! prefactor_dir                         = /home/morabito/software/prefactor
 # the following are in the singularity image and should not need to be changed
 ! losoto_directory                      = /opt/lofar/losoto
 ! lofar_directory                       = $LOFARROOT
+! working_directory         =  input.output.working_directory/input.output.job_name               ## specify the working_directory (intermediate data products)
 
 ## target data information
-! target_input_path             = /home/longbaseline/3C263/L590157/
-! target_input_pattern          = L590163*.MS
+! target_input_path             = /data/scratch/lb_bw/targetdata
+! target_input_pattern          = L*.MS
 
 ## Prefactor solution information
 ## assumes the job directory and Pre-Facet-Target will be in the same parent directory
@@ -34,7 +35,7 @@
 
 ## Stations to flag and filter
 ! flag_baselines        = [ ] ## flag baselines, eg: [ CS013HBA*&&* ]
-! filter_baselines	= *&  ## filter baselines that are flagged, e.g.: !CS013HBA*&&*
+! filter_baselines	=   *& ## filter baselines that are flagged, e.g.: !CS013HBA*&&*
 
 ## averaging information -- do not touch unless you know what you are doing!
 ! cal_avg_freqresolution    = 97.64kHz
@@ -62,6 +63,7 @@
 
 ## job and output directories
 ! job_directory                 = input.output.job_directory 
+! log_file                      = input.output.log_file                                               ## location of the logfile
 ! results_directory             = {{ job_directory }}/results
 ! inspection_directory          = {{ results_directory }}/inspection/
 ! cal_values_directory          = {{ results_directory }}/calibrator_results/
@@ -124,8 +126,8 @@ pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_
 pipeline.steps.aoflagging = [ aoflag ]
 pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat, correct_beam ]
 pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, delay_cal_parmmap, delay_solve, make_losoto, process_losoto, apply_delay, selfcal ]
-pipeline.steps.applydelay = [ copyST_gains, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
-pipeline.steps.cleanup = [ delete_prep_target, delete_phaseup ]
+pipeline.steps.applydelay = [createmap_selfcal, copyST_gains, copyST_gains_selfcal, copy_delay_sols, expand_h5_map, expand_h5_selfcal_map, ndppp_apply_delay ]
+pipeline.steps.cleanup = [ delete_prep_target, delete_phaseup, make_results_compress, make_summary ]
 
 ##################################################################################################################
 ##                                                                                                              ##
@@ -565,7 +567,7 @@ do_phaseup_maps.control.mapfile_datamap   =  sort_phaseupmap.output.mapfile.mapf
 phaseup_concat.control.type                    = dppp
 phaseup_concat.control.max_per_node            = {{ num_proc_per_node_limit }}
 phaseup_concat.control.error_tolerance         = {{ error_tolerance }}
-phaseup_concat.control.mapfiles_out	       = do_phaseup_maps.output.groupmap
+phaseup_concat.control.mapfiles_out            = do_phaseup_maps.output.groupmap
 phaseup_concat.control.mapfiles_in             = [do_phaseup_maps.output.datamap]
 phaseup_concat.control.inputkey                = msin
 phaseup_concat.argument.msin.datacolumn        = DATA
@@ -689,6 +691,14 @@ selfcal.argument.verbose		= False
 selfcal.argument.catalogue              = {{ best_delay_cat }}
 selfcal.argument.naturalwt		= True
 
+createmap_selfcal.control.kind             = plugin
+createmap_selfcal.control.type             = createMapfile
+createmap_selfcal.control.method           = mapfile_from_folder
+createmap_selfcal.control.mapfile_dir      = input.output.mapfile_dir
+createmap_selfcal.control.filename         = createmap_selfcal.mapfile
+createmap_selfcal.control.folder           = {{ job_directory }}
+createmap_selfcal.control.pattern          = prep_delay_dir.output.name*_sols.h5
+
 # in delay cal parmdb, copy ST values to CS values
 copyST_gains.control.type                            = pythonplugin
 copyST_gains.control.executable                      = {{ scripts }}/gains_toCS_h5parm.py
@@ -698,6 +708,17 @@ copyST_gains.argument.solset_out                     = sol001
 copyST_gains.argument.soltab_list                    = 'tec000,phase000'
 copyST_gains.argument.superstation                   = ST001
 copyST_gains.argument.restrictToCS                   = True
+
+# in delay cal parmdb, copy ST values to CS values
+copyST_gains_selfcal.control.type                    = pythonplugin
+copyST_gains_selfcal.control.executable              = {{ scripts }}/gains_toCS_h5parm.py
+copyST_gains_selfcal.argument.flags                  = [createmap_selfcal.output.mapfile,dpppconcat.output.mapfile]
+copyST_gains_selfcal.argument.solset_in              = sol000
+copyST_gains_selfcal.argument.solset_out             = sol001
+copyST_gains_selfcal.argument.soltab_list            = 'amplitude000,phase000'
+copyST_gains_selfcal.argument.superstation           = ST001
+copyST_gains_selfcal.argument.restrictToCS           = True
+
 
 # copy the LoSoTo file to the inspection_directory
 copy_delay_sols.control.kind               =  recipe
@@ -715,30 +736,48 @@ expand_h5_map.control.mapfile_to_match          = dpppconcat.output.mapfile
 expand_h5_map.control.mapfile_dir               = input.output.mapfile_dir
 expand_h5_map.control.filename                  = expand_h5_map.mapfile
 
+# expand the mapfile so there's one entry per ms
+expand_h5_selfcal_map.control.kind                      = plugin
+expand_h5_selfcal_map.control.type                      = expandMapfile
+expand_h5_selfcal_map.control.mapfile_in                = createmap_selfcal.output.mapfile
+expand_h5_selfcal_map.control.mapfile_to_match          = dpppconcat.output.mapfile
+expand_h5_selfcal_map.control.mapfile_dir               = input.output.mapfile_dir
+expand_h5_selfcal_map.control.filename                  = expand_h5_selfcal_map.mapfile
+
 # Apply the gain solutions directly to the data -- no need to remove time dependence
-ndppp_apply_delay.control.type                           = dppp
-ndppp_apply_delay.control.inplace                        = True
-ndppp_apply_delay.control.max_per_node                   = {{ num_proc_per_node_limit }}
-ndppp_apply_delay.control.error_tolerance                = {{ error_tolerance }}
-ndppp_apply_delay.control.mapfiles_in                    = [dpppconcat.output.mapfile,expand_h5_map.output.mapfile]
-ndppp_apply_delay.control.inputkeys                      = [inputms,h5parm]
-ndppp_apply_delay.argument.numthreads                    = {{ max_dppp_threads }}
-ndppp_apply_delay.argument.msin                          = inputms
-ndppp_apply_delay.argument.msin.datacolumn               = {{ delaycal_col }}
-ndppp_apply_delay.argument.msin.baseline                 = *&
-ndppp_apply_delay.argument.msout.datacolumn              = CORRECTED_DATA
-ndppp_apply_delay.argument.msout.writefullresflag        = False
-ndppp_apply_delay.argument.steps                         = [applyTEC,applyphase,count]
-ndppp_apply_delay.argument.applyTEC.type		 = applycal
-ndppp_apply_delay.argument.applyTEC.parmdb		 = h5parm
-ndppp_apply_delay.argument.applyTEC.correction		 = tec000
-ndppp_apply_delay.argument.applyTEC.solset		 = sol001
-ndppp_apply_delay.argument.applyTEC.updateweights	 = false
-ndppp_apply_delay.argument.applyphase.type               = applycal
-ndppp_apply_delay.argument.applyphase.parmdb             = h5parm
-ndppp_apply_delay.argument.applyphase.correction         = phase000
-ndppp_apply_delay.argument.applyphase.solset             = sol001
-ndppp_apply_delay.argument.applyphase.updateweights      = false
+ndppp_apply_delay.control.type                              = dppp
+ndppp_apply_delay.control.inplace                           = True
+ndppp_apply_delay.control.max_per_node                      = {{ num_proc_per_node_limit }}
+ndppp_apply_delay.control.error_tolerance                   = {{ error_tolerance }}
+ndppp_apply_delay.control.mapfiles_in                       = [dpppconcat.output.mapfile,expand_h5_map.output.mapfile,expand_h5_selfcal_map.output.mapfile]
+ndppp_apply_delay.control.inputkeys                         = [inputms,h5parm,h5parm_selfcal]
+ndppp_apply_delay.argument.numthreads                       = {{ max_dppp_threads }}
+ndppp_apply_delay.argument.msin                             = inputms
+ndppp_apply_delay.argument.msin.datacolumn                  = {{ delaycal_col }}
+ndppp_apply_delay.argument.msin.baseline                    = *&
+ndppp_apply_delay.argument.msout.datacolumn                 = CORRECTED_DATA
+ndppp_apply_delay.argument.msout.writefullresflag           = False
+ndppp_apply_delay.argument.steps                            = [applyTEC,applyphase,applyphase_selfcal,applyamp_selfcal,count]
+ndppp_apply_delay.argument.applyTEC.type                    = applycal
+ndppp_apply_delay.argument.applyTEC.parmdb                  = h5parm
+ndppp_apply_delay.argument.applyTEC.correction              = tec000
+ndppp_apply_delay.argument.applyTEC.solset                  = sol001
+ndppp_apply_delay.argument.applyTEC.updateweights           = false
+ndppp_apply_delay.argument.applyphase.type                  = applycal
+ndppp_apply_delay.argument.applyphase.parmdb                = h5parm
+ndppp_apply_delay.argument.applyphase.correction            = phase000
+ndppp_apply_delay.argument.applyphase.solset                = sol001
+ndppp_apply_delay.argument.applyphase.updateweights         = false
+ndppp_apply_delay.argument.applyphase_selfcal.type          = applycal
+ndppp_apply_delay.argument.applyphase_selfcal.parmdb        = h5parm_selfcal
+ndppp_apply_delay.argument.applyphase_selfcal.correction    = phase000
+ndppp_apply_delay.argument.applyphase_selfcal.solset        = sol001
+ndppp_apply_delay.argument.applyphase_selfcal.updateweights = false
+ndppp_apply_delay.argument.applyamp_selfcal.type            = applycal
+ndppp_apply_delay.argument.applyamp_selfcal.parmdb          = h5parm_selfcal
+ndppp_apply_delay.argument.applyamp_selfcal.correction      = amplitude000
+ndppp_apply_delay.argument.applyamp_selfcal.solset          = sol001
+ndppp_apply_delay.argument.applyamp_selfcal.updateweights   = false
 
 ############################################
 #                                         ##
@@ -762,9 +801,28 @@ delete_phaseup.control.mapfile_in      = dppp_phaseup.output.mapfile
 delete_phaseup.control.inputkey        = msin
 delete_phaseup.control.arguments       = [-r,msin]
 
+# compress mapfiles for plotting
+make_results_compress.control.kind                             =   plugin
+make_results_compress.control.type                             =   compressMapfile
+make_results_compress.control.mapfile_in                       =   dpppconcat.output.mapfile
+make_results_compress.control.mapfile_dir                      =   input.output.mapfile_dir
+make_results_compress.control.filename                         =   make_results_compress.mapfile
+
+# set the pointing direction
+make_summary.control.type                                      =   pythonplugin
+make_summary.control.executable                                =   {{ scripts }}/make_summaryVLBI.py
+make_summary.control.error_tolerance                           =   {{ error_tolerance }}
+make_summary.control.mapfile_in                                =   make_results_compress.output.mapfile
+make_summary.control.inputkey                                  =   infiles
+make_summary.argument.observation_directory                    =   {{ working_directory }}
+make_summary.argument.logfile                                  =   {{ log_file }}
+make_summary.argument.h5parmdb                                 =   expand_h5_selfcal_map.output.mapfile
+# make_summary.argument.inspection_directory                     =   {{ inspection_directory }}
+make_summary.argument.MSfile                                   =   infiles
+
+
 ##################################################################
 #                                                               ##
 #                   END OF PIPELINE                             ##
 #                                                               ##
 ##################################################################
-
