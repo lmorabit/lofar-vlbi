@@ -355,9 +355,10 @@ def plugin_main( args, **kwargs ):
     image_limit_Jy = float(kwargs['image_limit_Jy'])
     fail_lotss_ok = kwargs['continue_no_lotss'].lower().capitalize()
 
-    #mslist = DataMap.load(mapfile_in)
-    #MSname = mslist[0].file
-    MSname = kwargs['MSname']
+    mslist = DataMap.load(mapfile_in)
+    MSname = mslist[0].file
+    # For testing
+    #MSname = kwargs['MSname']
  
     ## first check for a valid delay_calibrator file
     if os.path.isfile(delay_cals_file):
