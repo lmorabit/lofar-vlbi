@@ -341,7 +341,7 @@ def find_close_objs(lo, lbcs, tolerance=5.):
 
 def plugin_main( args, **kwargs ):
 
-    #mapfile_in = kwargs['mapfile_in']
+    mapfile_in = kwargs['mapfile_in']
     lotss_radius = kwargs['lotss_radius']
     lbcs_radius  = kwargs['lbcs_radius']
     bright_limit_Jy = float(kwargs['bright_limit_Jy'])
