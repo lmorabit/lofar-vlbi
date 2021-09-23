@@ -50,6 +50,17 @@ def count_s(n):
     norm = float(s)/float(c)
     return(norm)
 
+def count_x(n):
+    s = 0
+    c = 0
+    for ii in n:
+        if ii != '-':
+            c += 1
+            if ii == 'X':
+                s += 1
+    norm = float(s)/float(c)
+    return(norm)
+
 def grab_coo_MS(MS):
     """
     Read the coordinates of a field from one MS corresponding to the selection given in the parameters
@@ -232,6 +243,19 @@ def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
 
 def find_close_objs(lo, lbcs, tolerance=5.):
 
+    ## first filter the LBCS data on Flags
+    lbcs_idx = np.where( np.logical_or(lbcs['Flags'] == 'O', lbcs['Flags'] == 'A' ) )
+    lbcs = lbcs[lbcs_idx]
+    ## get rid of anything with only X's
+    nump = []
+    nums = []
+    for xx in range(len(lbcs)):
+        nump.append(count_p(lbcs['Goodness'][xx]))
+        nums.append(count_s(lbcs['Goodness'][xx]))
+    print( np.array(nump) + np.array(nums) )
+    lbcs_idx = np.where( np.array(nump)+np.array(nums) > 0 )[0]
+    lbcs = lbcs[lbcs_idx]
+
     ## get RA and DEC for the catalogues
     lotss_coords = SkyCoord( lo['RA'], lo['DEC'], frame='icrs', unit='deg' )
     lbcs_coords = SkyCoord( lbcs['RA'], lbcs['DEC'], frame='icrs', unit='deg' )
@@ -317,7 +341,7 @@ def find_close_objs(lo, lbcs, tolerance=5.):
 
 def plugin_main( args, **kwargs ):
 
-    mapfile_in = kwargs['mapfile_in']
+    #mapfile_in = kwargs['mapfile_in']
     lotss_radius = kwargs['lotss_radius']
     lbcs_radius  = kwargs['lbcs_radius']
     bright_limit_Jy = float(kwargs['bright_limit_Jy'])
@@ -331,8 +355,9 @@ def plugin_main( args, **kwargs ):
     image_limit_Jy = float(kwargs['image_limit_Jy'])
     fail_lotss_ok = kwargs['continue_no_lotss'].lower().capitalize()
 
-    mslist = DataMap.load(mapfile_in)
-    MSname = mslist[0].file
+    #mslist = DataMap.load(mapfile_in)
+    #MSname = mslist[0].file
+    MSname = kwargs['MSname']
  
     ## first check for a valid delay_calibrator file
     if os.path.isfile(delay_cals_file):
@@ -521,5 +546,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    plugin_main( args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_catalogue=args.lotss_catalogue, lbcs_catalogue=args.lbcs_catalogue, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy, continue_no_lotss = str(args.continue_no_lotss) )
+    plugin_main( args.MSname, MSname=args.MSname, lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, bright_limit_Jy=args.bright_limit_Jy, lotss_catalogue=args.lotss_catalogue, lbcs_catalogue=args.lbcs_catalogue, lotss_result_file=args.lotss_result_file, delay_cals_file=args.delay_cals_file, subtract_file=args.subtract_file, match_tolerance=args.match_tolerance, subtract_limit=args.subtract_limit, image_limit_Jy=args.image_limit_Jy, continue_no_lotss = str(args.continue_no_lotss) )
 
