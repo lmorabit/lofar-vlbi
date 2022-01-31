@@ -17,6 +17,7 @@
 # local software paths
 ! lofar_vlbi_dir            		= /home/morabito/software/lofar-vlbi
 ! prefactor_dir                         = /home/morabito/software/prefactor
+! selfcal_dir				= /home/morabito/software/lofar_facet_selfcal
 # the following are in the singularity image and should not need to be changed
 ! losoto_directory                      = /opt/lofar/losoto
 ! lofar_directory                       = $LOFARROOT
@@ -49,7 +50,7 @@
 ### DDF Options -- please check even if not using        ##
 ###########################################################
 
-! substep_ddf             = # ,apply_ddf   ## set to apply_ddf to use, leave blank otherwise
+! substep_ddf             = #,apply_ddf   ## set to apply_ddf to use, leave blank otherwise
 ! ddf_soldir              = # /data/scratch/lb_bw/targetddf/L602888/SOLSDIR     ## path to 'SOLSDIR' from ddf-pipeline run, leave blank otherwise
 ! delaycal_col            = DATA ## set to DATA_DI_CORRECTED if applying ddf solutions, leave as DATA otherwise.
 
@@ -79,8 +80,8 @@
 ! continue_without_lotss = True
 
 ## setup for running steps
-! substep_clip     = # clipATeam,     ## turn on if you want to a-team clip (will take several days)
-! substep_flag     = # aoflagging,    ## aoflagging
+! substep_clip     = ,clipATeam     ## turn on if you want to a-team clip (will take several days)
+! substep_flag     = ,aoflagging    ## aoflagging
 ! substep_delay    = ,delaycal        ## do a single in-field delay calibration
 ! substep_apply    = ,applydelay      ## apply the delay solutions back to the data
 ! substep_cleanup  = ,cleanup	      ## delete files not needed for Split-Directions.parset
@@ -116,7 +117,7 @@
 ## Steps to run.                                        ##
 ##########################################################
 
-pipeline.steps = [ setup, prep, {{ substep_clip }} concat {{ substep_ddf }} {{ substep_flag }} ,phaseup {{ substep_delay }} {{ substep_apply }} {{ substep_cleanup }} ]
+pipeline.steps = [ setup, prep {{ substep_clip }} ,concat {{ substep_ddf }} {{ substep_flag }} ,phaseup {{ substep_delay }} {{ substep_apply }} {{ substep_cleanup }} ]
 
 pipeline.steps.setup = [ mk_results_dir, mk_inspect_dir, mk_cal_values_dir, createmap_target, createmap_target_list, cp_cal_solutions, check_station_mismatch, download_cats ]
 pipeline.steps.prep = [ ndppp_prep_target, ndppp_prep_target_list ]
@@ -595,6 +596,19 @@ delay_cal_model.control.mapfile_in            = phaseup_concat.output.mapfile
 delay_cal_model.control.inputkey              = msin
 delay_cal_model.argument.flags                = [msin]
 delay_cal_model.argument.delayCalFile         = {{ best_delay_cat }}
+
+## copy h5_merger.py locally? or to the selfcal_dir
+
+# run self-calibration
+delay_solve.control.type		      = pythonplugin
+delay_solve.control.executable		      = {{ selfcal_dir }}/facetselfcal.py
+delay_solve.control.mapfile_in		      = phaseup_concat.output.mapfile
+delay_solve.control.inputkey		      = msin
+delay_solve.control.flags		      = [msin]
+delay_solve.argument.helperscriptspath	      = {{ selfcal_dir }}
+
+
+
 
 # generate mapfile with the sourceDB names to be used in the gsmcal steps
 delay_cal_model_map.control.kind               =  plugin
