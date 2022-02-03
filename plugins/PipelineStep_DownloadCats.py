@@ -438,6 +438,10 @@ def plugin_main( args, **kwargs ):
 	flux_cut_sources = tmp_cat[image_index]
 
         ## make a radius cut
+        src_coords = SkyCoord( flux_cut_sources['RA'], flux_cut_sources['DEC'], frame='icrs', unit='deg' )
+        separations = src_coords.separation( ptg_coords )
+        seps = Column( separations.deg, name='Radius' )
+        flux_cut_sources.add_column( seps )
         good_idx = np.where( flux_cut_sources['Radius'] <= im_radius )[0]
         sources_to_image = flux_cut_sources[good_idx]
 
