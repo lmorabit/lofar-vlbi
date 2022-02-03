@@ -195,17 +195,16 @@ check_station_mismatch.control.filter                          =   {{ filter_bas
 download_cats.control.kind                    = plugin
 download_cats.control.type                    = DownloadCats
 download_cats.control.mapfile_in              = createmap_target_list.output.mapfile
-download_cats.control.lotss_radius            = 2.
-download_cats.control.lbcs_radius             = 2.
-download_cats.control.bright_limit_Jy         = 5.
+download_cats.control.lotss_radius            = 1.5
+download_cats.control.lbcs_radius             = 1.5
+download_cats.control.im_radius		      = 1.24
 download_cats.control.lotss_catalogue         = {{ lotss_skymodel }}
 download_cats.control.lbcs_catalogue          = {{ lbcs_skymodel }}
 download_cats.control.lotss_result_file       = {{ image_cat }}
 download_cats.control.delay_cals_file         = {{ delay_cat }}
-download_cats.control.subtract_file           = {{ subtract_cat }}
 download_cats.control.match_tolerance         = 5.
-download_cats.control.subtract_limit          = 0.5
-download_cats.control.image_limit_Jy          = 0.05
+download_cats.control.bright_limit_Jy         = 5.
+download_cats.control.image_limit_Jy          = 0.01
 download_cats.control.continue_no_lotss       = {{ continue_without_lotss }}
        
 # run NDPPP on the target data to flag and apply solutions
