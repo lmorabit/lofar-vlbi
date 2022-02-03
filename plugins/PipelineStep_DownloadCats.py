@@ -339,6 +339,7 @@ def plugin_main( args, **kwargs ):
     lotss_radius = kwargs['lotss_radius']
     lbcs_radius  = kwargs['lbcs_radius']
     im_radius = float(kwargs['im_radius'])
+    image_limit_Jy = float(kwargs['image_limit_Jy'])
     bright_limit_Jy = float(kwargs['bright_limit_Jy'])
     lotss_result_file = kwargs['lotss_result_file']
     lotss_catalogue = kwargs['lotss_catalogue']
