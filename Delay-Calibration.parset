@@ -76,8 +76,6 @@
 ! lbcs_skymodel          = {{ results_directory }}/lbcs_catalogue.csv
 ! image_cat              = {{ results_directory }}/image_catalogue.csv
 ! delay_cat              = {{ results_directory }}/delay_calibrators.csv
-! best_delay_cat	 = {{ results_directory }}/best_delay_calibrators.csv
-! subtract_cat           = {{ results_directory }}/subtract_sources.csv
 ! continue_without_lotss = True
 
 ## setup for running steps
@@ -512,7 +510,7 @@ prep_delay_dir.control.type             = TargetListToMapfile
 prep_delay_dir.control.mapfile_dir      = input.output.mapfile_dir
 prep_delay_dir.control.mapfile_in       = dpppconcat.output.mapfile
 prep_delay_dir.control.filename         = prep_delay_dir.mapfile
-prep_delay_dir.control.target_file      = {{ best_delay_cat }}
+prep_delay_dir.control.target_file      = {{ delay_cat }}
 prep_delay_dir.control.all_to_one       = False
 
 # shift, average and add up stations for tied array
@@ -592,7 +590,7 @@ delay_cal_model.control.executable            = {{ scripts }}/skynet.py
 delay_cal_model.control.mapfile_in            = phaseup_concat.output.mapfile
 delay_cal_model.control.inputkey              = msin
 delay_cal_model.argument.flags                = [msin]
-delay_cal_model.argument.delayCalFile         = {{ best_delay_cat }}
+delay_cal_model.argument.delayCalFile         = {{ delay_cat }}
 
 # generate mapfile with the sourceDB names to be used in the gsmcal steps
 delay_cal_model_map.control.kind               =  plugin
