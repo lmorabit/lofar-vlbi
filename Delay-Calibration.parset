@@ -44,7 +44,7 @@
 ! cal_avg_timeresolution    = 32.
 
 ## flagging and a-team clipping settings
-! rfistrategy                       =  HBAdefault.rfis
+! rfistrategy                       =  {{ prefactor_dir }}/rfistrategies/HBAdefault.rfis
 ! min_separation                    =  30         ## minimal accepted distance to an A-team source on the sky in degrees (will raise a WARNING)
 
 ###########################################################
@@ -397,7 +397,7 @@ aoflag.argument.steps                               =  [aoflagger]
 aoflag.argument.aoflagger.type                      =  aoflagger
 aoflag.argument.aoflagger.memoryperc                =  15
 aoflag.argument.aoflagger.keepstatistics            =  true
-aoflag.argument.aoflagger.strategy                  =  {{ prefactor_dir }}/rfistrategies/{{ rfistrategy }}
+aoflag.argument.aoflagger.strategy                  =  {{ rfistrategy }}
 
 ###################################################################
 ##                                                               ##
