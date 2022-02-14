@@ -624,6 +624,7 @@ delay_solve.argument.antennaconstraint-list	= "['alldutch',None,None]"
 delay_solve.argument.docircular 		= True
 delay_solve.argument.forwidefield 		= True 
 delay_solve.argument.stop			= 10
+delay_solve.argument.no-beamcor		        = True
 
 # generate mapfile of the output file
 createmap_selfcal.control.kind             = plugin
