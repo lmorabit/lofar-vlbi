@@ -648,7 +648,7 @@ copyST_gains.argument.restrictToCS                   = True
 copy_delay_sols.control.kind               =  recipe
 copy_delay_sols.control.type               =  executable_args
 copy_delay_sols.control.executable         =  /bin/cp
-copy_delay_sols.control.mapfile_in         =  delay_cal_parmmap.output.mapfile
+copy_delay_sols.control.mapfile_in         =  createmap_selfcal.output.mapfile
 copy_delay_sols.control.inputkey           =  h5in
 copy_delay_sols.control.arguments          =  [h5in, {{ cal_values_directory }}/delay_cal_sols.h5]
 
