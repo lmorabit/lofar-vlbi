@@ -18,12 +18,17 @@ def main(mapfile,helperscriptspath,helperscriptspath-h5merge,configfile,destdir)
 
     # copy the config file
     destfile = os.path.join( destdir, configfile.split('/')[-1] )
-    os.system( 'cp {:s} {:s}'.format(configfile, destfile) )
+    ss = 'cp {:s} {:s}'.format(configfile, destfile)
+    print( ss )
+    os.system( ss )
 
     # update it
     os.system( 'sed -i "s~FACETSELFCAL_DIR~{:s}~g" {:s}'.format(helperscriptspath,destfile) )
     os.system( 'sed -i "s~LOFARHELPERS_DIR~{:s}~g" {:s}'.format(helperscriptspath-h5merge,destfile) )
     os.system( 'sed -i "s~MYMODEL~{:s}~g" {:s}'.format(mapfile,destfile) )
+    with open( destfile, 'r' ) as f:
+        lines = f.readlines()
+    print( lines )
 
 if __name__ == "__main__":
 
