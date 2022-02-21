@@ -522,7 +522,7 @@ dppp_phaseup.argument.msin.datacolumn      	= {{ delaycal_col }}
 dppp_phaseup.argument.msout.datacolumn     	= DATA
 dppp_phaseup.argument.msout.storagemanager 	= dysco
 dppp_phaseup.argument.msout.overwrite      	= True
-dppp_phaseup.argument.steps                	= [shift, avgerage1, applybeam, adder, filter, average2]
+dppp_phaseup.argument.steps                	= [shift, average1, applybeam, adder, filter, average2]
 dppp_phaseup.argument.shift.type           	= phaseshift
 dppp_phaseup.argument.shift.phasecenter    	= prep_delay_dir.output.coords
 dppp_phaseup.argument.average1.type             = averager
@@ -606,7 +606,7 @@ delay_solve.control.type		      	= pythonplugin
 delay_solve.control.executable		      	= {{ selfcal_dir }}/facetselfcal.py
 delay_solve.control.mapfiles_in		      	= [phaseup_concat.output.mapfile,delay_cal_model_map.output.mapfile]
 delay_solve.control.inputkeys		      	= [msin,skymod]
-delay_solve.control.flags		      	= [msin]
+delay_solve.argument.flags		      	= [msin]
 delay_solve.argument.helperscriptspath	      	= {{ selfcal_dir }}
 delay_solve.argument.helperscriptspath-h5merge  = {{ helper_dir }}
 delay_solve.argument.imsize			= 1600	
@@ -624,6 +624,7 @@ delay_solve.argument.antennaconstraint-list	= "['alldutch',None,None]"
 delay_solve.argument.docircular 		= True
 delay_solve.argument.forwidefield 		= True 
 delay_solve.argument.stop			= 10
+delay_solve.argument.no-beamcor		        = True
 
 # generate mapfile of the output file
 createmap_selfcal.control.kind             = plugin
