@@ -14,7 +14,7 @@ import os
 import glob
 import logging
 
-def main(msin,skymod,,helperscriptspath='',helperscriptspath-h5merge='',configfile='',destdir=''):
+def main(msin,skymod,helperscriptspath='',helperscriptspath-h5merge='',configfile='',destdir=''):
 
     # copy the config file
     destfile = os.path.join( destdir, configfile.split('/')[-1] )
