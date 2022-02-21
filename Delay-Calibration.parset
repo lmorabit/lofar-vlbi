@@ -70,6 +70,9 @@
 ! inspection_directory          = {{ results_directory }}/inspection/
 ! cal_values_directory          = {{ results_directory }}/calibrator_results/
 
+## selfcal config
+! delay_config_file 		= {{ lofar_vlbi_dir }}/facetselfcal_config.txt
+
 ## catalogue information
 ## if using your own field catalogue (i.e., ddf-pipeline generated catalogue), point lotss_skymodel to it on disk
 ! lotss_skymodel         = {{ results_directory }}/lotss_catalogue.csv
@@ -125,7 +128,7 @@ pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconca
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
 pipeline.steps.aoflagging = [ aoflag ]
 pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat ]
-pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, delay_solve ]
+pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, copy_delay_config, delay_solve ]
 pipeline.steps.applydelay = [ createmap_selfcal, copyST_gains, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
 pipeline.steps.cleanup = [ delete_prep_target, delete_phaseup, make_results_compress, make_summary ]
 
@@ -601,30 +604,24 @@ delay_cal_model_map.control.add_suffix_to_file =  /sky
 delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
 delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
 
+# copy the cal solutions to operate on
+copy_delay_config.control.kind                  = pythonplugin
+copy_delay_config.control.executable            = {{ scripts }}/prep_selfcal.py
+copy_delay_config.control.max_per_node          = 1
+copy_delay_config.control.mapfile_in		= delay_cal_model_map.output.mapfile
+copy_delay_config.control.inputkey		= skymod
+copy_delay_config.argument.flags		= [skymod]
+copy_delay_config.argument.helperscriptspath    = {{ selfcal_dir }}
+copy_delay_config.argument.helperscriptspath-h5merge  = {{ helper_dir }}
+copy_delay_config.argument.configfile		= {{ delay_config_file }}
+copy_delay_config.argument.destdir		= {{ job_directory }}
+
 # run self-calibration
 delay_solve.control.type		      	= pythonplugin
 delay_solve.control.executable		      	= {{ selfcal_dir }}/facetselfcal.py
-delay_solve.control.mapfiles_in		      	= [phaseup_concat.output.mapfile,delay_cal_model_map.output.mapfile]
-delay_solve.control.inputkeys		      	= [msin,skymod]
+delay_solve.control.mapfile_in		      	= phaseup_concat.output.mapfile
+delay_solve.control.inputkey		      	= msin
 delay_solve.argument.flags		      	= [msin]
-delay_solve.argument.helperscriptspath	      	= {{ selfcal_dir }}
-delay_solve.argument.helperscriptspath-h5merge  = {{ helper_dir }}
-delay_solve.argument.imsize			= 1600	
-delay_solve.argument.skymodel			= skymod
-delay_solve.argument.pixelscale			= 0.075
-delay_solve.argument.robust			= -0.5
-delay_solve.argument.uvmin			= 40000
-delay_solve.argument.maskthreshold		= [7.0]
-delay_solve.argument.soltype-list		= "['scalarphasediff','scalarphase','scalarcomplexgain']"
-delay_solve.argument.soltypecycles-list		= "[0,0,2]"
-delay_solve.argument.solint-list		= "[4,1,100]"
-delay_solve.argument.nchan-list			= "[1,1,1]"
-delay_solve.argument.smoothnessconstraint-list	= "[10.0,2.0,10.0]"
-delay_solve.argument.antennaconstraint-list	= "['alldutch',None,None]"
-delay_solve.argument.docircular 		= True
-delay_solve.argument.forwidefield 		= True 
-delay_solve.argument.stop			= 10
-delay_solve.argument.no-beamcor		        = True
 
 # generate mapfile of the output file
 createmap_selfcal.control.kind             = plugin
