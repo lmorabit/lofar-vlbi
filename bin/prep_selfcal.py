@@ -14,7 +14,7 @@ import os
 import glob
 import logging
 
-def main(mapfile,helperscriptspath,helperscriptspath-h5merge,configfile,destdir):
+def main(mapfile,helperscriptspath='',helperscriptspath-h5merge='',configfile='',destdir=''):
 
     # copy the config file
     destfile = os.path.join( destdir, configfile.split('/')[-1] )
@@ -41,4 +41,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.mapfile,args.helperscriptspath,args.helperscriptspath-h5merge,args.configfile,args.destdir)
+    main(args.mapfile,helperscriptspath=args.helperscriptspath,helperscriptspath-h5merge=args.helperscriptspath-h5merge,configfile=args.configfile,destdir=args.destdir)
