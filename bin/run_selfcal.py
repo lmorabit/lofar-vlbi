@@ -12,6 +12,8 @@ import glob
 
 def main( msin, skymod, helperscriptspath='', helperscriptspath_h5merge='', configfile='', destdir='' ):
 
+    msin = msin.split('/')[-1]
+
     with open( 'run_selfcal.log', 'a+') as f:
         f.write('{:s}\n{:s}\n{:s}\n{:s}\n{:s}\n{:s}'.format(msin,skymod,helperscriptspath,helperscriptspath_h5merge,configfile,destdir) )
 
