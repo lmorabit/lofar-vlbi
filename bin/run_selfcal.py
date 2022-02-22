@@ -28,7 +28,7 @@ def main( msin, skymod, helperscriptspath='', helperscriptspath_h5merge='', conf
     os.system( 'sed -i "s~LOFARHELPERS_DIR~{:s}~g" {:s}'.format(helperscriptspath_h5merge,destfile) )
     os.system( 'sed -i "s~MYMODEL~{:s}~g" {:s}'.format(skymod,destfile) )
 
-    os.system( 'python {:s} {:s}'.format(os.path.join(helperscriptspath,'facetselfcal.py'), msin ) )
+    os.system( '/opt/lofar/pyenv-py2/bin/python {:s} {:s}'.format(os.path.join(helperscriptspath,'facetselfcal.py'), msin ) )
 
 if __name__ == "__main__":
 
