@@ -19,16 +19,15 @@ def main(msin,skymod,helperscriptspath='',helperscriptspath_h5merge='',configfil
     # copy the config file
     destfile = os.path.join( destdir, configfile.split('/')[-1] )
     ss = 'cp {:s} {:s}'.format(configfile, destfile)
-    print( ss )
+    logging.info( ss )
     os.system( ss )
 
     # update it
     os.system( 'sed -i "s~FACETSELFCAL_DIR~{:s}~g" {:s}'.format(helperscriptspath,destfile) )
     os.system( 'sed -i "s~LOFARHELPERS_DIR~{:s}~g" {:s}'.format(helperscriptspath_h5merge,destfile) )
     os.system( 'sed -i "s~MYMODEL~{:s}~g" {:s}'.format(skymod,destfile) )
-    with open( destfile, 'r' ) as f:
-        lines = f.readlines()
-    print( lines )
+
+    os.system( 'python {:s}'.format(os.path.join(helperscriptspath,'facetselfcal.py') ) )
 
 if __name__ == "__main__":
 
