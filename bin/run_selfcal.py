@@ -29,6 +29,9 @@ def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='
     os.system( 'sed -i "s~LOFARHELPERS_DIR~{:s}~g" {:s}'.format(helperscriptspath_h5merge,destfile) )
     os.system( 'sed -i "s~MYMODEL~{:s}~g" {:s}'.format(skymod,destfile) )
 
+    ## also copy the h5_merger.py script
+    os.system( 'cp {:s} {:s}'.format( os.path.join( helperscriptspath_h5merge, 'h5_merger.py' ), os.path.join( destdir, 'h5_merger.py' ) ) )
+
     os.system( '/opt/lofar/pyenv-py2/bin/python {:s} {:s}'.format(os.path.join(helperscriptspath,'facetselfcal.py'), msin ) )
 
 if __name__ == "__main__":
