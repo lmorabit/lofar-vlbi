@@ -9,12 +9,11 @@ written 21 Feb 2022
 @author: Leah Morabito)
 """
 
-import argparse
 import os
 import glob
 import logging
 
-def main(msin,skymod,helperscriptspath='',helperscriptspath_h5merge='',configfile='',destdir=''):
+def main( msin, skymod, helperscriptspath='', helperscriptspath_h5merge='', configfile='', destdir='' ):
 
     # copy the config file
     destfile = os.path.join( destdir, configfile.split('/')[-1] )
@@ -31,6 +30,7 @@ def main(msin,skymod,helperscriptspath='',helperscriptspath_h5merge='',configfil
 
 if __name__ == "__main__":
 
+    import argparse
     parser = argparse.ArgumentParser(description='cleanup script at the end of the pipeline.')
     parser.add_argument('msin')
     parser.add_argument('skymod')
