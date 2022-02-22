@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# -* coding: utf-8 -*-
-
 """
 setup for a generic pipeline run of facetselfcal.py
 
@@ -11,14 +9,16 @@ written 21 Feb 2022
 
 import os
 import glob
-import logging
 
 def main( msin, skymod, helperscriptspath='', helperscriptspath_h5merge='', configfile='', destdir='' ):
+
+    with open( 'run_selfcal.log', 'a+') as f:
+        f.write('{:s}\n{:s}\n{:s}\n{:s}\n{:s}\n{:s}'.format(msin,skymod,helperscriptspath,helperscriptspath_h5merge,configfile,destdir) )
 
     # copy the config file
     destfile = os.path.join( destdir, configfile.split('/')[-1] )
     ss = 'cp {:s} {:s}'.format(configfile, destfile)
-    logging.info( ss )
+    print( ss )
     os.system( ss )
 
     # update it
@@ -26,7 +26,7 @@ def main( msin, skymod, helperscriptspath='', helperscriptspath_h5merge='', conf
     os.system( 'sed -i "s~LOFARHELPERS_DIR~{:s}~g" {:s}'.format(helperscriptspath_h5merge,destfile) )
     os.system( 'sed -i "s~MYMODEL~{:s}~g" {:s}'.format(skymod,destfile) )
 
-    os.system( 'python {:s}'.format(os.path.join(helperscriptspath,'facetselfcal.py') ) )
+    os.system( 'python {:s} {:s}'.format(os.path.join(helperscriptspath,'facetselfcal.py'), msin ) )
 
 if __name__ == "__main__":
 
