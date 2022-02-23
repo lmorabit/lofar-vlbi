@@ -1,5 +1,5 @@
 helperscriptspath          = FACETSELFCAL_DIR
-helperscriptspath_h5merge  = LOFARHELPERS_DIR
+helperscriptspathh5merge  = LOFARHELPERS_DIR
 imsize                     = 1600
 skymodel                   = MYMODEL
 pixelscale                 = 0.075
