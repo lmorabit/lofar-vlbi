@@ -128,7 +128,7 @@ pipeline.steps.concat = [ sort_concatmap, do_sortmap_maps, dpppconcat, dpppconca
 pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_to_h5, expand_concat_map, addIS, h5imp_ddf_map, h5imp_ddf, ndppp_applycal ]
 pipeline.steps.aoflagging = [ aoflag ]
 pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat ]
-pipeline.steps.delaycal = [ delay_cal_model, delay_cal_model_map, copy_delay_config, delay_solve ]
+pipeline.steps.delaycal = [ delay_cal_model, delay_solve ]
 pipeline.steps.applydelay = [ createmap_selfcal, copyST_gains, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
 pipeline.steps.cleanup = [ delete_prep_target, delete_phaseup, make_results_compress, make_summary ]
 
@@ -595,33 +595,16 @@ delay_cal_model.control.inputkey              = msin
 delay_cal_model.argument.flags                = [msin]
 delay_cal_model.argument.delayCalFile         = {{ delay_cat }}
 
-# generate mapfile with the sourceDB names to be used in the gsmcal steps
-delay_cal_model_map.control.kind               =  plugin
-delay_cal_model_map.control.type               =  createMapfile
-delay_cal_model_map.control.method             =  add_suffix_to_file
-delay_cal_model_map.control.mapfile_in         =  phaseup_concat.output.mapfile
-delay_cal_model_map.control.add_suffix_to_file =  /sky
-delay_cal_model_map.control.mapfile_dir        =  input.output.mapfile_dir
-delay_cal_model_map.control.filename           =  delay_cal_model_map.mapfile
-
-# copy the cal solutions to operate on
-copy_delay_config.control.kind                  = pythonplugin
-copy_delay_config.control.executable            = {{ scripts }}/prep_selfcal.py
-copy_delay_config.control.max_per_node          = 1
-copy_delay_config.control.mapfile_in		= delay_cal_model_map.output.mapfile
-copy_delay_config.control.inputkey		= skymod
-copy_delay_config.argument.flags		= [skymod]
-copy_delay_config.argument.helperscriptspath    = {{ selfcal_dir }}
-copy_delay_config.argument.helperscriptspath-h5merge  = {{ helper_dir }}
-copy_delay_config.argument.configfile		= {{ delay_config_file }}
-copy_delay_config.argument.destdir		= {{ job_directory }}
-
 # run self-calibration
-delay_solve.control.type		      	= pythonplugin
-delay_solve.control.executable		      	= {{ selfcal_dir }}/facetselfcal.py
-delay_solve.control.mapfile_in		      	= phaseup_concat.output.mapfile
-delay_solve.control.inputkey		      	= msin
-delay_solve.argument.flags		      	= [msin]
+delay_solve.control.type                  	= pythonplugin
+delay_solve.control.executable            	= {{ scripts }}/run_selfcal.py
+delay_solve.control.mapfile_in             	= phaseup_concat.output.mapfile
+delay_solve.control.inputkey               	= msin
+delay_solve.argument.flags                 	= [msin]
+delay_solve.argument.helperscriptspath     	= {{ selfcal_dir }}
+delay_solve.argument.helperscriptspath_h5merge  = {{ helper_dir }}
+delay_solve.argument.configfile         	= {{ delay_config_file }}
+delay_solve.argument.destdir            	= {{ job_directory }}
 
 # generate mapfile of the output file
 createmap_selfcal.control.kind             = plugin
@@ -630,7 +613,7 @@ createmap_selfcal.control.method           = mapfile_from_folder
 createmap_selfcal.control.mapfile_dir      = input.output.mapfile_dir
 createmap_selfcal.control.filename         = createmap_selfcal.mapfile
 createmap_selfcal.control.folder           = {{ job_directory }}
-createmap_selfcal.control.pattern          = prep_delay_dir.output.name*_sols.h5  ###################################
+createmap_selfcal.control.pattern          = merged_selfcalcyle009_*.h5
 
 # in delay cal h5parm, copy ST values to CS values
 copyST_gains.control.type                            = pythonplugin
@@ -677,11 +660,11 @@ ndppp_apply_delay.argument.applyphase.parmdb                = h5parm
 ndppp_apply_delay.argument.applyphase.correction            = phase000
 ndppp_apply_delay.argument.applyphase.solset                = sol001
 ndppp_apply_delay.argument.applyphase.updateweights         = false
-ndppp_apply_delay.argument.applyamp.type            = applycal
-ndppp_apply_delay.argument.applyamp.parmdb          = h5parm
-ndppp_apply_delay.argument.applyamp.correction      = amplitude000
-ndppp_apply_delay.argument.applyamp.solset          = sol001
-ndppp_apply_delay.argument.applyamp.updateweights   = false
+ndppp_apply_delay.argument.applyamp.type            	    = applycal
+ndppp_apply_delay.argument.applyamp.parmdb          	    = h5parm
+ndppp_apply_delay.argument.applyamp.correction      	    = amplitude000
+ndppp_apply_delay.argument.applyamp.solset          	    = sol001
+ndppp_apply_delay.argument.applyamp.updateweights   	    = false
 
 ############################################
 #                                         ##
