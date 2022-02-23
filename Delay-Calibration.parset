@@ -612,7 +612,7 @@ createmap_selfcal.control.type             = createMapfile
 createmap_selfcal.control.method           = mapfile_from_folder
 createmap_selfcal.control.mapfile_dir      = input.output.mapfile_dir
 createmap_selfcal.control.filename         = createmap_selfcal.mapfile
-createmap_selfcal.control.folder           = {{ job_directory }}
+createmap_selfcal.control.folder           = {{ job_directory }}/delay_solve
 createmap_selfcal.control.pattern          = merged_selfcalcyle009_*.h5
 
 # in delay cal h5parm, copy ST values to CS values

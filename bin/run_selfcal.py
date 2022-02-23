@@ -15,6 +15,12 @@ def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='
     msin = msin.split('/')[-1]
     skymod = os.path.join( msin, 'skymodel' )
 
+    ## make a new directory and copy the measurement set into it
+    os.mkdir('delay_solve')
+    destdir = os.path.join( destdir, 'delay_solve' )
+    os.system( 'cp -r {:s} delay_solve/'.format( msin ) )
+    os.chdir('delay_solve')
+
     with open( 'run_selfcal.log', 'a+') as f:
         f.write('{:s}\n{:s}\n{:s}\n{:s}\n{:s}\n{:s}'.format(msin,skymod,helperscriptspath,helperscriptspath_h5merge,configfile,destdir) )
 
