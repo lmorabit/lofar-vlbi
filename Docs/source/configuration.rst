@@ -43,7 +43,7 @@ Each parset will contain different instructions, relating to what that part of t
 And the `LOFAR-VLBI`_ parsets are:
 
  * Delay-Calibration.parset
- * Split-Directions.parset
+ * Split-Directions.parset (still under development)
 
 These can all use the same configuration file (see next section).
 
@@ -76,8 +76,9 @@ If you are using a local version of the LOFAR software instead of the Singularit
 Using your own catalogue
 ========================
 
-The `LOFAR-VLBI`_ pipeline will automatically try to download information from both the `LBCS catalogue server`_ and the `LoTSS catalogue server`_. Both of these are required to help select the best in-field calibrator. As described in the `Before you begin`_ section, if LoTSS coverage for your field does not yet exist, you can manually make your own field catalogue. 
-This is done by running the `ddf-pipeline`_ and then the *quality_pipeline.py* script. The output catalogue will be named *image_full_ampphase_di_m.NS.cat.fits*.  The only thing you need to do is convert this to a csv file, and then update the following line in **Delay-Calibration.parset**::
+The `LOFAR-VLBI`_ pipeline will automatically try to download information from both the `LBCS catalogue server`_ and the `LoTSS catalogue server`_. Both of these are required to help select the best in-field calibrator. As described in the `Before you begin`_ section, if LoTSS coverage for your field does not yet exist, you can manually make your own field catalogue, or if you have information on calibrator sources from somewhere else, you can provide your own catalogue.  This needs to be a CSV file with a minimum of columns **Source_name,RA,DEC** with your in-field calibrator as the top entry. The columns must be named as described here; you can have more columns than this but **Source_name,RA,DEC** must exist. 
+
+If you use your own catalogue, update the following line in **Delay-Calibration.parset**::
 
     ! lotss_skymodel         = {{ results_directory }}/lotss_catalogue.csv
 
@@ -99,13 +100,7 @@ Once the **Delay-Calibration** step has run, you can simply edit or replace the 
 Selecting imaging parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, the pipeline will run self-calibration using difmap. This is an order of magnitude faster (usually ~30 min) than any self-calibration using native LOFAR tools, and already optimised for VLBI. Difmap operates on the XX and YY polarisations independently, but the self-calibration script converts these solutions to an h5parm, applies them, and makes a Stokes I image from the corrected data using wsclean. The final self-calibrated dataset will have TEC-corrected, un-self-calibrated data in the **DATA** column and TEC + self-cal corrected data in the **CORRECTED_DATA** column. The user is free to perform more self-calibration, or re-do the self-calibration, using any tools they wish. The data at this point is already corrected for beam effects (including the array factor), so you are free to use any imaging / gain calibration software you like.
-
-The self-calibration script run by the pipeline has the following default parameters:
-* Number of pixels = 512
-* Pixel scale = 50 milli-arcsec
-
-This gives an image which is 25.6 x 25.6 arcseconds. If your source is larger than this, you will need to adjust the number of pixels, following the convention of using powers of 2 (512,1024,2048,... etc.). 
+The imaging parameters for the delay calibrator are stored in the *facetselfcal_config.txt* file. These should not be changed unless you know what you are doing. 
    
 .. _help:
 

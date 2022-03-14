@@ -17,6 +17,8 @@
 # software paths
 ! lofar_vlbi_dir            		= /home/morabito/software/lofar-vlbi
 ! prefactor_dir                         = /home/morabito/software/prefactor
+! selfcal_dir                           = /home/morabito/software/lofar_facet_selfcal
+! helper_dir                            = /home/morabito/software/lofar_helpers
 # the following are in the singularity image and should not need to be changed
 ! losoto_directory                      = /opt/lofar/losoto
 ! aoflagger                             = /opt/lofar/aoflagger/bin/aoflagger
@@ -55,8 +57,8 @@
 ! data_col = CORRECTED_DATA 
 
 ## Averaging parameters
-! cal_avg_freqresolution    = 97.64kHz
-! cal_avg_timeresolution    = 8.
+! cal_avg_freqresolution    = 390.56kHz
+! cal_avg_timeresolution    = 32.
 
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use) -- set to string '000' to not combine anything
@@ -74,8 +76,8 @@
 
 pipeline.steps = [ setup, selfcal ]
  
-pipeline.steps.setup = [ mk_results_dir, targetdata_map, targetdata_map_list, parallel_split, caldata_map, correct_beam, cal_model, h5parm_map, sourcedb_map ]
-pipeline.steps.selfcal = [ tecsolve, plot_tec, apply_tec, selfcal ]
+pipeline.steps.setup = [ mk_results_dir, targetdata_map, prep_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat ]
+pipeline.steps.selfcal = [ selfcal ]
 
 ###########################################################################
 
@@ -100,131 +102,99 @@ targetdata_map.control.filename         = targetdata_map.mapfile
 targetdata_map.control.folder           = {{ delaycal_directory }}
 targetdata_map.control.pattern          = L*msdpppconcat
 
-# convert to a mapfile with all subbands in one list
-targetdata_map_list.control.kind            =   plugin
-targetdata_map_list.control.type            =   createMapfile
-targetdata_map_list.control.method          =   mapfile_all_to_one
-targetdata_map_list.control.mapfile_dir     =   input.output.mapfile_dir
-targetdata_map_list.control.filename        =   combine_data_tar_map.mapfile
-targetdata_map_list.control.mapfile_in      =   targetdata_map.output.mapfile
+# convert the best delay calibrator from catalogue to output mapfile
+prep_dir.control.kind             = plugin
+prep_dir.control.type             = TargetListToMapfile
+prep_dir.control.mapfile_dir      = input.output.mapfile_dir
+prep_dir.control.mapfile_in       = targetdata_map.output.mapfile
+prep_dir.control.filename         = prep_dir.mapfile
+prep_dir.control.target_file      = {{ image_cat }}
+prep_dir.control.all_to_one       = False
 
-# parallel split the direction to image
-parallel_split.control.type		= pythonplugin
-parallel_split.control.max_per_node	= {{ num_proc_per_node }}
-parallel_split.control.executable	= {{ scripts }}/parallel_split.py
-parallel_split.argument.flags           = [targetdata_map_list.output.mapfile,{{ image_cat }}]
-parallel_split.argument.phaseup_cmd	= {{ phaseup_command }}
-parallel_split.argument.filter_cmd	= {{ filter_command }}
-parallel_split.argument.ncpu		= {{ num_proc_per_node }}
-parallel_split.argument.datacol		= {{ data_col }}
-parallel_split.argument.timeres		= {{ cal_avg_timeresolution }}
-parallel_split.argument.freqres		= {{ cal_avg_freqresolution }}
-parallel_split.argument.nsbs		= 999
-parallel_split.argument.nthreads        = 0 ## 0 --> default of 4
+# shift, average and add up stations for tied array
+dppp_phaseup.control.type                       = dppp
+dppp_phaseup.control.max_per_node               = {{ num_proc_per_node }}
+dppp_phaseup.control.mapfile_out                = prep_dir.output.mapfile
+dppp_phaseup.argument.msin                      = targetdata_map.output.mapfile
+dppp_phaseup.argument.msin.datacolumn           = {{ data_col }}
+dppp_phaseup.argument.msout.datacolumn          = DATA
+dppp_phaseup.argument.msout.storagemanager      = dysco
+dppp_phaseup.argument.msout.overwrite           = True
+dppp_phaseup.argument.steps                     = [shift, average1, applybeam, adder, filter, average2]
+dppp_phaseup.argument.shift.type                = phaseshift
+dppp_phaseup.argument.shift.phasecenter         = prep_delay_dir.output.coords
+dppp_phaseup.argument.average1.type             = averager
+dppp_phaseup.argument.average1.freqresolution   = 48.82kHz
+dppp_phaseup.argument.average1.timeresolution   = 4.
+dppp_phaseup.argument.applybeam.type            = applybeam
+dppp_phaseup.argument.applybeam.beammode        = full
+dppp_phaseup.argument.adder.type                = stationadder
+dppp_phaseup.argument.adder.stations            = {{ phaseup_command }}
+dppp_phaseup.argument.filter.type               = filter
+dppp_phaseup.argument.filter.baseline           = {{ filter_command }}
+dppp_phaseup.argument.filter.remove             = True
+dppp_phaseup.argument.average2.type             = averager
+dppp_phaseup.argument.average2.freqresolution   = {{ cal_avg_freqresolution }}
+dppp_phaseup.argument.average2.timeresolution   = {{ cal_avg_timeresolution }}
+dppp_phaseup.argument.numthreads                = {{ max_dppp_threads }}
 
-# make a mapfile of the directions to image
-caldata_map.control.kind		= plugin
-caldata_map.control.type		= createMapfile
-caldata_map.control.method		= mapfile_from_folder
-caldata_map.control.mapfile_dir		= input.output.mapfile_dir
-caldata_map.control.filename		= caldata_map.mapfile
-caldata_map.control.folder		= {{ job_directory }}
-caldata_map.control.pattern		= *imdir.ms
+# convert to a mapfile with all bands in one list
+dppp_phaseup_list.control.kind            =   plugin
+dppp_phaseup_list.control.type            =   createMapfile
+dppp_phaseup_list.control.method          =   mapfile_all_to_one
+dppp_phaseup_list.control.mapfile_dir     =   input.output.mapfile_dir
+dppp_phaseup_list.control.filename        =   dppp_phaseup_list.mapfile
+dppp_phaseup_list.control.mapfile_in      =   dppp_phaseup.output.mapfile
 
-# correct the beam for the array_factor
-correct_beam.control.type                       = pythonplugin
-correct_beam.control.max_per_node		= {{ num_proc_per_node_limit }}
-correct_beam.control.executable                 = {{ scripts }}/correct_array_factor.py
-correct_beam.control.mapfile_in                 = caldata_map.output.mapfile
-correct_beam.control.inputkey                   = msin
-correct_beam.argument.mslist                    = msin
-correct_beam.argument.results_dir               = {{ results_directory }}
+# sort them by frequency and fill in missing subband information
+sort_phaseupmap.control.type               = pythonplugin
+sort_phaseupmap.control.executable         = {{ prefactor_scripts }}/sort_times_into_freqGroups.py
+sort_phaseupmap.argument.flags             = [dppp_phaseup_list.output.mapfile]
+sort_phaseupmap.argument.filename          = sort_phaseupmap
+sort_phaseupmap.argument.mapfile_dir       = input.output.mapfile_dir
+sort_phaseupmap.argument.target_path       = {{ job_directory }}
+sort_phaseupmap.argument.numSB             = -1
+sort_phaseupmap.argument.NDPPPfill         = True
+sort_phaseupmap.argument.stepname          = dpppconcat
+sort_phaseupmap.argument.firstSB           = None
+sort_phaseupmap.argument.truncateLastSBs   = False
 
-# generate point source models with skynet
-cal_model.control.type			= pythonplugin
-cal_model.control.executable	  	= {{ scripts }}/skynet.py
-cal_model.control.mapfile_in	  	= caldata_map.output.mapfile
-cal_model.control.inputkey	  	= msin
-cal_model.argument.flags		= [msin]
-cal_model.argument.delayCalFile 	= {{ image_cat }}
+# convert the output of sort_phaseupmap into usable mapfile
+do_phaseup_maps.control.kind              =  plugin
+do_phaseup_maps.control.type              =  mapfilenamesFromMapfiles
+do_phaseup_maps.control.mapfile_groupmap  =  sort_phaseupmap.output.groupmapfile.mapfile
+do_phaseup_maps.control.mapfile_datamap   =  sort_phaseupmap.output.mapfile.mapfile
 
-# parmdb mapfile
-h5parm_map.control.kind			= plugin
-h5parm_map.control.type			= createMapfile
-h5parm_map.control.method		= add_suffix_to_file
-h5parm_map.control.mapfile_in		= caldata_map.output.mapfile
-h5parm_map.control.add_suffix_to_file	= _tec.h5
-h5parm_map.control.mapfile_dir		= input.output.mapfile_dir
-h5parm_map.control.filename 		= h5parm_map.mapfile
-
-# sourcedb mapfile
-sourcedb_map.control.kind                = plugin
-sourcedb_map.control.type                = createMapfile
-sourcedb_map.control.method              = add_suffix_to_file
-sourcedb_map.control.mapfile_in          = caldata_map.output.mapfile
-sourcedb_map.control.add_suffix_to_file  = /sky
-sourcedb_map.control.mapfile_dir         = input.output.mapfile_dir
-sourcedb_map.control.filename            = sourcedb_map.mapfile
-
-# run the tecsolve on them 
-tecsolve.control.type			= dppp
-tecsolve.control.inplace		= True
-tecsolve.control.max_per_node		= {{ num_proc_per_node_limit }}
-tecsolve.control.error_tolerance	= {{ error_tolerance }}
-tecsolve.control.mapfiles_in		= [caldata_map.output.mapfile,h5parm_map.output.mapfile,sourcedb_map.output.mapfile]
-tecsolve.control.inputkeys		= [msfiles,h5parms,skymodels]
-tecsolve.argument.numthreads		= {{ max_dppp_threads }}
-tecsolve.argument.msin			= msfiles
-tecsolve.argument.msin.datacolumn	= DATA
-tecsolve.argument.steps			= [gaincal]
-tecsolve.argument.gaincal.caltype	= tecandphase
-tecsolve.argument.gaincal.uvlambdamin   = 50000
-tecsolve.argument.gaincal.solint	= 2
-tecsolve.argument.gaincal.nchan		= 2
-tecsolve.argument.gaincal.directions	= [ME0]
-tecsolve.argument.gaincal.parmdb	= h5parms
-tecsolve.argument.gaincal.sourcedb	= skymodels 
-
-# plot the tec solutions
-plot_tec.control.type			= pythonplugin
-plot_tec.control.max_per_node		= 1
-plot_tec.control.executable		= {{ scripts }}/plot_tec.py
-plot_tec.argument.flags			= [targetdata_map_list.output.mapfile]
-
-# apply the solutions
-apply_tec.control.type			= dppp
-apply_tec.control.max_per_node		= {{ num_proc_per_node_limit }}
-apply_tec.control.error_tolerance	= {{ error_tolerance }}
-apply_tec.control.mapfiles_in		= [caldata_map.output.mapfile,h5parm_map.output.mapfile]
-apply_tec.control.inputkeys		= [msfiles,h5parms]
-apply_tec.argument.msin			= msfiles
-apply_tec.argument.numthreads		= {{ max_dppp_threads }}
-apply_tec.argument.msin.datacolumn	= DATA
-apply_tec.argument.msout.datacolumn	= DATA
-apply_tec.argument.steps		= [applytec,applyphs]
-apply_tec.argument.applytec.type	= applycal
-apply_tec.argument.applytec.correction	= tec000
-apply_tec.argument.applytec.parmdb	= h5parms
-apply_tec.argument.applyphs.type	= applycal
-apply_tec.argument.applyphs.correction	= phase000
-apply_tec.argument.applyphs.parmdb	= h5parms
-
+# concatenate them
+phaseup_concat.control.type                    = dppp
+phaseup_concat.control.max_per_node            = {{ num_proc_per_node_limit }}
+phaseup_concat.control.error_tolerance         = {{ error_tolerance }}
+phaseup_concat.control.mapfiles_out            = do_phaseup_maps.output.groupmap
+phaseup_concat.control.mapfiles_in             = [do_phaseup_maps.output.datamap]
+phaseup_concat.control.inputkey                = msin
+phaseup_concat.argument.msin.datacolumn        = DATA
+phaseup_concat.argument.msin.missingdata       = True
+phaseup_concat.argument.msin.orderms           = False
+phaseup_concat.argument.msout.datacolumn       = DATA
+phaseup_concat.argument.msout.writefullresflag = False
+phaseup_concat.argument.msout.storagemanager   = dysco
+phaseup_concat.argument.msout.overwrite        = True
+phaseup_concat.argument.steps                  = [count]
+phaseup_concat.argument.numthreads             = {{ max_dppp_threads }}
 
 # run self-calibration
 selfcal.control.type                    = pythonplugin
-selfcal.control.executable              = {{ scripts }}/selfcal_difmap.py
-selfcal.control.mapfile_in              = apply_tec.output.mapfile
+selfcal.control.executable              = {{ selfcal_dir }}/facetselfcal.py
+selfcal.control.mapfile_in              = phaseup_concat.output.mapfile
 selfcal.control.inputkey                = msin
 selfcal.argument.flags                  = [msin]
-selfcal.argument.clean_sig              = 6
-selfcal.argument.map_size               = 1024
-selfcal.argument.pix_size               = 50
-selfcal.argument.obs_length             = 900
-selfcal.argument.datacolumn             = DATA
-selfcal.argument.startmod               = True
-selfcal.argument.verbose                = False
-selfcal.argument.catalogue		= {{ image_cat }}
-selfcal.argument.naturalwt		= True
+selfcal.argument.helperscriptspath          = {{ selfcal_dir }}
+selfcal.argument.helperscriptspath-h5merge  = {{ helper_dir }}
+selfcal.argument.imsize                     = 1600
+selfcal.argument.no-beamcor                 = True
+selfcal.argument.auto			= True
+selfcal.argument.avgfreqstep		= 10 
+selfcal.argument.avgtimestep		= 4 
 
 
 ##################################################################

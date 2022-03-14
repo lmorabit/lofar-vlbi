@@ -47,12 +47,10 @@ def plugin_main(args, **kwargs):
     map_out_coords = DataMap([])
     # read in the catalogue to get source_id, RA, and DEC
     t = Table.read(target_file, format='csv')
-    RA_val = t['RA_LOTSS'].data[0]
-    DEC_val = t['DEC_LOTSS'].data[0]
+    RA_val = t['RA'].data[0]
+    DEC_val = t['DEC'].data[0]
     Source_id = t['Source_id'].data[0]
-    if str(Source_id)[0:1] == 'I':
-	pass
-    elif str(Source_id)[0:1] == 'S':
+    if isinstance( Source_id, str ):
 	pass
     else:
 	Source_id = 'S' + str(Source_id)
@@ -73,7 +71,6 @@ def plugin_main(args, **kwargs):
         ms_file = datalist[0]
         map_out.data.append(DataProduct(data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip))
     else:
-        print( 'HELLO HELLO HELLO' )
         for msID, ms_file in enumerate(datalist):
 	    map_out.data.append(DataProduct(data[msID].host, '/'.join(data[msID].file.split('/')[:-1]) + '/' + current_name + '_' + data[msID].file.split('/')[-1], data[msID].skip))
     # save the file

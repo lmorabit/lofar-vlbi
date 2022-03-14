@@ -12,10 +12,10 @@ Before beginning any data processing, it is important to keep several things in 
 
 * **Ionosphere:** should not be particularly bad. Check inspection plots from the observatory.  If it's been processed successfully by the Surveys KSP infrastructure, it should be okay.
 * **Field of View:** The Surveys standard averaging is 16 channels/SB and 1 sec, which limits the Field of View (FoV) to ~1.25 deg from the centre. Your target and LBCS calibrators should be inside this.
-* **Distance between calibrator and target:** An acceptable value will vary based on ionosphere and the distribution of sources in the field. As a rule of thumb, 1 degree separation *should* be okay, but it is safer to look for a calibrator within 0.5 degrees. The pipeline will pick the best in-field calibrator if there are multiple choices, but you can always manually phase reference a calibrator closer to your target from a more distant calibrator.
+* **Distance between calibrator and target:** An acceptable value will vary based on ionosphere and the distribution of sources in the field. As a rule of thumb, 1 degree separation should be okay, but it is safer to look for a calibrator within 0.5 degrees. The pipeline will pick the best in-field calibrator if there are multiple choices, but you can always manually phase reference a calibrator closer to your target from a more distant calibrator.
 * **Flux Density:** In principle the limiting rms noise will be ~100 uJy/bm for an 8 hour observation. In practice, the quality of your image / amount you have to self-calibrate will depend on all of the factors above, including the distance from the phase centre of the observation. 
 * **Source structure:** Keep in mind that not all point sources at 6" resolution are point sources at 0.3" resolution. If you expect your 1 mJy/bm source to break equally into 4 components, each component will only be 250 uJy/bm and therefore only a 2.5 sigma detection for 100 uJy/bm rms. 
-* **Flux calibrator:** 3C295 and 3C196 are commonly used as standard flux calibrators, but high-resolution models of them are not included in the pipeline. They are therefore currently not advisable to use as flux calibrators for LOFAR-VLBI.
+* **Flux calibrator:** High resolution models of 3C295 and 3C196 have only been included in prefactor relatively recently.  If you are using the latest version of `prefactor`_ you should be fine. If you haven't pulled this repository in a while, we recommend you do so. 
 * **Bandwidth:** The HBA has a strong bandpass roll-off at its lower frequency end. We recommend using the standard Surveys frequency range of 120 - 168 MHz. NOTE: the Surveys setup places some individual subbands above 168 MHz, but the RFI in this frequency range is incredibly strong and virtually all data above 168 MHz will be impacted. We recommend discarding subbands above 168 MHz.
 
 As an example, a good field will have: the target within ~ 1 degree from the pointing centre, an LBCS calibrator < 0.5 degrees from your target, no bright (> 1 Jy) sources within ~ 1 degree, reasonable to good ionospheric conditions, with 16 channels/SB and 1 second time resolution. If your data is averaged more than this, you may run into problems. 
@@ -37,6 +37,7 @@ The `LOFAR-VLBI`_ pipeline makes use of two catalogue servers. It is a good idea
 
 * **LoTSS:** Useful information is collected from the LOFAR Two-metre Sky Survey (LoTSS) on the sources in your field. If LoTSS does not cover your field, you will have to manually produce a catalogue at 6 arcsecond resolution using the Dutch array before you run the LOFAR-VLBI pipeline. You can check the LoTSS catalogue here: `LoTSS catalogue server`_
 
+Additionally, the `LOFAR-VLBI`_ pipeline uses the self-calibration script `facetselfcal`_ developed by Reinout van Weeren, which in turn requires some functionality from `lofar_helpers`_ .
    
 .. _help:
 
@@ -50,3 +51,5 @@ The `LOFAR-VLBI`_ pipeline makes use of two catalogue servers. It is a good idea
 .. _prefactor tutorial: https://www.astron.nl/lofarschool2018/Documents/Thursday/prefactor_tutorial.pdf
 .. _documentation: file:///media/quasarfix/media/cep3/prefactor/docs/build/html/parset.html
 .. _ddf-pipeline: https://github.com/mhardcastle/ddf-pipeline
+.. _facetselfcal: https://github.com/rvweeren/lofar_facet_selfcal
+.. _lofar_helpers: https://github.com/jurjen93/lofar_helpers
