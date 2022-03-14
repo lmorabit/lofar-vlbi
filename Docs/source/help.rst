@@ -11,3 +11,6 @@ If you need help or want to report any issues or bugs, follow these links:
 
 * losoto: https://github.com/revoltk/losoto/issues
 
+* facetselfcal: https://github.com/rvweeren/lofar_facet_selfcal
+
+* lofar_helpers: https://github.com/jurjen93/lofar_helpers

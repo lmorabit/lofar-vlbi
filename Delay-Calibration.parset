@@ -20,7 +20,7 @@
 ! selfcal_dir				= /home/morabito/software/lofar_facet_selfcal
 ! helper_dir				= /home/morabito/software/lofar_helpers
 # the following are in the singularity image and should not need to be changed
-! losoto_directory                      = /opt/lofar/losoto
+! losoto_directory                      = /opt/lofar/pyenv-py2
 ! lofar_directory                       = $LOFARROOT
 ! working_directory         =  input.output.working_directory/input.output.job_name               ## specify the working_directory (intermediate data products)
 
@@ -44,7 +44,7 @@
 ! cal_avg_timeresolution    = 32.
 
 ## flagging and a-team clipping settings
-! rfistrategy                       =  {{ prefactor_dir }}/rfistrategies/HBAdefault.rfis
+! rfistrategy                       =  {{ prefactor_dir }}/rfistrategies/HBAdefault.rfis   ## this may need to be changed to the cwl version depending on the singularity image used
 ! min_separation                    =  30         ## minimal accepted distance to an A-team source on the sky in degrees (will raise a WARNING)
 
 ###########################################################

@@ -32,23 +32,7 @@ The LOFAR-VLBI pipeline makes use of prefactor solutions to apply to the data. T
 
 * The default is now for **Pre-Facet-Calibrator.parset** to process all stations, including the international stations. You can run this with the default settings. Please check the outputs to make sure they are sensible! 
 
-.. note::
-    If your standard calibrator is either 3C 295 or 3C 196, the standard models in the prefactor github repository do not have sufficiently high resolution, but high-resolution models do exist. Please contact the long baseline working group for help. 
-
-.. note::
-    Some versions of prefactor will incorrectly apply a 'reference' 3C48 bandpass which will result in an incorrect flux scale, and possible problems with self-calibration of the international stations. Please check the `Software Requirements`_ section of this documentation for more information.
-
 * The **Pre-Facet-Target.parset** should be run with all the standard defaults. This will copy over the solutions from Pre-Facet-Calibrator and add the self-cal phase solutions for the core and remote stations, which are necessary for the LOFAR-VLBI pipeline. Please check the outputs to make sure they are sensible!  Also note any stations which were flagged as 'bad' as you will need to pre-flag these for the LOFAR-VLBI pipeline.
-
-* There is a mismatch between the version of losoto in the Singularity image and the one expected by the pipeline. The result is that the ``-H`` flat is not recognized in the ``h5exp_gsm`` step of ``Pre-Facet-Target.parset``.  Before running, please change the following line::
-
-        h5exp_gsm.argument.flags                                       =   [-q,-v,-H,h5in]
-
-to::
-
-        h5exp_gsm.argument.flags                                       =   [-q,-v,h5in]
-
-otherwise you will get an error.
 
 .. note::
     Processing of interleaved datasets is not currently supported.
@@ -93,29 +77,13 @@ Trying a different Delay Calibrator
 
 If you find that the delay calibrator selected by the pipeline is not adequate, or you wish to try a different LBCS source, you can do this with a little manual input. 
 
-First, you will have to modify the statefile (see `prefactor documentation`_ ) to remove the *prep_delay_dir* step and everything afterwards. You will then be able to resume the pipeline after making your catalogue changes.
+First, you will have to modify the statefile (see `prefactor documentation`_ ) to remove the *delay_solve* step and everything afterwards, including the *delay_solve* directory in your runtime directory (although you may just wish to copy this to another name). You will then be able to resume the pipeline after making your catalogue changes.
 
-Next, you need to modify (or insert) the *best_delay_calibrators.csv* file, which can be found in the **results** directory of your runtime directory. The name of the file must be *best_delay_calibrators.csv* and the following comma separated values, including the header, are required::
+Next, you need to modify (or insert) the *delay_calibrators.csv* file, which can be found in the **results** directory of your runtime directory. The name of the file must be *delay_calibrators.csv* and the following comma separated values, including the header, are required::
 
-        Source_id,RA_LOTSS,DEC_LOTSS,Date,Time,Goodness,Flags,FT_Goodness,Quality,FT_total,Radius,Total_flux,LGZ_Size,DC_Maj
+        Source_id,RA,DEC
 
-The columns *LGZ_Size* and *DC_Maj* provide complementary information, and only one of these two columns is required. The rest of the columns must be present, and it does not matter if you have more columns than what is listed above. 
-
-All of this inforamtion is available from a combination of LBCS and LoTSS queries, but if you do not have LoTSS information then you can input dummy information to fill out the required columns. The recommended way to do this is to start with LBCS information and do the following:
-
-* Rename *Observation* to *Source_id* 
-
-* Rename *RA* to *RA_LOTSS* and *DEC* to *DEC_LOTSS*
-
-* Find the radius from the pointing centre and add this (in degrees) as the *Radius* information
-
-* Input the *Total_flux* as *1.0*
-
-* Add an *LGZ_Size* of *20.*
-
-The last 2 parameters are read in by the pipeline, but can be dummy values. The *LGZ_Size* is used to calculate the imaging parameters, and should be sensible for LBCS calibrators.
-
-You should have **ONLY ONE** source in your *best_delay_calibrators.csv* file. A good way to create this new file from LBCS data is to copy the *delay_calibrators.csv* file to *best_delay_calibrators.csv*, delete all the targets except the one you wish to try, and then add the extra columns necessary. 
+By default, the pipeline will have processed the first entry in the catalogue, which is sorted by increasing distance from the phase centre.  If you wish to try the next source, simply delete the first entry and restart the pipeline after modifying the statefile / removing the *delay_solve* directory as described above. 
 
 
 Self-calibration or not?
@@ -127,17 +95,6 @@ The pipeline by default will run self-calibration and imaging as described below
 
 The resulting measurement set will be appropriate to start imaging.
 
-
-Selecting imaging parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-By default, the pipeline will run self-calibration using difmap. This is an order of magnitude faster (usually ~30 min) than any self-calibration using native LOFAR tools, and already optimised for VLBI. Difmap operates on the XX and YY polarisations independently, but the self-calibration script converts these solutions to an h5parm, applies them, and makes a Stokes I image from the corrected data using wsclean. The final self-calibrated dataset will have TEC-corrected, un-self-calibrated data in the **DATA** column and TEC + self-cal corrected data in the **CORRECTED_DATA** column. The user is free to perform more self-calibration, or re-do the self-calibration, using any tools they wish. The data at this point is already corrected for beam effects (including the array factor), so you are free to use any imaging / gain calibration software you like.
-
-The self-calibration script run by the pipeline has the following default parameters:
-* Number of pixels = 512
-* Pixel scale = 50 milli-arcsec
-
-This gives an image which is 25.6 x 25.6 arcseconds. If your source is larger than this, you will need to adjust the number of pixels, following the convention of using powers of 2 (512,1024,2048,... etc.). 
 
 ======================
 Pipeline Block Diagram
