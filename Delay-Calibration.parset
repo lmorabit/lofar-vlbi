@@ -513,6 +513,7 @@ dppp_phaseup.argument.average1.type             = averager
 dppp_phaseup.argument.average1.freqresolution   = 48.82kHz
 dppp_phaseup.argument.average1.timeresolution   = 4.
 dppp_phaseup.argument.applybeam.type		= applybeam
+dppp_phaseup.argument.applybeam.direction		=  prep_delay_dir.output.coords
 dppp_phaseup.argument.applybeam.beammode	= full
 dppp_phaseup.argument.adder.type           	= stationadder
 dppp_phaseup.argument.adder.stations       	= {{ phaseup_command }}
