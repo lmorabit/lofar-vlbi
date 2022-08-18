@@ -333,6 +333,61 @@ def find_close_objs(lo, lbcs, tolerance=5.):
 
     return result
 
+def is_resolved(Sint, Speak, rms):
+    """ Determines if a source is resolved or unresolved.
+    The calculation is presented in Shimwell et al. 2018 of the LOFAR DR1 paper splash.
+    
+    Args:
+        Sint (float or ndarray): integrated flux density.
+        Speak (float or ndarray): peak flux density.
+        rms (float or ndarray): local rms around the source.
+    Returns:
+        resolved (bool or ndarray): True if the source is resolved, False if not.
+    """
+    resolved = ((Sint / Speak) > 1.25 + 3.1 * (Speak / rms) ** (-0.53))
+    return resolved
+
+def remove_multiples_position( mycat, racol='RA', decol='DEC' ):
+    radecstrings = []
+    for i in np.arange(0,len(mycat)):
+        radecstrings.append(str(mycat[i][racol]) + str(mycat[i][decol]) )
+    radecstrings = np.asarray(radecstrings)
+    if len( np.unique( radecstrings ) ) != len( mycat ):
+        radecs = np.unique( radecstrings )
+        good_idx = []
+        for radec in radecs:
+            idx = np.where( radecstrings == radec )[0]
+            if len(idx) > 1:
+                ## multiple matches found.  Count P's first and then break ties with Goodness_FT 
+                num_P = []
+                total_ft = []
+                for yy in range( len( idx ) ):
+                    tmp = mycat[idx[yy]]['Goodness']
+                    num_P.append( count_p( tmp ) )
+                    tmp = mycat[idx[yy]]['FT_Goodness']
+                    total_ft.append( sum_digits( tmp ) )
+                ## check that the total_ft values are non-zero before looking for a best cal
+                if np.max( total_ft ) > 0:
+                    ## pick the one with the highest number of P's -- if tie, use total_ft
+                    best_idx = np.where( num_P == np.max( num_P ) )[0]  ## this is an array
+                    if len( best_idx ) == 1:
+                        good_idx.append(idx[best_idx][0])  ## idx[best_idx][0] is a number
+                    if len( best_idx ) > 1:
+                        currentmax = 0.0
+                        for i in range(0,len(best_idx)):
+                            if total_ft[best_idx[i]] > currentmax:
+                                currentmax = total_ft[best_idx[i]]
+                                ft_idx = i
+                        good_idx.append( idx[best_idx[ft_idx]] )
+                else:
+                    print( 'Duplicate sources have total_ft = 0, removing from results.' )
+            else:
+                good_idx.append(idx[0])                       
+    else:
+        print( 'All LBCS sources are unique' )
+
+    return( mycat[good_idx] )
+
 def plugin_main( args, **kwargs ):
 
     mapfile_in = kwargs['mapfile_in']
@@ -396,6 +451,9 @@ def plugin_main( args, **kwargs ):
         LGZ_Size = Column( np.ones( len(lbcs_catalogue) )*20., name='LGZ_Size' ) ## set to a default of 20 arcsec
         lbcs_catalogue.add_column( LGZ_Size )
 
+        ## remove duplicate sources if necessary 
+        lbcs_catalogue = remove_multiples_position( lbcs_catalogue )
+
         ## order based on radius from the phase centre
         lbcs_catalogue.sort('Radius')
 
@@ -451,19 +509,6 @@ def plugin_main( args, **kwargs ):
 
     return
 
-def is_resolved(Sint, Speak, rms):
-    """ Determines if a source is resolved or unresolved.
-    The calculation is presented in Shimwell et al. 2018 of the LOFAR DR1 paper splash.
-    
-    Args:
-        Sint (float or ndarray): integrated flux density.
-        Speak (float or ndarray): peak flux density.
-        rms (float or ndarray): local rms around the source.
-    Returns:
-        resolved (bool or ndarray): True if the source is resolved, False if not.
-    """
-    resolved = ((Sint / Speak) > 1.25 + 3.1 * (Speak / rms) ** (-0.53))
-    return resolved
 
 if __name__ == "__main__":
 
