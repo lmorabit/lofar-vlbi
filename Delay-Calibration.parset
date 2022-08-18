@@ -635,6 +635,7 @@ ndppp_apply_delay.argument.msin                             = inputms
 ndppp_apply_delay.argument.msin.datacolumn                  = {{ delaycal_col }}
 ndppp_apply_delay.argument.msin.baseline                    = *&
 ndppp_apply_delay.argument.msout.datacolumn                 = CORRECTED_DATA
+ndppp_apply_delay.argument.msout.storagemanager		    = dysco
 ndppp_apply_delay.argument.msout.writefullresflag           = False
 ndppp_apply_delay.argument.steps                            = [applyphase,applyamp,count]
 ndppp_apply_delay.argument.applyphase.type                  = applycal
