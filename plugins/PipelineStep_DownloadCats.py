@@ -157,7 +157,7 @@ def my_lotss_catalogue( ms_input, Radius=1.5, bright_limit_Jy=5., outfile='' ):
         ## rename source_id column if necessary   
         if 'Source_Name' in tb_sorted.colnames:
             tb_sorted.rename_column('Source_Name', 'Source_id')
-        keep_cols = ['Source_id', 'RA', 'DEC','Total_flux','Peak_flux', 'Major', 'Minor', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'Isl_rms', 'Resolved']
+        keep_cols = ['Source_id', 'RA', 'DEC','Total_flux','Peak_flux', 'Majax', 'Minax', 'PA', 'DC_Maj', 'DC_Min', 'DC_PA', 'Isl_rms', 'Resolved']
         if 'LGZ_Size' in colnames:
             keep_cols = keep_cols + ['LGZ_Size', 'LGZ_Width', 'LGZ_PA']
 
