@@ -447,9 +447,9 @@ def plugin_main( args, **kwargs ):
         lbcs_catalogue.rename_column('Observation','Source_id')
 
         ## add in some dummy data
-        Total_flux = Column( np.ones(len(lbcs_catalogue)), name='Total_flux' )
+        Total_flux = Column( np.ones(len(lbcs_catalogue))*1e3, name='Total_flux', unit='mJy' )
         lbcs_catalogue.add_column( Total_flux )
-        LGZ_Size = Column( np.ones( len(lbcs_catalogue) )*20., name='LGZ_Size' ) ## set to a default of 20 arcsec
+        LGZ_Size = Column( np.ones( len(lbcs_catalogue) )*20., name='LGZ_Size', unit='arcsec' ) ## set to a default of 20 arcsec
         lbcs_catalogue.add_column( LGZ_Size )
 
         ## remove duplicate sources if necessary 
