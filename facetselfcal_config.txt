@@ -16,3 +16,4 @@ docircular                 = True
 forwidefield               = True
 stop                       = 10
 no_beamcor                 = True
+phaseupstations		   = core
