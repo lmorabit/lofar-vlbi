@@ -59,6 +59,9 @@
 ## These parameters may need to be updated.             ##
 ##########################################################
 
+## for proper concatenation
+! reference_stationSB           = 104
+
 ## Station combination
 ! phaseup_command               = {ST001:'CS*'} ## 'CS*' for all core stations (or select stations you want to use)
 ! filter_command                = '!CS*&&*' ## remove the core stations after combination
@@ -346,7 +349,7 @@ sort_concatmap.argument.target_path       = {{ job_directory }}
 sort_concatmap.argument.numSB             = 10
 sort_concatmap.argument.NDPPPfill         = True
 sort_concatmap.argument.stepname          = dpppconcat
-sort_concatmap.argument.firstSB           = None
+sort_concatmap.argument.firstSB           = {{ reference_stationSB }}
 sort_concatmap.argument.truncateLastSBs   = False
 
 # convert the output of sort_concatmap into usable mapfile
