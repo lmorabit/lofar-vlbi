@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='cleanup script at the end of the pipeline.')
     parser.add_argument('msin')
     parser.add_argument('--helperscriptspath',default='lofar_facet_selfcal')
-    parser.add_argument('--helperscriptspath)h5merge',default='lofar_helpers')
+    parser.add_argument('--helperscriptspath_h5merge',default='lofar_helpers')
     parser.add_argument('--configfile',default='facetselfcal_config.txt')
     parser.add_argument('--destdir',default='jobdir')
 
