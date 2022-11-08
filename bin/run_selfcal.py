@@ -38,6 +38,8 @@ def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='
     ## also copy the h5_merger.py script
     os.system( 'cp {:s} {:s}'.format( os.path.join( helperscriptspath_h5merge, 'h5_merger.py' ), os.path.join( destdir, 'h5_merger.py' ) ) )
 
+    os.system( 'cp {:s} {:s}'.format( os.path.join( helperscriptspath, 'polconv.py' ), os.path.join( destdir, 'polconv.py' ) ) )
+
     os.system( '/opt/lofar/pyenv-py2/bin/python {:s} {:s}'.format(os.path.join(helperscriptspath,'facetselfcal.py'), msin ) )
 
 if __name__ == "__main__":
