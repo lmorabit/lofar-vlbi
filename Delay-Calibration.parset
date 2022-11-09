@@ -132,7 +132,7 @@ pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_
 pipeline.steps.aoflagging = [ aoflag ]
 pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat ]
 pipeline.steps.delaycal = [ delay_cal_model, delay_solve ]
-pipeline.steps.applydelay = [ createmap_selfcal, copyST_gains, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
+pipeline.steps.applydelay = [ createmap_selfcal, copyST_gains, createmap_linear, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
 pipeline.steps.cleanup = [ delete_prep_target, delete_phaseup, make_results_compress, make_summary ]
 
 ##################################################################################################################
@@ -601,18 +601,28 @@ copyST_gains.control.executable                      = {{ scripts }}/run_h5merge
 copyST_gains.argument.flags                          = [createmap_selfcal.output.mapfile,dpppconcat.output.mapfile]
 copyST_gains.argument.helperscriptspath_h5merge      = {{ helper_dir }}
 
+# generate mapfile of the linear + CS solutions
+createmap_linear.control.kind             = plugin
+createmap_linear.control.type             = createMapfile
+createmap_linear.control.method           = mapfile_from_folder
+createmap_linear.control.mapfile_dir      = input.output.mapfile_dir
+createmap_linear.control.filename         = createmap_selfcal.mapfile
+createmap_linear.control.folder           = {{ job_directory }}
+createmap_linear.control.pattern          = *_toapply.h5
+ 
+
 # copy the h5parm to the inspection_directory
 copy_delay_sols.control.kind               =  recipe
 copy_delay_sols.control.type               =  executable_args
 copy_delay_sols.control.executable         =  /bin/cp
-copy_delay_sols.control.mapfile_in         =  createmap_selfcal.output.mapfile
+copy_delay_sols.control.mapfile_in         =  createmap_linear.output.mapfile
 copy_delay_sols.control.inputkey           =  h5in
 copy_delay_sols.control.arguments          =  [h5in, {{ cal_values_directory }}/delay_cal_sols.h5]
 
 # expand the mapfile so there's one entry per ms
 expand_h5_map.control.kind                      = plugin
 expand_h5_map.control.type                      = expandMapfile
-expand_h5_map.control.mapfile_in                = createmap_selfcal.output.mapfile
+expand_h5_map.control.mapfile_in                = createmap_linear.output.mapfile
 expand_h5_map.control.mapfile_to_match          = dpppconcat.output.mapfile
 expand_h5_map.control.mapfile_dir               = input.output.mapfile_dir
 expand_h5_map.control.filename                  = expand_h5_map.mapfile
@@ -635,12 +645,12 @@ ndppp_apply_delay.argument.steps                            = [applyphase,applya
 ndppp_apply_delay.argument.applyphase.type                  = applycal
 ndppp_apply_delay.argument.applyphase.parmdb                = h5parm
 ndppp_apply_delay.argument.applyphase.correction            = phase000
-ndppp_apply_delay.argument.applyphase.solset                = sol001
+ndppp_apply_delay.argument.applyphase.solset                = sol000
 ndppp_apply_delay.argument.applyphase.updateweights         = false
 ndppp_apply_delay.argument.applyamp.type            	    = applycal
 ndppp_apply_delay.argument.applyamp.parmdb          	    = h5parm
 ndppp_apply_delay.argument.applyamp.correction      	    = amplitude000
-ndppp_apply_delay.argument.applyamp.solset          	    = sol001
+ndppp_apply_delay.argument.applyamp.solset          	    = sol000
 ndppp_apply_delay.argument.applyamp.updateweights   	    = false
 
 ############################################
