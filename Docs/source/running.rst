@@ -118,6 +118,6 @@ To aid the user, below is a block diagram of the pipeline.
 .. _LBCS catalogue server: https://lofar-surveys.org/lbcs.html
 .. _Long Baseline Pipeline GitHub issues: https://github.com/lmorabit/lofar-vlbi/issues
 .. _prefactor: https://github.com/lofar-astron/prefactor
-.. _prefactor documentation: https://www.astron.nl/citt/prefactor/
+.. _prefactor documentation: https://www.astron.nl/lofarwiki/doku.php?id=public:user_software:prefactor
 .. _documentation: file:///media/quasarfix/media/cep3/prefactor/docs/build/html/parset.html
 .. _ddf-pipeline: https://github.com/mhardcastle/ddf-pipeline
