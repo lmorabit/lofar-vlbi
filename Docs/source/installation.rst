@@ -28,7 +28,7 @@ This is the recommended method to run the pipeline. You will need the following 
 
    * An appropriate Singularity image. You may use another one but be aware that there may be software compatibility issues.
      We recommend::
-    $ wget https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp_v3.3.2_x86-64_generic_cuda_11_3_ddfpublic.sif
+    $ wget https://lofar-webdav.grid.sara.nl/software/shub_mirror/tikk3r/lofar-grid-hpccloud/lofar_sksp_v3.5_x86-64_generic_noavx512_ddf.sif?action=show
 
    * The lofar-vlbi github repository (master branch)::
 
