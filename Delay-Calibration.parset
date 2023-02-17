@@ -599,14 +599,14 @@ createmap_selfcal.control.pattern          = merged_selfcalcyle009_linear*.h5
 copy_delay_sols.control.kind               =  recipe
 copy_delay_sols.control.type               =  executable_args
 copy_delay_sols.control.executable         =  /bin/cp
-copy_delay_sols.control.mapfile_in         =  createmap_linear.output.mapfile
+copy_delay_sols.control.mapfile_in         =  createmap_selfcal.output.mapfile
 copy_delay_sols.control.inputkey           =  h5in
 copy_delay_sols.control.arguments          =  [h5in, {{ cal_values_directory }}/delay_cal_sols.h5]
 
 # expand the mapfile so there's one entry per ms
 expand_h5_map.control.kind                      = plugin
 expand_h5_map.control.type                      = expandMapfile
-expand_h5_map.control.mapfile_in                = createmap_linear.output.mapfile
+expand_h5_map.control.mapfile_in                = createmap_selfcal.output.mapfile
 expand_h5_map.control.mapfile_to_match          = dpppconcat.output.mapfile
 expand_h5_map.control.mapfile_dir               = input.output.mapfile_dir
 expand_h5_map.control.filename                  = expand_h5_map.mapfile
