@@ -132,7 +132,7 @@ pipeline.steps.apply_ddf = [ createmap_ddf, ddf_solutions, ddf_h5parms, convert_
 pipeline.steps.aoflagging = [ aoflag ]
 pipeline.steps.phaseup = [ prep_delay_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat ]
 pipeline.steps.delaycal = [ delay_cal_model, delay_solve ]
-pipeline.steps.applydelay = [ createmap_selfcal, copyST_gains, createmap_linear, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
+pipeline.steps.applydelay = [ createmap_selfcal, copy_delay_sols, expand_h5_map, ndppp_apply_delay ]
 pipeline.steps.cleanup = [ delete_prep_target, delete_phaseup, make_results_compress, make_summary ]
 
 ##################################################################################################################
@@ -593,23 +593,7 @@ createmap_selfcal.control.method           = mapfile_from_folder
 createmap_selfcal.control.mapfile_dir      = input.output.mapfile_dir
 createmap_selfcal.control.filename         = createmap_selfcal.mapfile
 createmap_selfcal.control.folder           = {{ job_directory }}/delay_solve
-createmap_selfcal.control.pattern          = merged_selfcalcyle009_*.h5
-
-# in delay cal h5parm, convert to linear and copy ST001 sols to CS
-copyST_gains.control.type                            = pythonplugin
-copyST_gains.control.executable                      = {{ scripts }}/run_h5merger.py
-copyST_gains.argument.flags                          = [createmap_selfcal.output.mapfile,dpppconcat.output.mapfile]
-copyST_gains.argument.helperscriptspath_h5merge      = {{ helper_dir }}
-
-# generate mapfile of the linear + CS solutions
-createmap_linear.control.kind             = plugin
-createmap_linear.control.type             = createMapfile
-createmap_linear.control.method           = mapfile_from_folder
-createmap_linear.control.mapfile_dir      = input.output.mapfile_dir
-createmap_linear.control.filename         = createmap_selfcal.mapfile
-createmap_linear.control.folder           = {{ job_directory }}
-createmap_linear.control.pattern          = *_toapply.h5
- 
+createmap_selfcal.control.pattern          = merged_selfcalcyle009_linear*.h5
 
 # copy the h5parm to the inspection_directory
 copy_delay_sols.control.kind               =  recipe
