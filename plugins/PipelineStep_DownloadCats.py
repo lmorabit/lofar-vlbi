@@ -384,10 +384,11 @@ def remove_multiples_position( mycat, racol='RA', decol='DEC' ):
                     print( 'Duplicate sources have total_ft = 0, removing from results.' )
             else:
                 good_idx.append(idx[0])                       
+        mycat = mycat[good_idx]
     else:
         print( 'All LBCS sources are unique' )
 
-    return( mycat[good_idx] )
+    return( mycat )
 
 def plugin_main( args, **kwargs ):
 
