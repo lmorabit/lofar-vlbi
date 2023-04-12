@@ -15,5 +15,5 @@ antennaconstraint_list     = ['alldutch',None,None]
 docircular                 = True
 forwidefield               = True
 stop                       = 10
-no_beamcor                 = True
+beamcor                    = auto
 phaseupstations		   = core
