@@ -10,7 +10,7 @@ written 21 Feb 2022
 import os
 import glob
 
-def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='', destdir='' ):
+def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='', destdir='', delay_sols = '' ):
 
     msin = msin.split('/')[-1]
     skymod = os.path.join( msin, 'skymodel' )
@@ -25,7 +25,7 @@ def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='
         f.write('{:s}\n{:s}\n{:s}\n{:s}\n{:s}\n{:s}'.format(msin,skymod,helperscriptspath,helperscriptspath_h5merge,configfile,destdir) )
 
     # copy the config file
-    destfile = os.path.join( destdir, configfile.split('/')[-1] )
+    destfile = os.path.join( destdir, "facetselfcal_config.txt")
     ss = 'cp {:s} {:s}'.format(configfile, destfile)
     print( ss )
     os.system( ss )
@@ -34,6 +34,8 @@ def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='
     os.system( 'sed -i "s~FACETSELFCAL_DIR~{:s}~g" {:s}'.format(helperscriptspath,destfile) )
     os.system( 'sed -i "s~LOFARHELPERS_DIR~{:s}~g" {:s}'.format(helperscriptspath_h5merge,destfile) )
     os.system( 'sed -i "s~MYMODEL~{:s}~g" {:s}'.format(skymod,destfile) )
+    
+    os.system( 'sed -i "s~DELAYCAL_SOLUTIONS~{:s}~g" {:s}'.format(delay_sols, destifle))
 
     ## also copy the h5_merger.py script
     os.system( 'cp {:s} {:s}'.format( os.path.join( helperscriptspath_h5merge, 'h5_merger.py' ), os.path.join( destdir, 'h5_merger.py' ) ) )
@@ -51,7 +53,8 @@ if __name__ == "__main__":
     parser.add_argument('--helperscriptspath_h5merge',default='lofar_helpers')
     parser.add_argument('--configfile',default='facetselfcal_config.txt')
     parser.add_argument('--destdir',default='jobdir')
+    parser.add_argument('--delay_sols', default='')
 
     args = parser.parse_args()
 
-    main(args.msin,helperscriptspath=args.helperscriptspath,helperscriptspath_h5merge=args.helperscriptspath-h5merge,configfile=args.configfile,destdir=args.destdir)
+    main(args.msin,helperscriptspath=args.helperscriptspath,helperscriptspath_h5merge=args.helperscriptspath-h5merge,configfile=args.configfile,destdir=args.destdir, delay_sols = args.delay_sols)
