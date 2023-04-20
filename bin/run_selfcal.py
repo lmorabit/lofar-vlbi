@@ -25,7 +25,7 @@ def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='
         f.write('{:s}\n{:s}\n{:s}\n{:s}\n{:s}\n{:s}'.format(msin,skymod,helperscriptspath,helperscriptspath_h5merge,configfile,destdir) )
 
     # copy the config file
-    destfile = os.path.join( destdir, configfile.split('/')[-1] )
+    destfile = os.path.join( destdir, "facetselfcal_config.txt")
     ss = 'cp {:s} {:s}'.format(configfile, destfile)
     print( ss )
     os.system( ss )

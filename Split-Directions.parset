@@ -34,6 +34,11 @@
 ! delaycal_directory                    = {{ job_directory }}/../Delay-Calibration
 ! results_directory                     = {{ job_directory }}/results
 
+## Target selfcal config
+! target_config_file      =   {{ lofar_vlbi_dir }}/targetselfcal_config.txt
+
+
+
 ##########################################################
 ## These parameters may need to be updated.		##
 ##########################################################
@@ -120,19 +125,15 @@ dppp_phaseup.argument.msin.datacolumn           = {{ data_col }}
 dppp_phaseup.argument.msout.datacolumn          = DATA
 dppp_phaseup.argument.msout.storagemanager      = dysco
 dppp_phaseup.argument.msout.overwrite           = True
-dppp_phaseup.argument.steps                     = [shift, average1, applybeam, adder, filter, average2]
+dppp_phaseup.argument.steps                     = [shift, average1, applybeam, average2]
 dppp_phaseup.argument.shift.type                = phaseshift
 dppp_phaseup.argument.shift.phasecenter         = prep_dir.output.coords
 dppp_phaseup.argument.average1.type             = averager
 dppp_phaseup.argument.average1.freqresolution   = 48.82kHz
 dppp_phaseup.argument.average1.timeresolution   = 4.
 dppp_phaseup.argument.applybeam.type            = applybeam
+dppp_phaseup.argument.applybeam.direction       = prep_dir.output.coords
 dppp_phaseup.argument.applybeam.beammode        = full
-dppp_phaseup.argument.adder.type                = stationadder
-dppp_phaseup.argument.adder.stations            = {{ phaseup_command }}
-dppp_phaseup.argument.filter.type               = filter
-dppp_phaseup.argument.filter.baseline           = {{ filter_command }}
-dppp_phaseup.argument.filter.remove             = True
 dppp_phaseup.argument.average2.type             = averager
 dppp_phaseup.argument.average2.freqresolution   = {{ cal_avg_freqresolution }}
 dppp_phaseup.argument.average2.timeresolution   = {{ cal_avg_timeresolution }}
@@ -184,18 +185,14 @@ phaseup_concat.argument.numthreads             = {{ max_dppp_threads }}
 
 # run self-calibration
 selfcal.control.type                    = pythonplugin
-selfcal.control.executable              = {{ selfcal_dir }}/facetselfcal.py
+selfcal.control.executable              = {{ scripts }}/run_selfcal.py
 selfcal.control.mapfile_in              = phaseup_concat.output.mapfile
 selfcal.control.inputkey                = msin
 selfcal.argument.flags                  = [msin]
 selfcal.argument.helperscriptspath          = {{ selfcal_dir }}
 selfcal.argument.helperscriptspath-h5merge  = {{ helper_dir }}
-selfcal.argument.imsize                     = 1600
-selfcal.argument.no-beamcor                 = True
-selfcal.argument.auto			= True
-selfcal.argument.avgfreqstep		= 10 
-selfcal.argument.avgtimestep		= 4 
-
+selfcal.argument.configfile             = {{ target_config_file }}
+selfcal.argument.destdir                = {{ job_directory }}
 
 ##################################################################
 #                                                               ##
