@@ -59,7 +59,7 @@
 ##########################################################
 
 ## data column from Delay-Calibration
-data_col = DATA ## set to DATA_DI_CORRECTED if you applied ddf solutions in Delay-Calibration
+! data_col = DATA ## set to DATA_DI_CORRECTED if you applied ddf solutions in Delay-Calibration
 
 ## Averaging parameters
 ! cal_avg_freqresolution    = 390.56kHz
