@@ -2,3 +2,4 @@ helperscriptspath         = FACETSELFCAL_DIR
 helperscriptspathh5merge  = LOFARHELPERS_DIR
 beamcor                   = auto
 auto                      = True
+preapplyH5-list           = [DELAYCAL_SOLUTIONS]

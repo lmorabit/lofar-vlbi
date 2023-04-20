@@ -59,7 +59,7 @@
 ##########################################################
 
 ## data column from Delay-Calibration
-! data_col = CORRECTED_DATA 
+! data_col = DATA 
 
 ## Averaging parameters
 ! cal_avg_freqresolution    = 390.56kHz
@@ -82,7 +82,7 @@
 pipeline.steps = [ setup, selfcal ]
  
 pipeline.steps.setup = [ mk_results_dir, targetdata_map, prep_dir, dppp_phaseup, dppp_phaseup_list, sort_phaseupmap, do_phaseup_maps, phaseup_concat ]
-pipeline.steps.selfcal = [ selfcal ]
+pipeline.steps.selfcal = [createmap_selfcal, selfcal ]
 
 ###########################################################################
 
@@ -183,6 +183,15 @@ phaseup_concat.argument.msout.overwrite        = True
 phaseup_concat.argument.steps                  = [count]
 phaseup_concat.argument.numthreads             = {{ max_dppp_threads }}
 
+# generate mapfile of the output file
+createmap_selfcal.control.kind             = plugin
+createmap_selfcal.control.type             = createMapfile
+createmap_selfcal.control.method           = mapfile_from_folder
+createmap_selfcal.control.mapfile_dir      = input.output.mapfile_dir
+createmap_selfcal.control.filename         = createmap_selfcal.mapfile
+createmap_selfcal.control.folder           = {{ job_directory }}/delay_solve
+createmap_selfcal.control.pattern          = merged_addCS_selfcalcyle009_linear*.h5
+
 # run self-calibration
 selfcal.control.type                    = pythonplugin
 selfcal.control.executable              = {{ scripts }}/run_selfcal.py
@@ -193,7 +202,7 @@ selfcal.argument.helperscriptspath          = {{ selfcal_dir }}
 selfcal.argument.helperscriptspath-h5merge  = {{ helper_dir }}
 selfcal.argument.configfile             = {{ target_config_file }}
 selfcal.argument.destdir                = {{ job_directory }}
-
+selfcal.argument.delay_sols             = createmap_selfcal.output.mapfile
 ##################################################################
 #                                                               ##
 #                   END OF PIPELINE	                        ##
