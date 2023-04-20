@@ -1,0 +1,4 @@
+helperscriptspath         = FACETSELFCAL_DIR
+helperscriptspathh5merge  = LOFARHELPERS_DIR
+beamcor                   = auto
+auto                      = True
