@@ -35,7 +35,7 @@ def main( msin, helperscriptspath='', helperscriptspath_h5merge='', configfile='
     os.system( 'sed -i "s~LOFARHELPERS_DIR~{:s}~g" {:s}'.format(helperscriptspath_h5merge,destfile) )
     os.system( 'sed -i "s~MYMODEL~{:s}~g" {:s}'.format(skymod,destfile) )
     
-    os.system( 'sed -i "s~DELAYCAL_SOLUTIONS~{:s}~g" {:s}'.format(delay_sols, destifle))
+    os.system( 'sed -i "s~DELAYCAL_SOLUTIONS~{:s}~g" {:s}'.format(delay_sols, destfile))
 
     ## also copy the h5_merger.py script
     os.system( 'cp {:s} {:s}'.format( os.path.join( helperscriptspath_h5merge, 'h5_merger.py' ), os.path.join( destdir, 'h5_merger.py' ) ) )
