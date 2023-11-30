@@ -10,7 +10,7 @@ from lofarpipe.support.data_map import DataProduct
 import requests
 from astropy.coordinates import SkyCoord
 from astropy import units as u
-
+from time import sleep
 
 def sum_digits(n):
     s = 0
@@ -197,7 +197,7 @@ def my_lbcs_catalogue( ms_input, Radius=1.5, outfile='' ):
             try:
                 response = requests.get(url, stream=True,verify=True,timeout=60)
                 if response.status_code!=200:
-                    print response.headers
+                    print(response.headers)
                     raise RuntimeError('Code was %i' % response.status_code)
             except requests.exceptions.ConnectionError:
                 print 'Connection error! sleeping 30 seconds before retry...'
