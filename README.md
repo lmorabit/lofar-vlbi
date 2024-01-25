@@ -50,6 +50,8 @@ What it does: This is the direction-dependent processing for the Dutch array. So
 
 __Module 4: VLBI-cwl__
 
+***Required** if you are planning on doing widefield processing.*
+
 This module applies all relevant solutions from the previous modules, carries out the initial in-field calibration on a delay calibrator, and splits out individual target directions for further self-calibration. There are two main workflows:
 
 - delay-calibration.cwl
@@ -65,7 +67,9 @@ These can be run directly, with some book-keeping to gather the results of one s
 
 The second workflow splits out directions of interest for further self-calibration. 
 
+__Module 5: Widefield processing__
 
+PIPELINES STILL UNDER CONSTRUCTION.
 
 
 
