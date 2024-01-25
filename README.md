@@ -67,9 +67,14 @@ These can be run directly, with some book-keeping to gather the results of one s
 
 The second workflow splits out directions of interest for further self-calibration. 
 
-__Module 5: Widefield processing__
+__Module 5a: full FoV, intermediate resolution (1-2 arcsec) imaging__
 
 PIPELINES STILL UNDER CONSTRUCTION.
+
+__Module 5b: full FoV, high resolution (sub-arcsec) imaging__
+
+PIPELINES STILL UNDER CONSTRUCTION.
+
 
 
 
