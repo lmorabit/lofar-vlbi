@@ -237,6 +237,10 @@ jQuery.fn = jQuery.prototype = {
 	splice: arr.splice
 };
 
+jQuery.htmlPrefilter = function( html ) {
+	return html;
+};
+
 jQuery.extend = jQuery.fn.extend = function() {
 	var options, name, src, copy, copyIsArray, clone,
 		target = arguments[ 0 ] || {},
