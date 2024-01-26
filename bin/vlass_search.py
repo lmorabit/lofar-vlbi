@@ -56,7 +56,7 @@ def get_tiles():
 
     summary_file_location = "VLASS_dyn_summary.php"
     if not os.path.exists(summary_file_location):
-        os.system('wget https://archive-new.nrao.edu/vlass/VLASS_dyn_summary.php')
+        os.system('wget https://raw.githubusercontent.com/lmorabit/lofar-vlbi/master/VLASS_dyn_summary.php')
     
     names, dec_min, dec_max, ra_min, ra_max, epoch, obsdate = np.loadtxt(summary_file_location, skiprows=3, unpack=True, dtype='str', usecols=(0,1,2,3,4,5,6))
 
@@ -241,7 +241,7 @@ if __name__=="__main__":
     c = SkyCoord(ra, dec, unit='deg')
 
     if not glob.glob(summary_file_location):
-        os.system('wget https://archive-new.nrao.edu/vlass/VLASS_dyn_summary.php')
+        os.system('wget https://raw.githubusercontent.com/lmorabit/lofar-vlbi/master/VLASS_dyn_summary.php')
         #raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), summary_file_location)
     
     search_vlass(c, crop=crop, crop_scale=crop_scale, consider_QA_rejected=consider_QA_rejected) 
