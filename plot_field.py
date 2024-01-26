@@ -783,8 +783,6 @@ def generate_catalogues( RATar, DECTar, targRA = 0.0, targDEC = 0.0, lotss_radiu
             ra, dec = source['RA'], source['DEC']
             c = SkyCoord(ra, dec, unit = (u.deg, u.deg))
             outfile = os.path.join(outdir,"%s_vlass.fits"%source['Observation'])
-            print('OUTFILE IS:')
-            print(outfile)
             try:
                 search_vlass(c, crop = True, crop_scale = 256)
                 os.system("mv vlass_post**.fits  %s"%outfile)
