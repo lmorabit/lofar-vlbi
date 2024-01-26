@@ -415,7 +415,8 @@ def mkfits (rasiz,decsiz,imsiz,pixsiz):
     hdu.header.update({'EQUINOX':2000.0})
     hdu.header.update({'EPOCH':2000.0})
 #    hdu.data = np.random.random(imsiz*imsiz).reshape(imsiz,imsiz)
-    os.system('rm temp.fits')
+    if os.path.exists('temp.fits'):
+        os.system('rm temp.fits')
     hdu.writeto('temp.fits')
     
 def smearing_calculation(nchan = 16, obs_freq=144000000, radii=np.arange(0.001,4,0.00001), resolution=0.3/206265 * 180 / np.pi,
@@ -529,6 +530,7 @@ def make_plot(RA, DEC,  lotss_catalogue, extreme_catalogue, lbcs_catalogue, targ
     plt.legend(fontsize = 'x-large')
 
     plt.savefig("output.png")
+    os.system('rm temp.fits')
 
 def convert_vlass_fits(fitsfile):
     import matplotlib.pyplot as plt
@@ -555,14 +557,15 @@ def make_html(RATar, DECTar,  lotss_result_file,
     
     from dash import Dash, dcc, html, Input, Output, no_update
     import plotly.graph_objects as go
-    import pandas as pd
+#    import pandas as pd
     from dash.exceptions import PreventUpdate
 
     # Small molcule drugbank dataset
     # Source: https://raw.githubusercontent.com/plotly/dash-sample-apps/main/apps/dash-drug-discovery/data/small_molecule_drugbank.csv'
     data_path = 'delay_calibrators.csv'
 
-    df = pd.read_csv(data_path, header=0,)
+    df = Table.read(data_path,format='csv')
+#    df = pd.read_csv(data_path, header=0,)
 
     print(df)
     observation = df["Observation"]
@@ -632,28 +635,16 @@ def make_html(RATar, DECTar,  lotss_result_file,
     return app
     
 
+def generate_catalogues( RATar, DECTar, targRA = 0.0, targDEC = 0.0, lotss_radius=1.5, lbcs_radius=1.5, im_radius=1.24,
+               bright_limit_Jy=5., lotss_catalogue='lotss_catalogue.csv', lbcs_catalogue='lbcs_catalogue.csv', lotss_result_file='image_catalogue.csv',
+               delay_cals_file='delay_calibrators.csv', match_tolerance=5., image_limit_Jy=0.01, continue_no_lotss=False,
+                nchan = 16,  av_time = 1., vlass=False, html=False):
 
-def plugin_main( RA, DEC, **kwargs ):
-    RATar = RA
-    DECTar = DEC
-    targRA = kwargs['targRA']
-    targDEC = kwargs['targDEC']
-    #mapfile_in = kwargs['mapfile_in']
-    lotss_radius = kwargs['lotss_radius']
-    lbcs_radius  = kwargs['lbcs_radius']
-    im_radius = float(kwargs['im_radius'])
-    image_limit_Jy = float(kwargs['image_limit_Jy'])
-    bright_limit_Jy = float(kwargs['bright_limit_Jy'])
-    lotss_result_file = kwargs['lotss_result_file']
-    lotss_catalogue = kwargs['lotss_catalogue']
-    lbcs_catalogue = kwargs['lbcs_catalogue']
-    delay_cals_file = kwargs['delay_cals_file']
-    match_tolerance = float(kwargs['match_tolerance'])
-    fail_lotss_ok = kwargs['continue_no_lotss'].lower().capitalize()
-    nchan = kwargs['nchan']
-    av_time = kwargs['av_time']
-    vlass = kwargs['vlass']
-    html = kwargs['html']
+#def plugin_main( RA, DEC, **kwargs ):
+#    im_radius = float(kwargs['im_radius'])
+#    image_limit_Jy = float(kwargs['image_limit_Jy'])
+#    bright_limit_Jy = float(kwargs['bright_limit_Jy'])
+#    match_tolerance = float(kwargs['match_tolerance'])
     #mslist = DataMap.load(mapfile_in)
     #MSname = mslist[0].file
     # For testing
@@ -833,14 +824,12 @@ if __name__ == "__main__":
     else:
         ptgRA, ptgDEC = args.RA, args.DEC
         
-
-
-    plugin_main( float(ptgRA), float(ptgDEC), targRA = args.targRA, targDEC = args.targDEC, 
+    generate_catalogues( float(ptgRA), float(ptgDEC), targRA = args.targRA, targDEC = args.targDEC, 
          lotss_radius=args.lotss_radius, lbcs_radius=args.lbcs_radius, im_radius=args.im_radius,
            bright_limit_Jy=args.bright_limit_Jy, lotss_catalogue=args.lotss_catalogue, 
            lbcs_catalogue=args.lbcs_catalogue, lotss_result_file=args.lotss_result_file, 
            delay_cals_file=args.delay_cals_file, match_tolerance=args.match_tolerance, 
-           image_limit_Jy=args.image_limit_Jy, continue_no_lotss = str(args.continue_no_lotss),
+           image_limit_Jy=args.image_limit_Jy, continue_no_lotss = args.continue_no_lotss,
             nchan = args.nchan,  av_time = args.av_time, vlass=args.vlass, html = args.html)
 
 
