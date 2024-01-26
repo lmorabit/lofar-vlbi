@@ -451,7 +451,7 @@ def smallest_distance(RA, DEC, lbcs_catalogue):
     
     
 def make_plot(RA, DEC,  lotss_catalogue, extreme_catalogue, lbcs_catalogue, targRA=None, 
-          targDEC=None, nchan = 16, av_time = 1):
+          targDEC=None, nchan = 16, av_time = 1, outdir='.'):
     import matplotlib.pyplot as plt
     from matplotlib.patches import Circle
 
@@ -529,7 +529,7 @@ def make_plot(RA, DEC,  lotss_catalogue, extreme_catalogue, lbcs_catalogue, targ
         ax.text(lbcs[i]['RA']-0.05, lbcs[i]['DEC'], "%.2f Jy"%(lbcs[i]['Total_flux']/1000),  transform=ax.get_transform('fk5'))
     plt.legend(fontsize = 'x-large')
 
-    plt.savefig("output.png")
+    plt.savefig(os.path.join(outdir,"output.png"))
     os.system('rm temp.fits')
 
 def convert_vlass_fits(fitsfile):
@@ -638,7 +638,7 @@ def make_html(RATar, DECTar,  lotss_result_file,
 def generate_catalogues( RATar, DECTar, targRA = 0.0, targDEC = 0.0, lotss_radius=1.5, lbcs_radius=1.5, im_radius=1.24,
                bright_limit_Jy=5., lotss_catalogue='lotss_catalogue.csv', lbcs_catalogue='lbcs_catalogue.csv', lotss_result_file='image_catalogue.csv',
                delay_cals_file='delay_calibrators.csv', match_tolerance=5., image_limit_Jy=0.01, continue_no_lotss=False,
-                nchan = 16,  av_time = 1., vlass=False, html=False):
+                nchan = 16,  av_time = 1., vlass=False, html=False, outdir='.'):
 
 #def plugin_main( RA, DEC, **kwargs ):
 #    im_radius = float(kwargs['im_radius'])
@@ -649,6 +649,15 @@ def generate_catalogues( RATar, DECTar, targRA = 0.0, targDEC = 0.0, lotss_radiu
     #MSname = mslist[0].file
     # For testing
     #MSname = kwargs['MSname']
+
+    ## prepend everything with outdir
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
+    lotss_catalogue = os.path.join(outdir,lotss_catalogue)
+    lbcs_catalogue = os.path.join(outdir,lbcs_catalogue)
+    lotss_result_file = os.path.join(outdir,lotss_result_file)
+    delay_cals_file=os.path.join(outdir,delay_cals_file)
+
  
     ## first check for a valid delay_calibrator file
     if os.path.isfile(delay_cals_file):
@@ -664,7 +673,7 @@ def generate_catalogues( RATar, DECTar, targRA = 0.0, targDEC = 0.0, lotss_radiu
                                          outfile=lotss_catalogue )
     
     print("Finding bright sources outside field")
-    extreme_catalogue = my_lotss_catalogue( RATar, DECTar,Radius=10.0, bright_limit_Jy=1000., faint_limit_Jy = 10.0, outfile = "extreme_catalogue.csv" )
+    extreme_catalogue = my_lotss_catalogue( RATar, DECTar,Radius=10.0, bright_limit_Jy=1000., faint_limit_Jy = 10.0, outfile = os.path.join(outdir,"extreme_catalogue.csv") )
     extreme_catalogue = remove_multiples_position(extreme_catalogue)
     ## if lbcs exists, and either lotss exists or continue_without_lotss = True, continue
     ## else provide an error message and stop
@@ -762,7 +771,7 @@ def generate_catalogues( RATar, DECTar, targRA = 0.0, targDEC = 0.0, lotss_radiu
             sources_to_image.write( lotss_result_file, format='csv' )
 
     print("Assumed averaging - nchannels: %s; time averaging: %s"%(nchan, av_time))
-    make_plot(RATar, DECTar,  lotss_result_file, extreme_catalogue, result, targRA, targDEC,nchan = nchan, av_time = av_time)
+    make_plot(RATar, DECTar,  lotss_result_file, extreme_catalogue, result, targRA, targDEC,nchan = nchan, av_time = av_time, outdir=outdir)
 
     
     
@@ -773,7 +782,9 @@ def generate_catalogues( RATar, DECTar, targRA = 0.0, targDEC = 0.0, lotss_radiu
         for i, source in enumerate(result):
             ra, dec = source['RA'], source['DEC']
             c = SkyCoord(ra, dec, unit = (u.deg, u.deg))
-            outfile = "%s_vlass.fits"%source['Observation']
+            outfile = os.path.join(outdir,"%s_vlass.fits"%source['Observation'])
+            print('OUTFILE IS:')
+            print(outfile)
             try:
                 search_vlass(c, crop = True, crop_scale = 256)
                 os.system("mv vlass_post**.fits  %s"%outfile)
@@ -792,6 +803,7 @@ def generate_catalogues( RATar, DECTar, targRA = 0.0, targDEC = 0.0, lotss_radiu
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
+    parser.add_argument( '--output_dir', dest='outdir', type=str, help='directory to save results in [default cwd]', default='.' )
     parser.add_argument( '--lotss_radius', dest='lotss_radius', type=float, help='Radius to search LoTSS', default=1.5 )
     parser.add_argument( '--lbcs_radius', dest='lbcs_radius', type=float, help='Radius to search LBCS', default=1.5 )
     parser.add_argument( '--im_radius', dest='im_radius', type=float, help='Radius in which to image', default=1.24 )
@@ -830,7 +842,7 @@ if __name__ == "__main__":
            lbcs_catalogue=args.lbcs_catalogue, lotss_result_file=args.lotss_result_file, 
            delay_cals_file=args.delay_cals_file, match_tolerance=args.match_tolerance, 
            image_limit_Jy=args.image_limit_Jy, continue_no_lotss = args.continue_no_lotss,
-            nchan = args.nchan,  av_time = args.av_time, vlass=args.vlass, html = args.html)
+            nchan = args.nchan,  av_time = args.av_time, vlass=args.vlass, html = args.html, outdir=args.outdir)
 
 
 
