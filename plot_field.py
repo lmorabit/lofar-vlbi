@@ -14,7 +14,6 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.table import Table
 from time import sleep
-from glob import glob
 
 
 def sum_digits(n):
